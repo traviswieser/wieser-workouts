@@ -584,6 +584,11 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
               <button onClick={saveAIKey} style={{padding:"10px 14px",borderRadius:8,border:"none",background:C.acc,color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>Save</button>
             </div>
             <div style={{fontSize:10,color:C.fnt,marginTop:6,lineHeight:1.5}}>Your key is stored in your private Firebase data. It never touches our servers. Calls go directly from your browser to the AI provider.</div>
+            <div style={{marginTop:10,padding:"10px 12px",background:C.srf,borderRadius:8,fontSize:11,color:C.dim,lineHeight:1.7}}>
+              {aiProvider==="openai"&&<><b style={{color:C.txt}}>How to get an OpenAI key:</b><br/>1. Go to <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" style={{color:C.acc}}>platform.openai.com/api-keys</a><br/>2. Sign in or create an account<br/>3. Click "Create new secret key"<br/>4. Copy the key (starts with <b>sk-</b>) and paste it above<br/>Note: Requires adding a payment method. Generating a plan costs ~$0.02–0.05.</>}
+              {aiProvider==="claude"&&<><b style={{color:C.txt}}>How to get a Claude key:</b><br/>1. Go to <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style={{color:C.acc}}>console.anthropic.com/settings/keys</a><br/>2. Sign in or create an account<br/>3. Click "Create Key"<br/>4. Copy the key (starts with <b>sk-ant-</b>) and paste it above<br/>Note: Requires adding billing credits. Generating a plan costs ~$0.02–0.05.</>}
+              {aiProvider==="gemini"&&<><b style={{color:C.txt}}>How to get a Gemini key:</b><br/>1. Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style={{color:C.acc}}>aistudio.google.com/apikey</a><br/>2. Sign in with your Google account<br/>3. Click "Create API key"<br/>4. Copy the key (starts with <b>AIza</b>) and paste it above<br/>Note: Free tier available with generous limits.</>}
+            </div>
           </div>
         </>)}
 
