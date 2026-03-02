@@ -45,7 +45,7 @@ const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const
 const link=document.createElement('link');link.rel='manifest';link.href=mUrl;document.head.appendChild(link);
 const iconLink=document.createElement('link');iconLink.rel='icon';iconLink.href=iconUrl;iconLink.type='image/svg+xml';document.head.appendChild(iconLink);
 const appleIcon=document.createElement('link');appleIcon.rel='apple-touch-icon';appleIcon.href=iconUrl;document.head.appendChild(appleIcon);
-if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v17';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
+if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v18';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
 const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.auth();const db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
 </script>
 </head>
@@ -87,6 +87,7 @@ const GC={chest:"#EF4444",back:"#3B82F6",shoulders:"#F59E0B",biceps:"#8B5CF6",tr
 const DURATION_EX=new Set(["Biking","Air Bike","Rower"]);
 const MILES_EX=new Set(["Biking","Air Bike","Rower"]);
 const REPS_ONLY_EX=new Set(["Stretches","Jumping Jacks"]);
+const ADMIN_EMAILS=new Set(["traviswieser@gmail.com"]);
 const mkEx=(n,s,c,g)=>({name:n,sets:s,cues:c,group:g||EX_GRP[n]||"other"});
 
 // V1 PLAN
@@ -171,9 +172,50 @@ mkEx("Reverse Lunges","3×10 each","Step back, not forward. Front shin vertical.
 mkEx("Biking","1×duration","Easy to moderate pace. Great finish to the session.","cardio")]}]}
 ]};
 
+
+// PLAN TEMPLATES
+const TEMPLATES=[
+  {key:"ppl",name:"Push / Pull / Legs",sub:"Classic 3-day split",icon:"💪",gen:()=>({
+    id:"custom_"+Date.now(),name:"Push / Pull / Legs",subtitle:"Classic 3-day hypertrophy split",
+    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1–4",desc:"Build a base with compound movements.",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[
+      {title:"Day 1",sub:"Push (Chest/Shoulders/Triceps)",exercises:[{name:"DB Flat Bench Press",sets:"3×10–12",cues:"Retract shoulder blades. Control eccentric 2–3 sec.",group:"chest"},{name:"DB Overhead Press",sets:"3×10–12",cues:"Brace core. Press straight up. Control descent.",group:"shoulders"},{name:"DB Incline Bench Press",sets:"3×10–12",cues:"30° incline. Full range of motion.",group:"chest"},{name:"DB Lateral Raise",sets:"3×12–15",cues:"Lead with elbows. Stop at shoulder height.",group:"shoulders"},{name:"Cable Tricep Pushdown (Rope)",sets:"3×10–12",cues:"Elbows pinned. Spread rope at bottom.",group:"triceps"},{name:"DB Overhead Tricep Ext.",sets:"3×10–12",cues:"Keep elbows close. Full stretch at bottom.",group:"triceps"}]},
+      {title:"Day 2",sub:"Pull (Back/Biceps/Rear Delts)",exercises:[{name:"DB Bent-Over Row",sets:"3×10–12",cues:"Hinge 45°. Pull to ribcage. Squeeze 1 sec.",group:"back"},{name:"Lat Pulldown",sets:"3×10–12",cues:"Wide grip. Pull to upper chest.",group:"back"},{name:"Seated Cable Row",sets:"3×10–12",cues:"V-bar handle. Squeeze shoulder blades.",group:"back"},{name:"Cable Face Pull",sets:"3×15",cues:"Pull to face level. External rotate at top.",group:"shoulders"},{name:"DB Bicep Curl",sets:"3×10–12",cues:"Pin elbows. Full extension. No swinging.",group:"biceps"},{name:"DB Hammer Curl",sets:"3×10–12",cues:"Neutral grip. Controlled tempo.",group:"biceps"}]},
+      {title:"Day 3",sub:"Legs (Quads/Hams/Glutes/Calves)",exercises:[{name:"DB Goblet Squat",sets:"3×12",cues:"Hold DB at chest. Break parallel. Heels down.",group:"quads"},{name:"DB Romanian Deadlift",sets:"3×10–12",cues:"Hinge at hips. Feel hamstring stretch.",group:"hamstrings"},{name:"DB Bulgarian Split Squat",sets:"3×10 each",cues:"Rear foot on bench. Front knee tracks toes.",group:"quads"},{name:"DB Hip Thrust",sets:"3×12",cues:"Drive through heels. Squeeze glutes at top.",group:"glutes"},{name:"DB Calf Raise",sets:"3×15",cues:"Full stretch at bottom. Pause at top.",group:"calves"},{name:"Plank",sets:"3×30–45s",cues:"Squeeze glutes. Brace core. Neutral spine.",group:"core"}]}
+    ]}]
+  })},
+  {key:"ul",name:"Upper / Lower",sub:"4-day split",icon:"🏋️",gen:()=>({
+    id:"custom_"+Date.now(),name:"Upper / Lower Split",subtitle:"4-day upper/lower hypertrophy program",
+    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1–4",desc:"Balanced upper and lower development.",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[
+      {title:"Day 1",sub:"Upper A (Horizontal Focus)",exercises:[{name:"DB Flat Bench Press",sets:"3×10–12",cues:"Retract shoulder blades. Control eccentric.",group:"chest"},{name:"DB Bent-Over Row",sets:"3×10–12",cues:"Hinge 45°. Pull to ribcage.",group:"back"},{name:"DB Overhead Press",sets:"3×10–12",cues:"Brace core. Press straight up.",group:"shoulders"},{name:"Cable Chest Fly",sets:"3×12",cues:"Slight elbow bend. Squeeze at midline.",group:"chest"},{name:"DB Bicep Curl",sets:"3×10–12",cues:"Pin elbows. No swinging.",group:"biceps"},{name:"Cable Tricep Pushdown (Rope)",sets:"3×10–12",cues:"Elbows pinned. Spread rope at bottom.",group:"triceps"}]},
+      {title:"Day 2",sub:"Lower A (Quad Focus)",exercises:[{name:"DB Goblet Squat",sets:"3×12",cues:"Hold DB at chest. Break parallel.",group:"quads"},{name:"DB Romanian Deadlift",sets:"3×10–12",cues:"Hinge at hips. Soft knees.",group:"hamstrings"},{name:"DB Lunge (Walking)",sets:"3×10 each",cues:"Long stride. Control descent.",group:"quads"},{name:"DB Hip Thrust",sets:"3×12",cues:"Drive through heels. Squeeze glutes.",group:"glutes"},{name:"DB Calf Raise",sets:"3×15",cues:"Full range. Pause at top.",group:"calves"},{name:"Cable Crunch (Rope)",sets:"3×12",cues:"Curl down, not forward. Squeeze abs.",group:"core"}]},
+      {title:"Day 3",sub:"Upper B (Vertical Focus)",exercises:[{name:"Lat Pulldown",sets:"3×10–12",cues:"Pull to upper chest. Lean back slightly.",group:"back"},{name:"DB Incline Bench Press",sets:"3×10–12",cues:"30° incline. Full ROM.",group:"chest"},{name:"Seated Cable Row",sets:"3×10–12",cues:"Squeeze shoulder blades together.",group:"back"},{name:"DB Lateral Raise",sets:"3×12–15",cues:"Lead with elbows. Controlled.",group:"shoulders"},{name:"DB Hammer Curl",sets:"3×10–12",cues:"Neutral grip. Controlled.",group:"biceps"},{name:"DB Overhead Tricep Ext.",sets:"3×10–12",cues:"Keep elbows close. Full stretch.",group:"triceps"}]},
+      {title:"Day 4",sub:"Lower B (Ham/Glute Focus)",exercises:[{name:"DB Sumo Squat",sets:"3×12",cues:"Wide stance. Toes out 45°.",group:"quads"},{name:"DB Bulgarian Split Squat",sets:"3×10 each",cues:"Rear foot elevated. Stay upright.",group:"quads"},{name:"Cable Pull-Through",sets:"3×12",cues:"Hinge at hips. Squeeze glutes.",group:"glutes"},{name:"Stability Ball Hamstring Curl",sets:"3×12",cues:"Hips up. Curl heels to glutes.",group:"hamstrings"},{name:"Single-Leg DB Calf Raise",sets:"3×12 each",cues:"Hold for balance. Full ROM.",group:"calves"},{name:"Dead Bug",sets:"3×10 each",cues:"Press low back to floor. Slow.",group:"core"}]}
+    ]}]
+  })},
+  {key:"fb",name:"Full Body",sub:"3-day per week",icon:"🔥",gen:()=>({
+    id:"custom_"+Date.now(),name:"Full Body 3x/Week",subtitle:"Hit every muscle group each session",
+    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1–4",desc:"Full body stimulus 3 times per week.",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[
+      {title:"Day 1",sub:"Full Body A",exercises:[{name:"DB Flat Bench Press",sets:"3×10–12",cues:"Retract shoulder blades. Control descent.",group:"chest"},{name:"DB Bent-Over Row",sets:"3×10–12",cues:"Hinge 45°. Pull to ribcage.",group:"back"},{name:"DB Goblet Squat",sets:"3×12",cues:"Hold at chest. Break parallel.",group:"quads"},{name:"DB Romanian Deadlift",sets:"3×10–12",cues:"Hinge. Feel hamstring stretch.",group:"hamstrings"},{name:"DB Overhead Press",sets:"3×10–12",cues:"Brace core. Full lockout.",group:"shoulders"},{name:"DB Bicep Curl",sets:"2×12",cues:"Pin elbows. Full ROM.",group:"biceps"},{name:"Cable Tricep Pushdown (Rope)",sets:"2×12",cues:"Elbows pinned. Squeeze.",group:"triceps"},{name:"Plank",sets:"2×30–45s",cues:"Neutral spine. Brace core.",group:"core"}]},
+      {title:"Day 2",sub:"Full Body B",exercises:[{name:"DB Incline Bench Press",sets:"3×10–12",cues:"30° incline. Squeeze at top.",group:"chest"},{name:"Lat Pulldown",sets:"3×10–12",cues:"Pull to upper chest.",group:"back"},{name:"DB Bulgarian Split Squat",sets:"3×10 each",cues:"Control descent. Drive up.",group:"quads"},{name:"DB Hip Thrust",sets:"3×12",cues:"Squeeze glutes. Pause at top.",group:"glutes"},{name:"DB Lateral Raise",sets:"3×12–15",cues:"Lead with elbows.",group:"shoulders"},{name:"DB Hammer Curl",sets:"2×12",cues:"Neutral grip. Controlled.",group:"biceps"},{name:"DB Overhead Tricep Ext.",sets:"2×12",cues:"Full stretch at bottom.",group:"triceps"},{name:"Cable Crunch (Rope)",sets:"2×12",cues:"Curl down. Squeeze abs.",group:"core"}]},
+      {title:"Day 3",sub:"Full Body C",exercises:[{name:"Cable Chest Fly",sets:"3×12",cues:"Stretch wide. Squeeze midline.",group:"chest"},{name:"Seated Cable Row",sets:"3×10–12",cues:"V-bar. Squeeze blades.",group:"back"},{name:"DB Lunge (Walking)",sets:"3×10 each",cues:"Long stride. Controlled.",group:"quads"},{name:"Cable Hamstring Curl (Ankle Strap)",sets:"3×12 each",cues:"Slow eccentric. Full curl.",group:"hamstrings"},{name:"Cable Face Pull",sets:"3×15",cues:"External rotate at top.",group:"shoulders"},{name:"DB Concentration Curl",sets:"2×12",cues:"Brace on knee. Squeeze.",group:"biceps"},{name:"Cable Kickback",sets:"2×12",cues:"Lock upper arm. Extend fully.",group:"triceps"},{name:"Cable Woodchop",sets:"2×10 each",cues:"Rotate through core.",group:"core"}]}
+    ]}]
+  })},
+  {key:"bro",name:"Bro Split",sub:"5-day bodybuilding",icon:"💎",gen:()=>({
+    id:"custom_"+Date.now(),name:"5-Day Bro Split",subtitle:"Classic bodybuilding — one muscle group per day",
+    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1–4",desc:"High volume single-muscle focus.",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[
+      {title:"Day 1",sub:"Chest",exercises:[{name:"DB Flat Bench Press",sets:"4×10–12",cues:"Retract blades. Full ROM.",group:"chest"},{name:"DB Incline Bench Press",sets:"3×10–12",cues:"30° incline. Squeeze at top.",group:"chest"},{name:"Cable Chest Fly",sets:"3×12",cues:"Stretch wide. Squeeze midline.",group:"chest"},{name:"Cable Crossover",sets:"3×12",cues:"High to low. Squeeze.",group:"chest"},{name:"DB Pullover",sets:"3×12",cues:"Feel stretch through lats and chest.",group:"chest"}]},
+      {title:"Day 2",sub:"Back",exercises:[{name:"Lat Pulldown",sets:"4×10–12",cues:"Wide grip. Pull to chest.",group:"back"},{name:"DB Bent-Over Row",sets:"3×10–12",cues:"Pull to ribcage. Squeeze.",group:"back"},{name:"Seated Cable Row",sets:"3×10–12",cues:"V-bar. Retract blades.",group:"back"},{name:"Cable Straight-Arm Pulldown",sets:"3×12",cues:"Keep arms straight. Squeeze lats.",group:"back"},{name:"Cable Face Pull",sets:"3×15",cues:"Pull to face. External rotate.",group:"shoulders"}]},
+      {title:"Day 3",sub:"Shoulders & Abs",exercises:[{name:"DB Overhead Press",sets:"4×10–12",cues:"Brace core. Full lockout.",group:"shoulders"},{name:"DB Lateral Raise",sets:"3×12–15",cues:"Lead with elbows.",group:"shoulders"},{name:"DB Rear Delt Fly",sets:"3×12",cues:"Bent over. Squeeze rear delts.",group:"shoulders"},{name:"Cable Upright Row",sets:"3×12",cues:"Wide grip. Lead with elbows.",group:"shoulders"},{name:"Cable Crunch (Rope)",sets:"3×15",cues:"Curl down. Squeeze.",group:"core"},{name:"Cable Woodchop",sets:"3×10 each",cues:"Rotate through core.",group:"core"}]},
+      {title:"Day 4",sub:"Legs",exercises:[{name:"DB Goblet Squat",sets:"4×12",cues:"Break parallel. Heels down.",group:"quads"},{name:"DB Romanian Deadlift",sets:"3×10–12",cues:"Hinge at hips.",group:"hamstrings"},{name:"DB Bulgarian Split Squat",sets:"3×10 each",cues:"Control descent.",group:"quads"},{name:"DB Hip Thrust",sets:"3×12",cues:"Squeeze glutes at top.",group:"glutes"},{name:"DB Calf Raise",sets:"4×15",cues:"Pause at top and bottom.",group:"calves"}]},
+      {title:"Day 5",sub:"Arms",exercises:[{name:"DB Bicep Curl",sets:"3×10–12",cues:"Pin elbows. No swinging.",group:"biceps"},{name:"Cable Tricep Pushdown (Rope)",sets:"3×10–12",cues:"Spread rope at bottom.",group:"triceps"},{name:"DB Incline Curl",sets:"3×10–12",cues:"Let arms hang. Full stretch.",group:"biceps"},{name:"DB Overhead Tricep Ext.",sets:"3×10–12",cues:"Elbows close. Full stretch.",group:"triceps"},{name:"DB Hammer Curl",sets:"3×10–12",cues:"Neutral grip. Controlled.",group:"biceps"},{name:"Cable Kickback",sets:"3×12",cues:"Lock upper arm. Full extension.",group:"triceps"}]}
+    ]}]
+  })}
+];
+
 const ALL=[V1,V2,V3];
 
 const CHANGELOG=[
+  {ver:"v18",date:"2026-03-02",title:"AI Workout Plan Generator",items:["4 quick-start templates (PPL, Upper/Lower, Full Body, Bro Split)","AI plan generation from text description","Paste existing plan for AI conversion","Full plan editor with revision workflow","Custom plans saved to Firebase","Admin + creator delete capability","Support for OpenAI, Claude, and Gemini API keys"]},
   {ver:"v17",date:"2026-03-02",title:"Apple, Microsoft Sign-In & Changelog",items:["Apple and Microsoft sign-in options","App updates/changelog page"]},
   {ver:"v16",date:"2026-03-02",title:"Email & Password Auth",items:["Email/password sign-in with account creation","Password reset via email","Friendly error messages for all auth flows"]},
   {ver:"v15",date:"2026-03-02",title:"Weekly Weigh-In, Stretches & Notes",items:["Body weight changed to weekly (hides after logging)","Weight badge in progress card","Stretches show reps only (no weight column)","Workout notes saved with each session"]},
@@ -289,10 +331,20 @@ function App(){
   const [bodyWt,setBodyWt]=useState({});
   const [bwInput,setBwInput]=useState("");
   const [wkNotes,setWkNotes]=useState("");
+  const [myPlans,setMyPlans]=useState({});
+  const [cpDraft,setCpDraft]=useState(null);
+  const [cpScreen,setCpScreen]=useState("main");
+  const [aiKey,setAiKey]=useState("");
+  const [aiProvider,setAiProvider]=useState("openai");
+  const [aiPrompt,setAiPrompt]=useState("");
+  const [aiPaste,setAiPaste]=useState("");
+  const [aiLoading,setAiLoading]=useState(false);
+  const [aiError,setAiError]=useState("");
   const unsubs=useRef([]);
   const C=theme==="dark"?DARK:LIGHT;
 
-  const plan=ALL.find(p=>p.id===planId)||ALL[0];
+  const allPlans=useMemo(()=>[...ALL,...Object.values(myPlans).filter(p=>p._published!==false)],[myPlans]);
+  const plan=allPlans.find(p=>p.id===planId)||allPlans[0];
   const phase=plan.phases[phaseIdx];
   const day=phase?.days[dayIdx];
   const today=new Date().toISOString().slice(0,10);
@@ -311,9 +363,9 @@ function App(){
     unsubs.current.forEach(fn=>fn());unsubs.current=[];
     if(!user)return;
     setSyncing(true);const uid=user.uid;
-    Promise.all([Cloud.load(uid,"state"),Cloud.load(uid,"history"),Cloud.load(uid,"swaps"),Cloud.load(uid,"customEx"),Cloud.load(uid,"ssLinks"),Cloud.load(uid,"exOrder"),Cloud.load(uid,"exEdits"),Cloud.load(uid,"bodyWeight"),Cloud.load(uid,"prefs")]).then(([st,h,s,ce,sl,eo,ee,bw,pf])=>{
+    Promise.all([Cloud.load(uid,"state"),Cloud.load(uid,"history"),Cloud.load(uid,"swaps"),Cloud.load(uid,"customEx"),Cloud.load(uid,"ssLinks"),Cloud.load(uid,"exOrder"),Cloud.load(uid,"exEdits"),Cloud.load(uid,"bodyWeight"),Cloud.load(uid,"prefs"),Cloud.load(uid,"myPlans")]).then(([st,h,s,ce,sl,eo,ee,bw,pf,mp])=>{
       if(st){setPlanId(st.p||"v1");setPhaseIdx(st.ph||0);setDayIdx(st.d||0);}
-      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);setSyncing(false);
+      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(mp)setMyPlans(mp);setSyncing(false);
     });
     unsubs.current.push(
       Cloud.listen(uid,"history",data=>setHist(data)),
@@ -324,7 +376,8 @@ function App(){
       Cloud.listen(uid,"exOrder",data=>{if(data)setExOrder(data);}),
       Cloud.listen(uid,"exEdits",data=>{if(data)setExEdits(data);}),
       Cloud.listen(uid,"bodyWeight",data=>{if(data)setBodyWt(data);}),
-      Cloud.listen(uid,"prefs",data=>{if(data&&data.theme)setTheme(data.theme);})
+      Cloud.listen(uid,"prefs",data=>{if(data&&data.theme)setTheme(data.theme);if(data&&data.aiKey)setAiKey(data.aiKey);if(data&&data.aiProvider)setAiProvider(data.aiProvider);}),
+      Cloud.listen(uid,"myPlans",data=>{if(data)setMyPlans(data);})
     );
     return()=>{unsubs.current.forEach(fn=>fn());unsubs.current=[];};
   },[user]);
@@ -338,7 +391,42 @@ function App(){
   const emailSignIn=async()=>{setAuthError(null);if(!emailIn||!passIn)return setAuthError("Please enter email and password.");try{await auth.signInWithEmailAndPassword(emailIn,passIn);}catch(e){const msg=e.code==='auth/user-not-found'?"No account found with that email.":e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'?"Incorrect password.":e.code==='auth/invalid-email'?"Invalid email address.":e.code==='auth/too-many-requests'?"Too many attempts. Try again later.":e.message;setAuthError(msg);}};
   const emailSignUp=async()=>{setAuthError(null);if(!emailIn||!passIn)return setAuthError("Please enter email and password.");if(passIn.length<6)return setAuthError("Password must be at least 6 characters.");try{await auth.createUserWithEmailAndPassword(emailIn,passIn);}catch(e){const msg=e.code==='auth/email-already-in-use'?"An account with that email already exists.":e.code==='auth/invalid-email'?"Invalid email address.":e.code==='auth/weak-password'?"Password is too weak. Use at least 6 characters.":e.message;setAuthError(msg);}};
   const resetPassword=async()=>{setAuthError(null);if(!emailIn)return setAuthError("Enter your email above, then tap Reset.");try{await auth.sendPasswordResetEmail(emailIn);setAuthError("Password reset email sent! Check your inbox.");}catch(e){const msg=e.code==='auth/user-not-found'?"No account found with that email.":e.code==='auth/invalid-email'?"Invalid email address.":e.message;setAuthError(msg);}};
-  const signOut=async()=>{unsubs.current.forEach(fn=>fn());unsubs.current=[];await auth.signOut();setHist({});setSwaps({});setCustomEx({});setSsLinks({});setExOrder({});setExEdits({});setBodyWt({});setScreen("home");};
+  const signOut=async()=>{unsubs.current.forEach(fn=>fn());unsubs.current=[];await auth.signOut();setHist({});setSwaps({});setCustomEx({});setSsLinks({});setExOrder({});setExEdits({});setBodyWt({});setMyPlans({});setScreen("home");};
+
+
+  // AI PLAN GENERATION
+  const AI_PROMPT=`You are a fitness coach. Generate a workout plan in EXACT JSON format. Respond ONLY with valid JSON, no markdown.
+The plan must match this structure: {"name":"Plan Name","subtitle":"Short description","phases":[{"title":"Phase 1: Name","weeks":"Weeks 1-4","desc":"Description","rest":"60-90s","sr":"3x10-12","rir":"RIR 3-4","days":[{"title":"Day 1","sub":"Muscle Group","exercises":[{"name":"Exercise Name","sets":"3x10-12","cues":"Form cues.","group":"chest"}]}]}]}
+Valid groups: chest, back, shoulders, biceps, triceps, quads, hamstrings, glutes, core, calves, cardio.
+Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exercises per day. Include form cues for every exercise. Create 3 phases of 4 weeks each with progressive difficulty (more volume/intensity).`;
+
+  const generateAIPlan=async(prompt)=>{
+    if(!aiKey){setAiError("Enter your API key in settings below.");return;}
+    setAiLoading(true);setAiError("");
+    try{
+      let text="";
+      if(aiProvider==="openai"){
+        const r=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+aiKey,"Content-Type":"application/json"},body:JSON.stringify({model:"gpt-4o",messages:[{role:"system",content:AI_PROMPT},{role:"user",content:prompt}],temperature:0.7})});
+        const d=await r.json();if(d.error)throw new Error(d.error.message);text=d.choices[0].message.content;
+      }else if(aiProvider==="gemini"){
+        const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+aiKey,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:AI_PROMPT+"\n\nUser request: "+prompt}]}]})});
+        const d=await r.json();if(d.error)throw new Error(d.error.message);text=d.candidates[0].content.parts[0].text;
+      }else if(aiProvider==="claude"){
+        const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"x-api-key":aiKey,"anthropic-version":"2023-06-01","content-type":"application/json","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-5-20250514",max_tokens:8000,system:AI_PROMPT,messages:[{role:"user",content:prompt}]})});
+        const d=await r.json();if(d.error)throw new Error(d.error.message);text=d.content[0].text;
+      }
+      const clean=text.replace(/```json\n?/g,"").replace(/```\n?/g,"").trim();
+      const parsed=JSON.parse(clean);
+      const plan={...parsed,id:"custom_"+Date.now(),_createdBy:user.uid,_createdAt:Date.now(),_published:false};
+      setCpDraft(plan);setCpScreen("edit");
+    }catch(e){setAiError(e.message||"Failed to generate. Check your API key and try again.");}
+    finally{setAiLoading(false);}
+  };
+
+  const saveAIKey=()=>{if(!user)return;const pf={theme,aiKey,aiProvider};Cloud.save(user.uid,"prefs",pf);};
+  const publishPlan=(p)=>{if(!user)return;const pub={...p,_published:true};const nm={...myPlans,[p.id]:pub};setMyPlans(nm);Cloud.save(user.uid,"myPlans",nm);setCpDraft(null);setCpScreen("main");setPlanId(p.id);setPhaseIdx(0);setDayIdx(0);setScreen("home");};
+  const deletePlan=(pid)=>{if(!user)return;const nm={...myPlans};delete nm[pid];setMyPlans(nm);Cloud.save(user.uid,"myPlans",nm);if(planId===pid){setPlanId("v1");setPhaseIdx(0);setDayIdx(0);}};
+  const isAdmin=user&&ADMIN_EMAILS.has(user.email);
 
   const dayKey=`${planId}-${phaseIdx}-${dayIdx}`;
   const getExs=useCallback(()=>{if(!day)return[];const base=day.exercises.map((e,i)=>{const sk=`${planId}-${phaseIdx}-${dayIdx}-${i}`;const sw=swaps[sk];let ex=(sw&&sw!==e.name)?{...e,name:sw,orig:e.name,cues:`Swapped from ${e.name}. Focus on form and controlled reps.`}:{...e};const ek=`${planId}-${phaseIdx}-${dayIdx}-${i}`;const ed=exEdits[ek];if(ed){if(ed.name)ex.name=ed.name;if(ed.sets)ex.sets=ed.sets;if(ed.cues)ex.cues=ed.cues;if(ed.group){ex.group=ed.group;}ex.edited=true;}ex._origIdx=i;return ex;});const ck=`${planId}-${phaseIdx}-${dayIdx}`;const cust=customEx[ck]||[];cust.forEach((c,ci)=>{base.push({name:c.name,sets:c.sets||"3×10–12",cues:c.cues||"Custom exercise. Focus on form and controlled reps.",group:c.group||"other",custom:true,_origIdx:day.exercises.length+ci});});const order=exOrder[ck];if(order&&order.length===base.length){const reordered=order.map(i=>base[i]).filter(Boolean);if(reordered.length===base.length)return reordered;}return base;},[day,swaps,planId,phaseIdx,dayIdx,customEx,exOrder,exEdits]);
@@ -449,7 +537,8 @@ function App(){
             <button onClick={()=>setPlanMenu(!planMenu)} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"6px 12px",color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>{plan.id.toUpperCase()} <Chev up={planMenu} s={14}/></button>
             {planMenu&&(
               <div style={{position:"absolute",right:0,top:"100%",marginTop:4,background:C.card,border:`1px solid ${C.sbdr}`,borderRadius:10,overflow:"hidden",minWidth:240,boxShadow:"0 12px 40px rgba(0,0,0,.6)",zIndex:60}}>
-                {ALL.map(p=>(<button key={p.id} onClick={()=>{setPlanId(p.id);setPhaseIdx(0);setDayIdx(0);setPlanMenu(false);setScreen("home");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:p.id===planId?C.srf:"transparent",border:"none",borderBottom:`1px solid ${C.bdr}`,color:C.txt,cursor:"pointer"}}><div style={{fontWeight:700,fontSize:13,color:p.id===planId?C.acc:C.txt}}>{p.name}</div><div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}</div></button>))}
+                {allPlans.map(p=>(<button key={p.id} onClick={()=>{setPlanId(p.id);setPhaseIdx(0);setDayIdx(0);setPlanMenu(false);setScreen("home");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:p.id===planId?C.srf:"transparent",border:"none",borderBottom:`1px solid ${C.bdr}`,color:C.txt,cursor:"pointer"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontWeight:700,fontSize:13,color:p.id===planId?C.acc:C.txt}}>{p.name}</div>{p._createdBy&&(p._createdBy===user?.uid||isAdmin)&&<span onClick={e=>{e.stopPropagation();if(confirm("Delete this custom plan?"))deletePlan(p.id);}} style={{fontSize:10,color:"#EF4444",cursor:"pointer",padding:"2px 6px",borderRadius:4,border:"1px solid #EF444430"}}>✕</span>}</div><div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}{p._createdBy?" ✨":""}</div></button>))}
+                <button onClick={()=>{setPlanMenu(false);setCpScreen("main");setCpDraft(null);setAiError("");setScreen("create");history.pushState({screen:"create"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.acc}30`,color:C.acc,cursor:"pointer",fontWeight:700,fontSize:13}}>✨ Create New Plan</button>
                 <button onClick={()=>{setScreen("changelog");setPlanMenu(false);history.pushState({screen:"changelog"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontSize:12,fontWeight:600}}>📋 Latest App Updates</button>
                 <div style={{borderTop:`1px solid ${C.bdr}`,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>{user.photoURL&&<img src={user.photoURL} style={{width:24,height:24,borderRadius:12}} referrerPolicy="no-referrer"/>}<span style={{fontSize:11,color:C.dim,maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user.displayName||user.email}</span></div>
@@ -462,6 +551,102 @@ function App(){
     </div>
 
     <div style={{maxWidth:600,margin:"0 auto"}}>
+
+    {/* ══════ CREATE PLAN ══════ */}
+    {screen==="create"&&(
+      <div className="fade-in" style={{padding:"16px 16px 80px"}}>
+
+        {cpScreen==="main"&&(<>
+          <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,marginBottom:4}}>Create a Plan</div>
+          <div style={{fontSize:13,color:C.dim,marginBottom:20}}>Start from a template or use AI to generate a custom plan</div>
+
+          <div style={{fontSize:11,color:C.acc,fontWeight:700,letterSpacing:"0.5px",marginBottom:10}}>QUICK TEMPLATES</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:24}}>
+            {TEMPLATES.map(t=>(<button key={t.key} onClick={()=>{const p=t.gen();p._createdBy=user.uid;p._createdAt=Date.now();p._published=false;setCpDraft(p);setCpScreen("edit");}} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"16px 12px",textAlign:"center",cursor:"pointer"}}><div style={{fontSize:24,marginBottom:6}}>{t.icon}</div><div style={{fontWeight:700,fontSize:13,color:C.txt}}>{t.name}</div><div style={{fontSize:11,color:C.dim,marginTop:2}}>{t.sub}</div></button>))}
+          </div>
+
+          <div style={{fontSize:11,color:"#A78BFA",fontWeight:700,letterSpacing:"0.5px",marginBottom:10}}>AI GENERATION</div>
+          <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:16,marginBottom:12}}>
+            <div style={{fontSize:13,fontWeight:700,color:C.txt,marginBottom:8}}>Describe your ideal plan</div>
+            <textarea placeholder='Example: "4-day upper/lower split for intermediate lifters. Focus on strength with 5x5 compounds and hypertrophy accessories. Include 2 rest days."' value={aiPrompt} onChange={e=>setAiPrompt(e.target.value)} style={{width:"100%",minHeight:80,background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"10px 12px",color:C.txt,fontSize:13,outline:"none",resize:"vertical",boxSizing:"border-box",fontFamily:"inherit",lineHeight:1.5}}/>
+            <button onClick={()=>generateAIPlan(aiPrompt)} disabled={aiLoading||!aiPrompt.trim()} style={{width:"100%",marginTop:8,padding:"12px",borderRadius:10,border:"none",background:aiLoading?"#555":`linear-gradient(135deg,#A78BFA,#7C3AED)`,color:"#fff",fontSize:14,fontWeight:700,cursor:aiLoading?"wait":"pointer",opacity:(!aiPrompt.trim()&&!aiLoading)?0.5:1}}>{aiLoading?"Generating...":"✨ Generate with AI"}</button>
+          </div>
+
+          <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:16,marginBottom:12}}>
+            <div style={{fontSize:13,fontWeight:700,color:C.txt,marginBottom:8}}>Paste an existing workout plan</div>
+            <textarea placeholder="Paste your workout plan here as text — from a PDF, image OCR, notes, spreadsheet, or any format. AI will convert it into a structured plan." value={aiPaste} onChange={e=>setAiPaste(e.target.value)} style={{width:"100%",minHeight:80,background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"10px 12px",color:C.txt,fontSize:13,outline:"none",resize:"vertical",boxSizing:"border-box",fontFamily:"inherit",lineHeight:1.5}}/>
+            <button onClick={()=>generateAIPlan("Convert this existing workout plan into the structured format. Preserve all exercises, sets, and reps exactly. Organize into phases and days as described:\n\n"+aiPaste)} disabled={aiLoading||!aiPaste.trim()} style={{width:"100%",marginTop:8,padding:"12px",borderRadius:10,border:"none",background:aiLoading?"#555":`linear-gradient(135deg,#F59E0B,#D97706)`,color:"#fff",fontSize:14,fontWeight:700,cursor:aiLoading?"wait":"pointer",opacity:(!aiPaste.trim()&&!aiLoading)?0.5:1}}>{aiLoading?"Converting...":"📋 Convert with AI"}</button>
+          </div>
+
+          {aiError&&<div style={{padding:"10px 14px",background:aiError.includes("Enter")?"#F59E0B18":"#EF444418",border:aiError.includes("Enter")?"1px solid #F59E0B30":"1px solid #EF444430",borderRadius:8,color:aiError.includes("Enter")?"#F59E0B":"#EF4444",fontSize:12,marginBottom:12}}>{aiError}</div>}
+
+          <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:16}}>
+            <div style={{fontSize:11,color:C.fnt,fontWeight:700,letterSpacing:"0.5px",marginBottom:10}}>API KEY SETTINGS</div>
+            <div style={{display:"flex",gap:6,marginBottom:8}}>
+              {["openai","claude","gemini"].map(p=>(<button key={p} onClick={()=>setAiProvider(p)} style={{flex:1,padding:"8px",borderRadius:8,border:`1px solid ${aiProvider===p?C.acc+"60":C.sbdr}`,background:aiProvider===p?C.acc+"15":"transparent",color:aiProvider===p?C.acc:C.dim,fontSize:12,fontWeight:700,cursor:"pointer"}}>{p==="openai"?"OpenAI":p==="claude"?"Claude":p==="gemini"?"Gemini":p}</button>))}
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <input type="password" placeholder={aiProvider==="openai"?"sk-...":aiProvider==="claude"?"sk-ant-...":"AIza..."} value={aiKey} onChange={e=>setAiKey(e.target.value)} style={{flex:1,background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"10px 12px",color:C.txt,fontSize:13,outline:"none",boxSizing:"border-box",fontFamily:"inherit"}}/>
+              <button onClick={saveAIKey} style={{padding:"10px 14px",borderRadius:8,border:"none",background:C.acc,color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>Save</button>
+            </div>
+            <div style={{fontSize:10,color:C.fnt,marginTop:6,lineHeight:1.5}}>Your key is stored in your private Firebase data. It never touches our servers. Calls go directly from your browser to the AI provider.</div>
+          </div>
+        </>)}
+
+        {cpScreen==="edit"&&cpDraft&&(<>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <div style={{fontFamily:"Outfit",fontSize:20,fontWeight:800}}>Edit Plan</div>
+            <div style={{display:"flex",gap:6}}>
+              <button onClick={()=>{setCpScreen("main");setCpDraft(null);}} style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+              <button onClick={()=>publishPlan(cpDraft)} style={{padding:"6px 16px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>Publish ✓</button>
+            </div>
+          </div>
+
+          <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:16,marginBottom:12}}>
+            <div style={{fontSize:10,color:C.fnt,fontWeight:700,marginBottom:6}}>PLAN NAME</div>
+            <input value={cpDraft.name} onChange={e=>setCpDraft({...cpDraft,name:e.target.value})} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"10px 12px",color:C.txt,fontSize:15,fontWeight:700,outline:"none",boxSizing:"border-box",fontFamily:"inherit",marginBottom:8}}/>
+            <div style={{fontSize:10,color:C.fnt,fontWeight:700,marginBottom:6}}>SUBTITLE</div>
+            <input value={cpDraft.subtitle} onChange={e=>setCpDraft({...cpDraft,subtitle:e.target.value})} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"10px 12px",color:C.txt,fontSize:13,outline:"none",boxSizing:"border-box",fontFamily:"inherit"}}/>
+          </div>
+
+          {cpDraft.phases?.map((ph,pi)=>(
+            <div key={pi} style={{marginBottom:12}}>
+              <div style={{background:`linear-gradient(135deg,${C.acc}15,${C.card})`,border:`1px solid ${C.acc}30`,borderRadius:12,padding:"12px 16px",marginBottom:8}}>
+                <input value={ph.title} onChange={e=>{const np=[...cpDraft.phases];np[pi]={...ph,title:e.target.value};setCpDraft({...cpDraft,phases:np});}} style={{background:"transparent",border:"none",color:C.acc,fontSize:14,fontWeight:800,outline:"none",width:"100%",fontFamily:"inherit"}}/>
+                <div style={{display:"flex",gap:8,marginTop:4}}>
+                  <input value={ph.weeks||""} onChange={e=>{const np=[...cpDraft.phases];np[pi]={...ph,weeks:e.target.value};setCpDraft({...cpDraft,phases:np});}} placeholder="Weeks 1-4" style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:6,padding:"4px 8px",color:C.dim,fontSize:11,outline:"none",width:100,fontFamily:"inherit"}}/>
+                  <input value={ph.rest||""} onChange={e=>{const np=[...cpDraft.phases];np[pi]={...ph,rest:e.target.value};setCpDraft({...cpDraft,phases:np});}} placeholder="Rest: 60-90s" style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:6,padding:"4px 8px",color:C.dim,fontSize:11,outline:"none",width:100,fontFamily:"inherit"}}/>
+                </div>
+              </div>
+
+              {ph.days?.map((dy,di)=>(
+                <div key={di} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:10,padding:"10px 14px",marginBottom:6,marginLeft:8}}>
+                  <div style={{display:"flex",gap:8,marginBottom:8}}>
+                    <input value={dy.title} onChange={e=>{const np=[...cpDraft.phases];np[pi].days[di]={...dy,title:e.target.value};setCpDraft({...cpDraft,phases:np});}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:6,padding:"6px 10px",color:C.txt,fontSize:13,fontWeight:700,outline:"none",width:80,fontFamily:"inherit"}}/>
+                    <input value={dy.sub} onChange={e=>{const np=[...cpDraft.phases];np[pi].days[di]={...dy,sub:e.target.value};setCpDraft({...cpDraft,phases:np});}} style={{flex:1,background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:6,padding:"6px 10px",color:C.dim,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
+                  </div>
+                  {dy.exercises?.map((ex,xi)=>(
+                    <div key={xi} style={{display:"grid",gridTemplateColumns:"1fr 80px 32px",gap:4,marginBottom:3}}>
+                      <input value={ex.name} onChange={e=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days[di].exercises[xi].name=e.target.value;setCpDraft({...cpDraft,phases:np});}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:4,padding:"5px 8px",color:C.txt,fontSize:11,outline:"none",fontFamily:"inherit"}}/>
+                      <input value={ex.sets} onChange={e=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days[di].exercises[xi].sets=e.target.value;setCpDraft({...cpDraft,phases:np});}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:4,padding:"5px 6px",color:C.dim,fontSize:10,outline:"none",textAlign:"center",fontFamily:"inherit"}}/>
+                      <button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days[di].exercises.splice(xi,1);setCpDraft({...cpDraft,phases:np});}} style={{background:"transparent",border:"none",color:"#EF4444",cursor:"pointer",fontSize:14,padding:0}}>✕</button>
+                    </div>
+                  ))}
+                  <button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days[di].exercises.push({name:"New Exercise",sets:"3×10–12",cues:"Add form cues.",group:"other"});setCpDraft({...cpDraft,phases:np});}} style={{fontSize:11,color:C.acc,background:"transparent",border:`1px dashed ${C.acc}40`,borderRadius:6,padding:"4px 8px",cursor:"pointer",width:"100%",marginTop:4}}>+ Add Exercise</button>
+                </div>
+              ))}
+              <button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days.push({title:"Day "+(ph.days.length+1),sub:"Muscle Group",exercises:[{name:"Exercise",sets:"3×10–12",cues:"Form cues.",group:"other"}]});setCpDraft({...cpDraft,phases:np});}} style={{fontSize:11,color:"#5B8DEF",background:"transparent",border:`1px dashed #5B8DEF40`,borderRadius:8,padding:"6px 10px",cursor:"pointer",width:"100%",marginLeft:8,marginBottom:8}}>+ Add Day</button>
+            </div>
+          ))}
+          <button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases||[]));np.push({title:"Phase "+(np.length+1),weeks:"Weeks X–Y",desc:"Description",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[{title:"Day 1",sub:"Muscle Group",exercises:[{name:"Exercise",sets:"3×10–12",cues:"Form cues.",group:"other"}]}]});setCpDraft({...cpDraft,phases:np});}} style={{fontSize:12,color:"#A78BFA",background:"transparent",border:`1px dashed #A78BFA40`,borderRadius:10,padding:"10px",cursor:"pointer",width:"100%",marginBottom:16}}>+ Add Phase</button>
+
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>{setCpScreen("main");setCpDraft(null);}} style={{flex:1,padding:"14px",borderRadius:10,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:14,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+            <button onClick={()=>publishPlan(cpDraft)} style={{flex:2,padding:"14px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>Publish Plan ✓</button>
+          </div>
+        </>)}
+
+      </div>)}
 
     {/* ══════ CHANGELOG ══════ */}
     {screen==="changelog"&&(
