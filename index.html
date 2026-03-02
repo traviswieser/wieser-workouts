@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#08080A">
+<meta name="apple-mobile-web-app-title" content="Wieser Workouts">
+<title>Wieser Workouts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+<script>
+  window.FIREBASE_CONFIG = {
+    apiKey: "AIzaSyCysMdY39HaYG_Cfavv1cO3DNChcHWJPNI",
+    authDomain: "wieser-workouts.firebaseapp.com",
+    projectId: "wieser-workouts",
+    storageBucket: "wieser-workouts.firebasestorage.app",
+    messagingSenderId: "159762724967",
+    appId: "1:159762724967:web:62a7f022f44a250fa8fcc2",
+    measurementId: "G-R8YR9SD2XL"
+  };
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body,#root{height:100%;background:#08080A;color:#E8E8EC;font-family:'DM Sans','Segoe UI',system-ui,sans-serif}
+  input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]{-moz-appearance:textfield}
+  select{background:#18181E;color:#E8E8EC;border:1px solid #252530;border-radius:8px;padding:8px 12px;font-size:14px;font-family:inherit;outline:none;width:100%;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:32px}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .fade-in{animation:fadeIn .3s ease-out both}
+  .syncing{animation:pulse 1.5s ease-in-out infinite}
+</style>
+<script>
+const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="#08080A"/><rect x="32" y="32" width="448" height="448" rx="80" fill="#111116" stroke="#1C1C24" stroke-width="4"/><g transform="translate(256,220)" stroke="#FF6B2C" stroke-width="18" stroke-linecap="round" fill="none"><rect x="-140" y="-30" width="40" height="60" rx="8"/><rect x="100" y="-30" width="40" height="60" rx="8"/><rect x="-100" y="-42" width="30" height="84" rx="8"/><rect x="70" y="-42" width="30" height="84" rx="8"/><line x1="-70" y1="0" x2="70" y2="0"/></g><text x="256" y="370" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="60" fill="#FF6B2C">WIESER</text><text x="256" y="430" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="42" fill="#E8E8EC">WORKOUTS</text></svg>`;
+const iconBlob=new Blob([iconSvg],{type:'image/svg+xml'});const iconUrl=URL.createObjectURL(iconBlob);
+const manifest={name:"Wieser Workouts",short_name:"Wieser Workouts",description:"Track your hypertrophy workouts",start_url:location.href.split('?')[0],display:"standalone",background_color:"#08080A",theme_color:"#08080A",orientation:"any",icons:[{src:iconUrl,sizes:"512x512",type:"image/svg+xml",purpose:"any maskable"}]};
+const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const mUrl=URL.createObjectURL(mBlob);
+const link=document.createElement('link');link.rel='manifest';link.href=mUrl;document.head.appendChild(link);
+const iconLink=document.createElement('link');iconLink.rel='icon';iconLink.href=iconUrl;iconLink.type='image/svg+xml';document.head.appendChild(iconLink);
+const appleIcon=document.createElement('link');appleIcon.rel='apple-touch-icon';appleIcon.href=iconUrl;document.head.appendChild(appleIcon);
+if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v16';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
+const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.auth();const db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+</script>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js"></script>
+<script type="text/babel">
+const {useState, useEffect, useCallback, useRef, useMemo} = React;
+
+// FIREBASE DATA LAYER
+const Cloud = {
+  doc: (uid, name) => db.collection("users").doc(uid).collection("app").doc(name),
+  save: async (uid, name, data) => { try { await Cloud.doc(uid, name).set(data); return true; } catch(e) { console.error("Cloud save:", e); return false; } },
+  load: async (uid, name) => { try { const snap = await Cloud.doc(uid, name).get(); return snap.exists ? snap.data() : null; } catch(e) { return null; } },
+  listen: (uid, name, cb) => Cloud.doc(uid, name).onSnapshot(snap => { if (snap.exists) cb(snap.data()); }, ()=>{})
+};
+
+// YOUTUBE VIDEO DATABASE
+const VIDEO_DB = {
+  "DB Flat Bench Press":{q:"dumbbell bench press form ScottHermanFitness",ch:"Scott Herman"},"DB Incline Bench Press":{q:"incline dumbbell press form ScottHermanFitness golden rules",ch:"Scott Herman"},"DB Decline Bench Press":{q:"decline dumbbell bench press form how to",ch:"M&S"},"Cable Chest Fly":{q:"cable fly chest form Jeremy Ethier how to",ch:"Jeremy Ethier"},"Incline Cable Fly":{q:"incline cable fly form how to chest Jeff Nippard",ch:"Jeff Nippard"},"Cable Crossover":{q:"cable crossover chest form Jeff Nippard how to",ch:"Jeff Nippard"},"DB Squeeze Press":{q:"dumbbell squeeze press chest form how to RP",ch:"RP"},"DB Pullover":{q:"dumbbell pullover form Jeff Nippard chest",ch:"Jeff Nippard"},"Push-Ups":{q:"push ups proper form Jeremy Ethier science",ch:"Jeremy Ethier"},"Cable Low-to-High Fly":{q:"low to high cable fly chest form tutorial",ch:"Jeff Nippard"},"Incline DB Fly":{q:"incline dumbbell fly chest form ScottHermanFitness",ch:"Scott Herman"},
+  "Pull-Ups":{q:"pull up form tutorial Jeremy Ethier how to",ch:"Jeremy Ethier"},"Chin-Ups":{q:"chin up form tutorial how to Jeff Nippard",ch:"Jeff Nippard"},"Lat Pulldown":{q:"lat pulldown form Jeff Nippard how to",ch:"Jeff Nippard"},"Seated Cable Row":{q:"seated cable row form Renaissance Periodization",ch:"RP"},"Single-Arm Cable Row":{q:"single arm cable row form tutorial how to",ch:"Jeff Nippard"},"DB Bent-Over Row":{q:"dumbbell bent over row form Jeremy Ethier",ch:"Jeremy Ethier"},"Cable Straight-Arm Pulldown":{q:"straight arm pulldown form Jeff Nippard lat",ch:"Jeff Nippard"},"Cable Face Pull":{q:"face pull cable form Jeff Cavaliere ATHLEANX",ch:"ATHLEAN-X"},"V-Bar Cable Row":{q:"v bar cable row form seated row close grip",ch:"Buff Dudes"},"T-Bar Cable Row":{q:"t bar row form how to back Jeff Nippard",ch:"Jeff Nippard"},"Inverted Row":{q:"inverted row form bodyweight back Jeremy Ethier",ch:"Jeremy Ethier"},"DB Pullover (Back)":{q:"dumbbell pullover back form Renaissance Periodization",ch:"RP"},
+  "DB Overhead Press":{q:"dumbbell overhead press form ScottHermanFitness",ch:"Scott Herman"},"DB Lateral Raise":{q:"dumbbell lateral raise form Jeff Nippard",ch:"Jeff Nippard"},"Cable Lateral Raise":{q:"cable lateral raise form Renaissance Periodization",ch:"RP"},"Cable Front Raise":{q:"cable front raise form shoulders how to",ch:"M&S"},"DB Rear Delt Fly":{q:"dumbbell rear delt fly form Jeff Nippard",ch:"Jeff Nippard"},"Cable Rear Delt Fly":{q:"cable rear delt fly crossover form Jeff Nippard",ch:"Jeff Nippard"},"DB Arnold Press":{q:"arnold press dumbbell form Jeremy Ethier",ch:"Jeremy Ethier"},"Cable Upright Row":{q:"cable upright row form shoulders Jeff Nippard",ch:"Jeff Nippard"},"DB Shrug":{q:"dumbbell shrug form trap ScottHermanFitness",ch:"Scott Herman"},"Cable Y-Raise":{q:"cable y raise shoulder form ATHLEANX",ch:"ATHLEAN-X"},
+  "DB Bicep Curl":{q:"dumbbell bicep curl form ScottHermanFitness",ch:"Scott Herman"},"DB Hammer Curl":{q:"dumbbell hammer curl form Jeff Nippard",ch:"Jeff Nippard"},"DB Incline Curl":{q:"incline dumbbell curl form Jeff Nippard",ch:"Jeff Nippard"},"Cable Bicep Curl":{q:"cable bicep curl form how to Jeff Nippard",ch:"Jeff Nippard"},"DB Concentration Curl":{q:"concentration curl form ScottHermanFitness",ch:"Scott Herman"},"Cable Hammer Curl (Rope)":{q:"rope hammer curl cable form Jeff Nippard",ch:"Jeff Nippard"},
+  "Cable Tricep Pushdown (Rope)":{q:"tricep rope pushdown form ScottHermanFitness",ch:"Scott Herman"},"Cable Tricep Pushdown (V-Bar)":{q:"v bar tricep pushdown form ScottHermanFitness",ch:"Scott Herman"},"DB Overhead Tricep Ext.":{q:"dumbbell overhead tricep extension form Jeff Nippard",ch:"Jeff Nippard"},"Cable Overhead Tricep Ext.":{q:"cable overhead tricep extension rope form",ch:"Jeff Nippard"},"DB Skull Crusher":{q:"dumbbell skull crusher form tricep Jeff Nippard",ch:"Jeff Nippard"},"Cable Kickback":{q:"cable kickback tricep form Renaissance Periodization",ch:"RP"},"Diamond Push-Ups":{q:"diamond push ups tricep form ATHLEANX",ch:"ATHLEAN-X"},
+  "DB Goblet Squat":{q:"dumbbell goblet squat form ScottHermanFitness",ch:"Scott Herman"},"DB Bulgarian Split Squat":{q:"dumbbell bulgarian split squat form Jeremy Ethier",ch:"Jeremy Ethier"},"DB Lunge (Walking)":{q:"dumbbell walking lunge form Jeff Nippard",ch:"Jeff Nippard"},"DB Reverse Lunge":{q:"dumbbell reverse lunge form how to",ch:"Jeff Nippard"},"DB Step-Up":{q:"dumbbell step up form quad Jeff Nippard",ch:"Jeff Nippard"},"DB Sumo Squat":{q:"dumbbell sumo squat form wide stance",ch:"M&S"},"Slant Board DB Squat":{q:"slant board squat dumbbell quad Knees Over Toes Guy",ch:"KOT Guy"},"DB Front Squat":{q:"dumbbell front squat form how to Buff Dudes",ch:"Buff Dudes"},"Apex Leg Extension":{q:"plate loaded leg extension form home gym",ch:"Garage Gym"},"Cable Leg Ext. (Ankle Strap)":{q:"cable leg extension ankle strap quad form",ch:"RP"},
+  "DB Romanian Deadlift":{q:"dumbbell romanian deadlift form Jeremy Ethier RDL",ch:"Jeremy Ethier"},"Apex Lying Leg Curl":{q:"lying leg curl form hamstring home gym plate loaded",ch:"Garage Gym"},"Nordic Curl":{q:"nordic curl form tutorial progression Knees Over Toes Guy",ch:"KOT Guy"},"Nordic Curl (Eccentric Only)":{q:"nordic curl eccentric only beginner progression",ch:"KOT Guy"},"Nordic Curl (Band Assisted)":{q:"nordic curl band assisted form progression",ch:"KOT Guy"},"Decline Nordic Curl":{q:"decline nordic curl advanced hamstring form",ch:"KOT Guy"},"Stability Ball Hamstring Curl":{q:"stability ball hamstring curl form ATHLEANX",ch:"ATHLEAN-X"},"Cable Hamstring Curl (Ankle Strap)":{q:"cable hamstring curl ankle strap standing form",ch:"RP"},"Cable Pull-Through":{q:"cable pull through form glute Jeff Nippard",ch:"Jeff Nippard"},"KB Swing":{q:"kettlebell swing form Jeff Cavaliere ATHLEANX",ch:"ATHLEAN-X"},
+  "DB Hip Thrust":{q:"dumbbell hip thrust form glute Jeff Nippard",ch:"Jeff Nippard"},"Plank":{q:"plank form Jeff Cavaliere ATHLEANX",ch:"ATHLEAN-X"},"Cable Crunch (Rope)":{q:"cable crunch rope kneeling ab Jeff Nippard",ch:"Jeff Nippard"},"Cable Woodchop":{q:"cable woodchop oblique form ATHLEANX",ch:"ATHLEAN-X"},"Cable Pallof Press":{q:"pallof press cable form ATHLEANX",ch:"ATHLEAN-X"},"Hanging Leg Raise":{q:"hanging leg raise form Jeremy Ethier",ch:"Jeremy Ethier"},"Stability Ball Crunch":{q:"stability ball crunch form ab exercise",ch:"M&S"},"Dead Bug":{q:"dead bug exercise form ATHLEANX",ch:"ATHLEAN-X"},"Ab Wheel (Stability Ball)":{q:"ab wheel rollout form ATHLEANX",ch:"ATHLEAN-X"},"DB Calf Raise":{q:"dumbbell calf raise form Jeff Nippard",ch:"Jeff Nippard"},"Single-Leg DB Calf Raise":{q:"single leg calf raise dumbbell form",ch:"Jeff Nippard"},"Neck Curl (Harness)":{q:"neck curl harness form Jeff Nippard",ch:"Jeff Nippard"},"Neck Extension (Harness)":{q:"neck extension harness form training",ch:"Jeff Nippard"},"Band Neck Side Flexion":{q:"band neck side flexion lateral AlphaDestiny",ch:"AlphaDestiny"},
+  "Prisoner Squats":{q:"prisoner squat bodyweight form how to",ch:"Buff Dudes"},"DB Bench Press":{q:"dumbbell bench press form ScottHermanFitness",ch:"Scott Herman"},"DB Curls":{q:"dumbbell bicep curl form ScottHermanFitness",ch:"Scott Herman"},"Lunges":{q:"lunge form how to Jeremy Ethier",ch:"Jeremy Ethier"},"DB Shrugs":{q:"dumbbell shrug form trap ScottHermanFitness",ch:"Scott Herman"},"Curl to Shoulder Press":{q:"bicep curl to overhead press dumbbell form",ch:"M&S"},"Jumping Jacks":{q:"jumping jacks proper form warm up",ch:"Fitness"},"Side Bends":{q:"dumbbell side bend oblique form ATHLEANX",ch:"ATHLEAN-X"},"Standing DB Press":{q:"standing dumbbell overhead press form Jeff Nippard",ch:"Jeff Nippard"},"Incline DB Bench":{q:"incline dumbbell press form ScottHermanFitness",ch:"Scott Herman"},"Bent-Over DB Row":{q:"dumbbell bent over row form Jeremy Ethier",ch:"Jeremy Ethier"},"Goblet Squats":{q:"dumbbell goblet squat form ScottHermanFitness",ch:"Scott Herman"},"Reverse DB Flys":{q:"dumbbell rear delt fly form Jeff Nippard",ch:"Jeff Nippard"},"Sit-Ups":{q:"sit up proper form ATHLEANX",ch:"ATHLEAN-X"},"Decline Push-Ups":{q:"decline push ups chest form ATHLEANX",ch:"ATHLEAN-X"},"Side Lunges":{q:"side lunge lateral lunge form how to",ch:"Jeff Nippard"},"Dips":{q:"dips form chest triceps ATHLEANX Jeff Cavaliere",ch:"ATHLEAN-X"},"DB Side Raises":{q:"dumbbell lateral raise form Jeff Nippard",ch:"Jeff Nippard"},"Reverse Lunges":{q:"reverse lunge form how to Jeff Nippard",ch:"Jeff Nippard"},"Biking":{q:"stationary bike workout tips form cycling",ch:"Fitness"},"Air Bike":{q:"rogue echo bike assault air bike workout tips form",ch:"Rogue Fitness"},"Rower":{q:"rowing machine proper form technique concept2",ch:"Concept2"},
+};
+const getVidUrl=(n)=>{const e=VIDEO_DB[n];return`https://m.youtube.com/results?search_query=${encodeURIComponent(e?e.q:n+" form tutorial")}`;};
+const getVidCh=(n)=>VIDEO_DB[n]?.ch||"";
+
+// SWAP POOLS
+const SWAP_POOLS={chest:["DB Flat Bench Press","DB Incline Bench Press","DB Decline Bench Press","Cable Chest Fly","Incline Cable Fly","Cable Crossover","DB Squeeze Press","DB Pullover","Push-Ups","Cable Low-to-High Fly","Incline DB Fly","DB Bench Press","Incline DB Bench","Decline Push-Ups"],back:["Pull-Ups","Chin-Ups","Lat Pulldown","Seated Cable Row","Single-Arm Cable Row","DB Bent-Over Row","Cable Straight-Arm Pulldown","Cable Face Pull","V-Bar Cable Row","T-Bar Cable Row","Inverted Row","DB Pullover (Back)","Bent-Over DB Row"],shoulders:["DB Overhead Press","DB Lateral Raise","Cable Lateral Raise","Cable Front Raise","DB Rear Delt Fly","Cable Rear Delt Fly","DB Arnold Press","Cable Upright Row","DB Shrug","Cable Y-Raise","DB Shrugs","DB Side Raises","Standing DB Press","Curl to Shoulder Press","Reverse DB Flys"],biceps:["DB Bicep Curl","DB Hammer Curl","DB Incline Curl","Cable Bicep Curl","DB Concentration Curl","Cable Hammer Curl (Rope)","DB Curls"],triceps:["Cable Tricep Pushdown (Rope)","Cable Tricep Pushdown (V-Bar)","DB Overhead Tricep Ext.","Cable Overhead Tricep Ext.","DB Skull Crusher","Cable Kickback","Diamond Push-Ups","Dips"],quads:["DB Goblet Squat","DB Bulgarian Split Squat","DB Lunge (Walking)","DB Reverse Lunge","DB Step-Up","DB Sumo Squat","Slant Board DB Squat","DB Front Squat","Apex Leg Extension","Cable Leg Ext. (Ankle Strap)","Prisoner Squats","Lunges","Side Lunges","Goblet Squats","Reverse Lunges"],hamstrings:["DB Romanian Deadlift","Apex Lying Leg Curl","Nordic Curl","Nordic Curl (Eccentric Only)","Nordic Curl (Band Assisted)","Decline Nordic Curl","Stability Ball Hamstring Curl","Cable Hamstring Curl (Ankle Strap)","Cable Pull-Through","KB Swing"],glutes:["DB Hip Thrust","Cable Pull-Through","KB Swing","DB Reverse Lunge"],core:["Plank","Cable Crunch (Rope)","Cable Woodchop","Cable Pallof Press","Hanging Leg Raise","Stability Ball Crunch","Dead Bug","Ab Wheel (Stability Ball)","Sit-Ups","Side Bends"],calves:["DB Calf Raise","Single-Leg DB Calf Raise"],neck:["Neck Curl (Harness)","Neck Extension (Harness)","Band Neck Side Flexion"],cardio:["Jumping Jacks","Stretches","Biking","Air Bike","Rower"]};
+const EX_GRP={};Object.entries(SWAP_POOLS).forEach(([g,exs])=>exs.forEach(e=>{EX_GRP[e]=g;}));
+const GC={chest:"#EF4444",back:"#3B82F6",shoulders:"#F59E0B",biceps:"#8B5CF6",triceps:"#EC4899",quads:"#10B981",hamstrings:"#06B6D4",glutes:"#F97316",core:"#6366F1",calves:"#14B8A6",neck:"#A78BFA",cardio:"#F472B6",other:"#6B7280"};
+const DURATION_EX=new Set(["Biking","Air Bike","Rower"]);
+const MILES_EX=new Set(["Biking","Air Bike","Rower"]);
+const REPS_ONLY_EX=new Set(["Stretches","Jumping Jacks"]);
+const mkEx=(n,s,c,g)=>({name:n,sets:s,cues:c,group:g||EX_GRP[n]||"other"});
+
+// V1 PLAN
+const V1={id:"v1",name:"V1 — Original Plan",subtitle:"Cable Tower + Adjustable Bench + Dumbbells",phases:[
+{title:"Phase 1: Foundation",weeks:"Weeks 1–4",desc:"Build a base. Learn movement patterns, establish mind-muscle connection.",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[
+{title:"Day 1",sub:"Chest & Back",exercises:[mkEx("DB Flat Bench Press","3×10–12","Retract shoulder blades. Control eccentric 2–3 sec.","chest"),mkEx("DB Bent-Over Row","3×10–12","Hinge 45°. Pull to ribcage. Squeeze blades 1 sec.","back"),mkEx("DB Goblet Squat","3×12","Hold DB at chest. Heels down, chest up. Break parallel.","quads"),mkEx("Cable Chest Fly","3×12","Slight elbow bend. Stretch wide. Squeeze at midline.","chest"),mkEx("Lat Pulldown","3×10–12","Lat bar. Pull to upper chest. Lean back slightly.","back"),mkEx("DB Romanian Deadlift","3×10–12","Hinge at hips, soft knees. Feel hamstring stretch.","hamstrings"),mkEx("DB Lateral Raise","3×12–15","Lead with elbows. Stop at shoulder height.","shoulders"),mkEx("DB Bicep Curl","3×10–12","Pin elbows. No swinging. Full extension.","biceps"),mkEx("Cable Tricep Pushdown (Rope)","3×10–12","Elbows pinned. Spread rope at bottom.","triceps"),mkEx("Plank","3×30–45s","Squeeze glutes. Brace core. Neutral spine.","core")]},
+{title:"Day 2",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: arm circles, leg swings, hip circles, world's greatest stretch.","cardio"),mkEx("Air Bike","1×duration","Moderate pace. RPM 50–70. Stand every 5 min to stretch hips. Cool down last 2 min.","cardio"),mkEx("Dead Bug","2×10 each","Low-impact core. Press low back to floor. Slow and controlled.","core"),mkEx("Plank","2×30–45s","Squeeze glutes. Brace core. Neutral spine.","core")]},
+{title:"Day 3",sub:"Shoulders & Legs",exercises:[mkEx("DB Incline Bench Press","3×10–12","Bench 30–45°. Drive through chest.","chest"),mkEx("Seated Cable Row","3×10–12","V-bar. Sit tall. Pull to navel.","back"),mkEx("DB Bulgarian Split Squat","3×10 each","Rear foot on bench. Shin vertical.","quads"),mkEx("Cable Face Pull","3×12–15","Pull to forehead. Externally rotate.","back"),mkEx("DB Overhead Press","3×10–12","Seated. Brace core. Press to lockout.","shoulders"),mkEx("DB Hip Thrust","3×12","Drive through heels. Squeeze glutes 2 sec.","glutes"),mkEx("DB Hammer Curl","3×10–12","Neutral grip. Controlled negative.","biceps"),mkEx("Cable Overhead Tricep Ext.","3×10–12","Face away. Rope behind head. Extend fully.","triceps"),mkEx("DB Calf Raise","3×15","Full stretch at bottom. Pause at top.","calves"),mkEx("Stability Ball Crunch","3×15","Lower back on ball. Slow crunch.","core")]},
+{title:"Day 4",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: walking lunges, inchworms, cat-cow, thoracic rotations.","cardio"),mkEx("Air Bike","1×duration","Easy to moderate. Alternate 2 min arms-focused, 2 min legs-focused. Cool down last 2 min.","cardio"),mkEx("Cable Pallof Press","2×10 each","Light weight. Anti-rotation. Hold 2 sec. Great for core stability.","core"),mkEx("Stretches","5–10 min","Static cool-down: hip flexors, hamstrings, chest, lats. Hold each 30+ sec.","cardio")]},
+{title:"Day 5",sub:"Pull & Arms",exercises:[mkEx("Pull-Ups","3×AMRAP","Band if needed. Full hang. Chin over bar.","back"),mkEx("Cable Crossover","3×12","Pulleys high. Wide arc. Cross at midline.","chest"),mkEx("DB Lunge (Walking)","3×10 each","Long stride. Upright torso.","quads"),mkEx("Single-Arm Cable Row","3×10 each","D-handle. Square hips. Pull to hip.","back"),mkEx("DB Arnold Press","3×10–12","Palms in → rotate out as you press.","shoulders"),mkEx("Stability Ball Hamstring Curl","3×12","Hips up. Curl heels to glutes.","hamstrings"),mkEx("DB Incline Curl","3×10–12","Bench 45°. Arms hang straight.","biceps"),mkEx("Cable Tricep Pushdown (V-Bar)","3×10–12","V-bar. Elbows pinned. Full lockout.","triceps"),mkEx("Cable Woodchop","3×10 each","Rotate torso — arms straight.","core"),mkEx("Neck Curl (Harness)","2×15","Face-up. Light weight. Smooth reps.","neck")]}]},
+{title:"Phase 2: Growth",weeks:"Weeks 5–8",desc:"More volume & intensity. Supersets introduced. Push closer to failure.",rest:"60–120s",sr:"3–4×8–12",rir:"RIR 1–2",days:[
+{title:"Day 1",sub:"Chest & Back",exercises:[mkEx("DB Flat Bench Press","4×8–10","Heavier. 3-sec eccentric. Drive explosively.","chest"),mkEx("DB Bent-Over Row","4×8–10","Heavier. 1-sec pause at top.","back"),mkEx("Slant Board DB Squat","4×10–12","Heels elevated for deep quad stretch.","quads"),mkEx("Incline Cable Fly","3×12","Bench 30°. D-handles. Deep stretch.","chest"),mkEx("Lat Pulldown","4×8–10","Lean back. Pull to chest. Squeeze lats.","back"),mkEx("Cable Pull-Through","3×12","Rope through legs. Hinge. Squeeze glutes.","glutes"),mkEx("Cable Lateral Raise","3×12–15","Ankle strap on wrist. Constant tension.","shoulders"),mkEx("DB Bicep Curl","3×10","⚡ SUPERSET with Pushdowns.","biceps"),mkEx("Cable Tricep Pushdown (Rope)","3×10","⚡ SUPERSET. No rest from curls.","triceps"),mkEx("Cable Crunch (Rope)","3×15","Kneel. Crunch ribs to hips. Exhale hard.","core")]},
+{title:"Day 2",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: arm circles, leg swings, hip circles, world's greatest stretch.","cardio"),mkEx("Air Bike","1×duration","Moderate pace. RPM 50–70. Stand every 5 min to stretch hips. Cool down last 2 min.","cardio"),mkEx("Dead Bug","2×10 each","Low-impact core. Press low back to floor. Slow and controlled.","core"),mkEx("Plank","2×30–45s","Squeeze glutes. Brace core. Neutral spine.","core")]},
+{title:"Day 3",sub:"Shoulders & Legs",exercises:[mkEx("DB Incline Bench Press","4×8–10","Heavier. Shoulder blades pinned.","chest"),mkEx("V-Bar Cable Row","4×8–10","Close grip. Pull to lower chest.","back"),mkEx("DB Bulgarian Split Squat","4×8–10 each","1-sec pause in hole. Drive through heel.","quads"),mkEx("Cable Rear Delt Fly","3×12–15","Cross cables. Fly wide. Squeeze rear delts.","shoulders"),mkEx("DB Overhead Press","4×8–10","Heavier. Brace core hard.","shoulders"),mkEx("DB Romanian Deadlift","4×8–10","3-sec eccentric. Deep hamstring stretch.","hamstrings"),mkEx("Cable Hammer Curl (Rope)","3×10–12","Squeeze brachialis. 2-sec negative.","biceps"),mkEx("DB Overhead Tricep Ext.","3×10–12","Single heavy DB. Full stretch.","triceps"),mkEx("Single-Leg DB Calf Raise","3×12 each","3-sec eccentrics. Full ROM.","calves"),mkEx("Hanging Leg Raise","3×10–12","Control swing. Curl pelvis up.","core")]},
+{title:"Day 4",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: walking lunges, inchworms, cat-cow, thoracic rotations.","cardio"),mkEx("Air Bike","1×duration","Easy to moderate. Alternate 2 min arms-focused, 2 min legs-focused. Cool down last 2 min.","cardio"),mkEx("Cable Pallof Press","2×10 each","Light weight. Anti-rotation. Hold 2 sec. Great for core stability.","core"),mkEx("Stretches","5–10 min","Static cool-down: hip flexors, hamstrings, chest, lats. Hold each 30+ sec.","cardio")]},
+{title:"Day 5",sub:"Pull & Arms",exercises:[mkEx("Chin-Ups","4×AMRAP","Underhand. Add weight if >12.","back"),mkEx("DB Squeeze Press","3×10–12","Press DBs together entire set.","chest"),mkEx("DB Front Squat","4×10","DBs at shoulders. Deep squat.","quads"),mkEx("T-Bar Cable Row","4×8–10","Pull to lower chest. Squeeze scapulae.","back"),mkEx("DB Arnold Press","4×8–10","Heavier. Full rotation.","shoulders"),mkEx("Cable Hamstring Curl (Ankle Strap)","3×12 each","Standing. Curl heel to glute.","hamstrings"),mkEx("DB Concentration Curl","3×10 each","Elbow on thigh. Peak squeeze.","biceps"),mkEx("Cable Kickback","3×12 each","Full extension. Squeeze 1 sec.","triceps"),mkEx("Cable Pallof Press","3×10 each","Anti-rotation. Hold 2 sec.","core"),mkEx("Neck Extension (Harness)","3×12–15","Controlled. No jerking.","neck")]}]},
+{title:"Phase 3: Peak",weeks:"Weeks 9–12",desc:"Max hypertrophy. Drop sets, pause reps, slow eccentrics.",rest:"60s–2 min",sr:"3–4×8–15",rir:"RIR 0–1",days:[
+{title:"Day 1",sub:"Chest & Back",exercises:[mkEx("DB Flat Bench Press","4×8–10 + drop","Near failure → drop 30% → AMRAP.","chest"),mkEx("DB Bent-Over Row","4×8–10 + drop","Drop set final set.","back"),mkEx("Slant Board DB Squat","4×10 + pause","3-sec pause × 6.","quads"),mkEx("Cable Low-to-High Fly","3×12","Sweep up. Peak contraction.","chest"),mkEx("Cable Straight-Arm Pulldown","3×12","Arms straight. Squeeze lats.","back"),mkEx("DB Hip Thrust","4×10 + hold","3-sec hold EVERY rep.","glutes"),mkEx("Cable Lateral Raise","4×12 + drop","Drop set last set.","shoulders"),mkEx("DB Incline Curl","3×10 + slow neg","4-sec lowering EVERY rep.","biceps"),mkEx("Cable Overhead Tricep Ext.","3×10 + drop","Drop set on final set.","triceps"),mkEx("Cable Crunch (Rope)","3×15–20","Slow tempo. Peak squeeze.","core")]},
+{title:"Day 2",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: arm circles, leg swings, hip circles, world's greatest stretch.","cardio"),mkEx("Air Bike","1×duration","Moderate pace. RPM 50–70. Stand every 5 min to stretch hips. Cool down last 2 min.","cardio"),mkEx("Dead Bug","2×10 each","Low-impact core. Press low back to floor. Slow and controlled.","core"),mkEx("Plank","2×30–45s","Squeeze glutes. Brace core. Neutral spine.","core")]},
+{title:"Day 3",sub:"Shoulders & Legs",exercises:[mkEx("DB Incline Bench Press","4×8–10 + drop","Drop set → AMRAP.","chest"),mkEx("Lat Pulldown","4×8–10 + drop","Drop 30%. Max reps.","back"),mkEx("DB Bulgarian Split Squat","4×8 each + pause","2-sec pause EVERY rep.","quads"),mkEx("Cable Face Pull","4×12–15","3-sec eccentric every rep.","back"),mkEx("DB Arnold Press","4×8–10 + mech drop","Failure → standard press → AMRAP.","shoulders"),mkEx("Cable Hamstring Curl (Ankle Strap)","3×10 each + drop","Drop set final set.","hamstrings"),mkEx("Cable Bicep Curl","3×10 + drop","Drop last set.","biceps"),mkEx("Cable Tricep Pushdown (V-Bar)","3×10 + drop","Drop final set.","triceps"),mkEx("DB Calf Raise","4×12 + slow ecc","5-sec lowering EVERY rep.","calves"),mkEx("Dead Bug","3×10 each","Press low back to floor.","core")]},
+{title:"Day 4",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: walking lunges, inchworms, cat-cow, thoracic rotations.","cardio"),mkEx("Air Bike","1×duration","Easy to moderate. Alternate 2 min arms-focused, 2 min legs-focused. Cool down last 2 min.","cardio"),mkEx("Cable Pallof Press","2×10 each","Light weight. Anti-rotation. Hold 2 sec. Great for core stability.","core"),mkEx("Stretches","5–10 min","Static cool-down: hip flexors, hamstrings, chest, lats. Hold each 30+ sec.","cardio")]},
+{title:"Day 5",sub:"Pull & Arms",exercises:[mkEx("Pull-Ups","4×AMRAP + neg","After failure: 3–5 slow negatives.","back"),mkEx("Cable Crossover","4×10 + drop","Drop set final set.","chest"),mkEx("DB Sumo Squat","4×10 + pulse","10 full + 10 pulse reps.","quads"),mkEx("Single-Arm Cable Row","4×8–10 each","3-sec eccentric stretch.","back"),mkEx("DB Rear Delt Fly","4×12–15","Max squeeze at top.","shoulders"),mkEx("KB Swing","3×15","Explosive hip drive.","hamstrings"),mkEx("DB Hammer Curl","3×10 + slow neg","4-sec lowering per rep.","biceps"),mkEx("Diamond Push-Ups","3×AMRAP","Hands together. To failure.","triceps"),mkEx("Cable Woodchop","3×10 each + hold","2-sec hold at end range.","core"),mkEx("Band Neck Side Flexion","2×12 each","Light band. Both sides.","neck")]}]}]};
+
+// V2 PLAN
+const V2={id:"v2",name:"V2 — Apex Edition",subtitle:"Apex Bench + Leg Trainer + Nordic Max + Cable Tower",phases:[
+{title:"Phase 1: Foundation",weeks:"Weeks 1–4",desc:"Build a base with Apex gear. Learn Nordic eccentrics.",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[
+{title:"Day 1",sub:"Chest & Back",exercises:[mkEx("DB Flat Bench Press","3×10–12","Retract shoulder blades. 2–3 sec eccentric.","chest"),mkEx("DB Bent-Over Row","3×10–12","Hinge 45°. Pull to ribcage.","back"),mkEx("DB Goblet Squat","3×12","Hold at chest. Heels down.","quads"),mkEx("Cable Chest Fly","3×12","Slight bend. Stretch wide.","chest"),mkEx("Lat Pulldown","3×10–12","Lat bar. Pull to upper chest.","back"),mkEx("Apex Leg Extension","3×12","Slow eccentric. 1-sec hold at full extension.","quads"),mkEx("DB Lateral Raise","3×12–15","Lead with elbows. Stop at shoulder height.","shoulders"),mkEx("DB Bicep Curl","3×10–12","Pin elbows. No swinging.","biceps"),mkEx("Cable Tricep Pushdown (Rope)","3×10–12","Spread rope at bottom.","triceps"),mkEx("Plank","3×30–45s","Squeeze glutes. Brace core.","core")]},
+{title:"Day 2",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: arm circles, leg swings, hip circles, world's greatest stretch.","cardio"),mkEx("Air Bike","1×duration","Moderate pace. RPM 50–70. Stand every 5 min to stretch hips. Cool down last 2 min.","cardio"),mkEx("Dead Bug","2×10 each","Low-impact core. Press low back to floor. Slow and controlled.","core"),mkEx("Plank","2×30–45s","Squeeze glutes. Brace core. Neutral spine.","core")]},
+{title:"Day 3",sub:"Shoulders & Legs",exercises:[mkEx("DB Incline Bench Press","3×10–12","Bench 30–45°. Drive through chest.","chest"),mkEx("Seated Cable Row","3×10–12","V-bar. Nordic Max footplate.","back"),mkEx("DB Bulgarian Split Squat","3×10 each","Rear foot on bench. Shin vertical.","quads"),mkEx("Cable Face Pull","3×12–15","Pull to forehead. Externally rotate.","back"),mkEx("DB Overhead Press","3×10–12","Seated on Apex bench. Brace core.","shoulders"),mkEx("Apex Lying Leg Curl","3×12","Slow eccentric. Squeeze hamstrings.","hamstrings"),mkEx("DB Hammer Curl","3×10–12","Neutral grip. Controlled negative.","biceps"),mkEx("Cable Overhead Tricep Ext.","3×10–12","Face away. Rope behind head.","triceps"),mkEx("DB Calf Raise","3×15","Full stretch at bottom.","calves"),mkEx("Stability Ball Crunch","3×15","Slow. Exhale at top.","core")]},
+{title:"Day 4",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: walking lunges, inchworms, cat-cow, thoracic rotations.","cardio"),mkEx("Air Bike","1×duration","Easy to moderate. Alternate 2 min arms-focused, 2 min legs-focused. Cool down last 2 min.","cardio"),mkEx("Cable Pallof Press","2×10 each","Light weight. Anti-rotation. Hold 2 sec. Great for core stability.","core"),mkEx("Stretches","5–10 min","Static cool-down: hip flexors, hamstrings, chest, lats. Hold each 30+ sec.","cardio")]},
+{title:"Day 5",sub:"Pull & Arms",exercises:[mkEx("Pull-Ups","3×AMRAP","Band assist if needed. Full hang.","back"),mkEx("Cable Crossover","3×12","Pulleys high. Wide arc.","chest"),mkEx("DB Lunge (Walking)","3×10 each","Long stride. Upright torso.","quads"),mkEx("Single-Arm Cable Row","3×10 each","D-handle. Square hips.","back"),mkEx("DB Arnold Press","3×10–12","Palms in → rotate out.","shoulders"),mkEx("Nordic Curl (Eccentric Only)","3×5","5-sec lowering. Catch with hands.","hamstrings"),mkEx("DB Incline Curl","3×10–12","Bench 45°. Arms hang straight.","biceps"),mkEx("Cable Tricep Pushdown (V-Bar)","3×10–12","V-bar. Elbows pinned.","triceps"),mkEx("Cable Woodchop","3×10 each","Rotate torso. Arms straight.","core"),mkEx("Neck Curl (Harness)","2×15","Light weight. Smooth reps.","neck")]}]},
+{title:"Phase 2: Growth",weeks:"Weeks 5–8",desc:"Band-assisted Nordics, heavier Leg Trainer, supersets.",rest:"60–120s",sr:"3–4×8–12",rir:"RIR 1–2",days:[
+{title:"Day 1",sub:"Chest & Back",exercises:[mkEx("DB Flat Bench Press","4×8–10","Heavier. 3-sec eccentric.","chest"),mkEx("DB Bent-Over Row","4×8–10","Heavier. 1-sec pause.","back"),mkEx("Slant Board DB Squat","4×10–12","Heels elevated. Deep quad stretch.","quads"),mkEx("Incline Cable Fly","3×12","Bench 30°. Deep stretch.","chest"),mkEx("Lat Pulldown","4×8–10","Lean back. Pull to chest.","back"),mkEx("Apex Lying Leg Curl","4×10–12","3-sec eccentric. Squeeze at top.","hamstrings"),mkEx("Cable Lateral Raise","3×12–15","Ankle strap. Constant tension.","shoulders"),mkEx("DB Bicep Curl","3×10","⚡ SUPERSET with Pushdowns.","biceps"),mkEx("Cable Tricep Pushdown (Rope)","3×10","⚡ SUPERSET. No rest.","triceps"),mkEx("Cable Crunch (Rope)","3×15","Crunch ribs to hips.","core")]},
+{title:"Day 2",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: arm circles, leg swings, hip circles, world's greatest stretch.","cardio"),mkEx("Air Bike","1×duration","Moderate pace. RPM 50–70. Stand every 5 min to stretch hips. Cool down last 2 min.","cardio"),mkEx("Dead Bug","2×10 each","Low-impact core. Press low back to floor. Slow and controlled.","core"),mkEx("Plank","2×30–45s","Squeeze glutes. Brace core. Neutral spine.","core")]},
+{title:"Day 3",sub:"Shoulders & Legs",exercises:[mkEx("DB Incline Bench Press","4×8–10","Heavier. Shoulder blades pinned.","chest"),mkEx("V-Bar Cable Row","4×8–10","Nordic Max footplate. Close grip.","back"),mkEx("DB Bulgarian Split Squat","4×8–10 each","1-sec pause. Drive through heel.","quads"),mkEx("Cable Rear Delt Fly","3×12–15","Cross cables. Fly wide.","shoulders"),mkEx("DB Overhead Press","4×8–10","Heavier. Brace hard.","shoulders"),mkEx("Apex Leg Extension","4×10–12","Squeeze quads. 2-sec hold.","quads"),mkEx("Nordic Curl (Band Assisted)","3×6–8","Band around chest. Full ROM.","hamstrings"),mkEx("Cable Hammer Curl (Rope)","3×10–12","Squeeze at top. 2-sec negative.","biceps"),mkEx("DB Overhead Tricep Ext.","3×10–12","Single heavy DB. Full stretch.","triceps"),mkEx("Hanging Leg Raise","3×10–12","Control swing. Curl pelvis.","core")]},
+{title:"Day 4",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: walking lunges, inchworms, cat-cow, thoracic rotations.","cardio"),mkEx("Air Bike","1×duration","Easy to moderate. Alternate 2 min arms-focused, 2 min legs-focused. Cool down last 2 min.","cardio"),mkEx("Cable Pallof Press","2×10 each","Light weight. Anti-rotation. Hold 2 sec. Great for core stability.","core"),mkEx("Stretches","5–10 min","Static cool-down: hip flexors, hamstrings, chest, lats. Hold each 30+ sec.","cardio")]},
+{title:"Day 5",sub:"Pull & Arms",exercises:[mkEx("Chin-Ups","4×AMRAP","Underhand. Add weight if >12.","back"),mkEx("DB Squeeze Press","3×10–12","Press DBs together entire set.","chest"),mkEx("DB Front Squat","4×10","DBs at shoulders. Deep squat.","quads"),mkEx("T-Bar Cable Row","4×8–10","Pull to lower chest.","back"),mkEx("DB Arnold Press","4×8–10","Heavier. Full rotation.","shoulders"),mkEx("Apex Lying Leg Curl","3×10–12","Control negative.","hamstrings"),mkEx("DB Concentration Curl","3×10 each","Elbow on thigh. Peak squeeze.","biceps"),mkEx("Cable Kickback","3×12 each","Full extension. Squeeze 1 sec.","triceps"),mkEx("Cable Pallof Press","3×10 each","Anti-rotation. Hold 2 sec.","core"),mkEx("Neck Extension (Harness)","3×12–15","Controlled. No jerking.","neck")]}]},
+{title:"Phase 3: Peak",weeks:"Weeks 9–12",desc:"Full Nordics, drop sets, slow eccentrics. Push to failure.",rest:"60s–2 min",sr:"3–4×8–15",rir:"RIR 0–1",days:[
+{title:"Day 1",sub:"Chest & Back",exercises:[mkEx("DB Flat Bench Press","4×8–10 + drop","Near failure → drop 30% → AMRAP.","chest"),mkEx("DB Bent-Over Row","4×8–10 + drop","Drop set final set.","back"),mkEx("Slant Board DB Squat","4×10 + pause","3-sec pause × 6.","quads"),mkEx("Cable Low-to-High Fly","3×12","Sweep up. Peak contraction.","chest"),mkEx("Cable Straight-Arm Pulldown","3×12","Arms straight. Squeeze lats.","back"),mkEx("Apex Leg Extension","4×10 + drop","Strip plates → AMRAP.","quads"),mkEx("Cable Lateral Raise","4×12 + drop","Drop set last set.","shoulders"),mkEx("DB Incline Curl","3×10 + slow neg","4-sec lowering EVERY rep.","biceps"),mkEx("Cable Overhead Tricep Ext.","3×10 + drop","Drop set final set.","triceps"),mkEx("Cable Crunch (Rope)","3×15–20","Slow tempo. Peak squeeze.","core")]},
+{title:"Day 2",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: arm circles, leg swings, hip circles, world's greatest stretch.","cardio"),mkEx("Air Bike","1×duration","Moderate pace. RPM 50–70. Stand every 5 min to stretch hips. Cool down last 2 min.","cardio"),mkEx("Dead Bug","2×10 each","Low-impact core. Press low back to floor. Slow and controlled.","core"),mkEx("Plank","2×30–45s","Squeeze glutes. Brace core. Neutral spine.","core")]},
+{title:"Day 3",sub:"Shoulders & Legs",exercises:[mkEx("DB Incline Bench Press","4×8–10 + drop","Drop set → AMRAP.","chest"),mkEx("Lat Pulldown","4×8–10 + drop","Drop 30%. Max reps.","back"),mkEx("DB Bulgarian Split Squat","4×8 each + pause","2-sec pause EVERY rep.","quads"),mkEx("Cable Face Pull","4×12–15","3-sec eccentric every rep.","back"),mkEx("DB Arnold Press","4×8–10 + mech drop","Failure → standard press → AMRAP.","shoulders"),mkEx("Nordic Curl","4×5–6 + ecc","Full reps → 3 slow eccentrics.","hamstrings"),mkEx("Apex Lying Leg Curl","3×10 + drop","Drop set. Add bands.","hamstrings"),mkEx("Cable Bicep Curl","3×10 + drop","Drop last set.","biceps"),mkEx("Cable Tricep Pushdown (V-Bar)","3×10 + drop","Drop final set.","triceps"),mkEx("Dead Bug","3×10 each","Press low back to floor.","core")]},
+{title:"Day 4",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: walking lunges, inchworms, cat-cow, thoracic rotations.","cardio"),mkEx("Air Bike","1×duration","Easy to moderate. Alternate 2 min arms-focused, 2 min legs-focused. Cool down last 2 min.","cardio"),mkEx("Cable Pallof Press","2×10 each","Light weight. Anti-rotation. Hold 2 sec. Great for core stability.","core"),mkEx("Stretches","5–10 min","Static cool-down: hip flexors, hamstrings, chest, lats. Hold each 30+ sec.","cardio")]},
+{title:"Day 5",sub:"Pull & Arms",exercises:[mkEx("Pull-Ups","4×AMRAP + neg","After failure: 3–5 slow negatives.","back"),mkEx("Cable Crossover","4×10 + drop","Drop set final set.","chest"),mkEx("DB Sumo Squat","4×10 + pulse","10 full + 10 pulse.","quads"),mkEx("Single-Arm Cable Row","4×8–10 each","3-sec eccentric.","back"),mkEx("DB Rear Delt Fly","4×12–15","Max squeeze at top.","shoulders"),mkEx("Apex Leg Extension","3×12 + slow ecc","4-sec lowering.","quads"),mkEx("Decline Nordic Curl","3×6–8","Slight decline. Slow.","hamstrings"),mkEx("DB Hammer Curl","3×10 + slow neg","4-sec lowering.","biceps"),mkEx("Diamond Push-Ups","3×AMRAP","Hands together. To failure.","triceps"),mkEx("Cable Woodchop","3×10 each + hold","2-sec hold at end.","core")]}]}]};
+
+// V3 MOUNTAIN MAN PLAN
+const V3={id:"v3",name:"V3 — Mountain Man",subtitle:"Dan's Dumbbell Hypertrophy Plan",phases:[
+{title:"Mountain Man Program",weeks:"Ongoing",desc:"Full-body hypertrophy with dumbbells and bodyweight. Warm up every session, then rotate through 3 workout days.",rest:"60–90s",sr:"3×10–12",rir:"RIR 2–3",days:[
+{title:"Warm-Up",sub:"Basics",exercises:[
+mkEx("Stretches","5–10 min","Dynamic stretches: arm circles, leg swings, hip circles, world's greatest stretch.","cardio"),
+mkEx("Push-Ups","3×10–15","Hands shoulder-width. Full range of motion. Chest to floor.","chest"),
+mkEx("Prisoner Squats","3×15","Hands behind head. Chest up, break parallel. Controlled tempo.","quads"),
+mkEx("DB Bench Press","3×10–12","Retract shoulder blades. Control the descent 2–3 sec.","chest"),
+mkEx("DB Curls","3×10–12","Pin elbows at sides. Full extension at bottom. No swinging.","biceps"),
+mkEx("Plank","3×30–45s","Squeeze glutes. Brace core like expecting a punch. Neutral spine.","core"),
+mkEx("Biking","1×duration","Steady pace. RPM 70–90. Cool down last 2 minutes.","cardio")]},
+{title:"Day 1",sub:"Pull & Press",exercises:[
+mkEx("Pull-Ups","3×AMRAP","Band assist if needed. Full hang at bottom. Chin over bar.","back"),
+mkEx("Lunges","3×10 each","Long stride. Upright torso. Back knee near floor.","quads"),
+mkEx("DB Shrugs","3×12–15","Heavy DBs. Shrug straight up — don't roll shoulders. Hold 1 sec at top.","shoulders"),
+mkEx("Curl to Shoulder Press","3×10","Curl DBs up, then press overhead in one fluid motion. Control the negative.","shoulders"),
+mkEx("Jumping Jacks","3×30","Full arm extension overhead. Light on your feet. Keep pace steady.","cardio"),
+mkEx("Side Bends","3×12 each","Hold one DB. Lean to opposite side slowly. Feel the oblique stretch.","core"),
+mkEx("Standing DB Press","3×10–12","Brace core tight. Press to full lockout. Don't arch your back.","shoulders"),
+mkEx("Biking","1×duration","Moderate intensity. Keep a steady cadence. Great for recovery.","cardio")]},
+{title:"Day 2",sub:"Push & Squat",exercises:[
+mkEx("Incline DB Bench","3×10–12","Bench 30–45°. Drive through chest. Control the descent.","chest"),
+mkEx("Bent-Over DB Row","3×10–12","Hinge 45°. Pull to ribcage. Squeeze shoulder blades 1 sec.","back"),
+mkEx("Goblet Squats","3×12","Hold DB at chest. Heels down, chest up. Break parallel.","quads"),
+mkEx("Diamond Push-Ups","3×AMRAP","Hands together. Elbows tight. Great tricep builder.","triceps"),
+mkEx("Reverse DB Flys","3×12–15","Slight bend in elbows. Squeeze rear delts hard at top.","shoulders"),
+mkEx("DB Curls","3×10–12","Pin elbows. Controlled negative. Full range of motion.","biceps"),
+mkEx("Sit-Ups","3×15–20","Feet anchored. Hands across chest. Exhale as you crunch up.","core"),
+mkEx("Biking","1×duration","Steady ride. Push the pace a little. Cool down last 2 minutes.","cardio")]},
+{title:"Day 3",sub:"Push & Lunge",exercises:[
+mkEx("Decline Push-Ups","3×10–15","Feet elevated on bench. Targets upper chest. Full range.","chest"),
+mkEx("Side Lunges","3×10 each","Wide step to the side. Sit hips back. Keep trailing leg straight.","quads"),
+mkEx("DB Arnold Press","3×10–12","Palms in at bottom → rotate out as you press. Full lockout.","shoulders"),
+mkEx("Dips","3×AMRAP","Lean forward slightly for chest emphasis. Controlled descent.","triceps"),
+mkEx("DB Side Raises","3×12–15","Lead with elbows. Stop at shoulder height. Light weight, strict form.","shoulders"),
+mkEx("DB Bench Press","3×10–12","Flat bench. Shoulder blades retracted. 2-sec eccentric.","chest"),
+mkEx("Reverse Lunges","3×10 each","Step back, not forward. Front shin vertical. Drive through front heel.","quads"),
+mkEx("Biking","1×duration","Easy to moderate pace. Great finish to the session.","cardio")]}]}
+]};
+
+const ALL=[V1,V2,V3];
+
+// ICONS
+const Chev=({up,s=18})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points={up?"18 15 12 9 6 15":"6 9 12 15 18 9"}/></svg>;
+const Check=({s=18})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>;
+const DBIcon=({s=20})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="9" width="4" height="6" rx="1"/><rect x="18" y="9" width="4" height="6" rx="1"/><rect x="6" y="7" width="3" height="10" rx="1"/><rect x="15" y="7" width="3" height="10" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/></svg>;
+const YT=({s=16})=><svg width={s} height={s} viewBox="0 0 24 24"><path d="M23.5 6.2c-.3-1-1-1.8-2-2.1C19.6 3.5 12 3.5 12 3.5s-7.6 0-9.5.6c-1 .3-1.7 1.1-2 2.1C0 8.1 0 12 0 12s0 3.9.5 5.8c.3 1 1 1.8 2 2.1 1.9.6 9.5.6 9.5.6s7.6 0 9.5-.6c1-.3 1.7-1.1 2-2.1.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8z" fill="#FF0000"/><path d="M9.8 15.5V8.5l6.3 3.5-6.3 3.5z" fill="#FFF"/></svg>;
+const GoogleIcon=()=><svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>;
+const ChartIcon=({s=18})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
+const DARK={bg:"#08080A",card:"#111116",bdr:"#1C1C24",acc:"#FF6B2C",grn:"#22C55E",txt:"#E8E8EC",dim:"#A0A0AC",fnt:"#78788A",srf:"#18181E",sbdr:"#252530"};
+const LIGHT={bg:"#F4F4F6",card:"#FFFFFF",bdr:"#E0E0E6",acc:"#E8551A",grn:"#16A34A",txt:"#1A1A1E",dim:"#555566",fnt:"#888898",srf:"#EBEBF0",sbdr:"#D0D0DA"};
+
+// PROGRESS HELPERS
+const Stats={
+  getDates:(hist,pid)=>{const dates=[];Object.keys(hist).forEach(k=>{if(k.startsWith(pid+"-")){const p=k.split("-");const d=p.slice(3).join("-");if(d&&!dates.includes(d))dates.push(d);}});return dates.sort();},
+  getWeek:(hist,pid)=>{const dates=Stats.getDates(hist,pid);if(!dates.length)return 0;const first=new Date(dates[0]);const now=new Date();return Math.min(Math.floor((now-first)/(7*864e5))+1,12);},
+  getTotal:(hist,pid)=>Stats.getDates(hist,pid).length,
+  getSessions:(hist,pid,phi,di)=>{const pre=`${pid}-${phi}-${di}-`;const s=[];Object.entries(hist).forEach(([k,v])=>{if(k.startsWith(pre))s.push({date:k.slice(pre.length),data:v});});return s.sort((a,b)=>a.date.localeCompare(b.date));},
+  getExHistory:(hist,pid,exName)=>{const pts=[];Object.entries(hist).forEach(([k,v])=>{if(!k.startsWith(pid+"-"))return;const parts=k.split("-");const date=parts.slice(3).join("-");Object.values(v).forEach(ex=>{if(ex.name===exName&&ex.sets){let bW=0,bR=0,vol=0;ex.sets.forEach(s=>{const w=parseFloat(s.weight)||0;const r=parseFloat(s.reps)||0;if(w>bW){bW=w;bR=r;}vol+=w*r;});if(bW>0)pts.push({date,weight:bW,reps:bR,volume:vol,sets:ex.sets});}});});return pts.sort((a,b)=>a.date.localeCompare(b.date));},
+  getLoggedExercises:(hist,pid)=>{const names=new Set();Object.entries(hist).forEach(([k,v])=>{if(!k.startsWith(pid+"-"))return;Object.values(v).forEach(ex=>{if(ex.name&&ex.sets&&ex.sets.some(s=>parseFloat(s.weight)>0))names.add(ex.name);});});return Array.from(names).sort();},
+  getTotalMiles:(hist,pid,exName)=>{let total=0;Object.entries(hist).forEach(([k,v])=>{if(!k.startsWith(pid+"-"))return;Object.values(v).forEach(ex=>{if(ex.name===exName&&ex.sets){ex.sets.forEach(s=>{total+=parseFloat(s.reps)||0;});}});});return Math.round(total*10)/10;},
+  getPR:(hist,pid,exName)=>{let best=0;Object.entries(hist).forEach(([k,v])=>{if(!k.startsWith(pid+"-"))return;Object.values(v).forEach(ex=>{if(ex.name===exName&&ex.sets){ex.sets.forEach(s=>{const w=parseFloat(s.weight)||0;if(w>best)best=w;});}});});return best;},
+  fmtDate:(d)=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}),
+  fmtDateFull:(d)=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}),
+  getPctChange:(pts)=>{if(pts.length<2)return null;const f=pts[0].weight,l=pts[pts.length-1].weight;return f===0?null:Math.round(((l-f)/f)*100);}
+};
+
+// SVG LINE CHART
+function MiniChart({points,width=340,height=180,unit="lbs",c}){const C=c||DARK;
+  if(!points||!points.length)return<div style={{color:C.fnt,fontSize:13,padding:20,textAlign:"center"}}>No data yet — log some workouts first!</div>;
+  const pad={t:20,r:16,b:36,l:44};const w=width-pad.l-pad.r;const h=height-pad.t-pad.b;
+  const weights=points.map(p=>p.weight);const minW=Math.floor(Math.min(...weights)*0.9);const maxW=Math.ceil(Math.max(...weights)*1.05);const range=maxW-minW||1;
+  const x=(i)=>pad.l+(points.length===1?w/2:(i/(points.length-1))*w);
+  const y=(v)=>pad.t+h-((v-minW)/range)*h;
+  const gridLines=[];for(let i=0;i<=4;i++){const val=minW+(range*i/4);gridLines.push({y:y(val),label:Math.round(val)});}
+  const linePath=points.map((p,i)=>`${i===0?'M':'L'}${x(i)},${y(p.weight)}`).join(' ');
+  const areaPath=linePath+` L${x(points.length-1)},${pad.t+h} L${x(0)},${pad.t+h} Z`;
+  return(
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{display:"block",maxWidth:"100%"}}>
+      <defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FF6B2C" stopOpacity="0.3"/><stop offset="100%" stopColor="#FF6B2C" stopOpacity="0"/></linearGradient></defs>
+      {gridLines.map((g,i)=>(<g key={i}><line x1={pad.l} y1={g.y} x2={width-pad.r} y2={g.y} stroke={C.bdr} strokeWidth="1"/><text x={pad.l-6} y={g.y+4} fill={C.fnt} fontSize="10" textAnchor="end" fontFamily="DM Sans">{g.label}</text></g>))}
+      {points.map((p,i)=>{const skip=Math.max(1,Math.floor(points.length/6));if(i%skip!==0&&i!==points.length-1)return null;return<text key={i} x={x(i)} y={height-6} fill={C.fnt} fontSize="9" textAnchor="middle" fontFamily="DM Sans">{Stats.fmtDate(p.date)}</text>;})}
+      <path d={areaPath} fill="url(#areaGrad)"/>
+      <path d={linePath} fill="none" stroke="#FF6B2C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+      {points.map((p,i)=>(<g key={i}><circle cx={x(i)} cy={y(p.weight)} r="4.5" fill="#FF6B2C" stroke="#08080A" strokeWidth="2"/><text x={x(i)} y={y(p.weight)-10} fill={C.txt} fontSize="10" fontWeight="600" textAnchor="middle" fontFamily="DM Sans">{p.weight}</text></g>))}
+      <text x={4} y={pad.t-6} fill={C.fnt} fontSize="9" fontFamily="DM Sans">{unit}</text>
+    </svg>
+  );
+}
+
+// MAIN APP
+function App(){
+  const [user,setUser]=useState(undefined);
+  const [planId,setPlanId]=useState("v1");
+  const [phaseIdx,setPhaseIdx]=useState(0);
+  const [dayIdx,setDayIdx]=useState(0);
+  const [screen,setScreen]=useState("home");
+  const [log,setLog]=useState({});
+  const [hist,setHist]=useState({});
+  const [swaps,setSwaps]=useState({});
+  const [openEx,setOpenEx]=useState(null);
+  const [planMenu,setPlanMenu]=useState(false);
+  const [saved,setSaved]=useState(false);
+  const [swapPanel,setSwapPanel]=useState(null);
+  const [syncing,setSyncing]=useState(false);
+  const [authError,setAuthError]=useState(null);
+  const [authMode,setAuthMode]=useState("signin");
+  const [emailIn,setEmailIn]=useState("");
+  const [passIn,setPassIn]=useState("");
+  const [progEx,setProgEx]=useState("");
+  const [progDay,setProgDay]=useState("all");
+  const [progOpen,setProgOpen]=useState(null);
+  const [customEx,setCustomEx]=useState({});
+  const [ssLinks,setSsLinks]=useState({});
+  const [addExForm,setAddExForm]=useState(null);
+  const [addExName,setAddExName]=useState("");
+  const [addExGroup,setAddExGroup]=useState("chest");
+  const [addExSets,setAddExSets]=useState("3");
+  const [delConfirm,setDelConfirm]=useState(false);
+  const [delHistKey,setDelHistKey]=useState(null);
+  const [exOrder,setExOrder]=useState({});
+  const [exEdits,setExEdits]=useState({});
+  const [editPanel,setEditPanel]=useState(null);
+  const [editName,setEditName]=useState("");
+  const [editSets,setEditSets]=useState("");
+  const [editCues,setEditCues]=useState("");
+  const [editGroup,setEditGroup]=useState("chest");
+  const [theme,setTheme]=useState("dark");
+  const [restSec,setRestSec]=useState(0);
+  const [restRunning,setRestRunning]=useState(false);
+  const [sessionStart,setSessionStart]=useState(null);
+  const [elapsed,setElapsed]=useState(0);
+  const [prToast,setPrToast]=useState(null);
+  const [bodyWt,setBodyWt]=useState({});
+  const [bwInput,setBwInput]=useState("");
+  const [wkNotes,setWkNotes]=useState("");
+  const unsubs=useRef([]);
+  const C=theme==="dark"?DARK:LIGHT;
+
+  const plan=ALL.find(p=>p.id===planId)||ALL[0];
+  const phase=plan.phases[phaseIdx];
+  const day=phase?.days[dayIdx];
+  const today=new Date().toISOString().slice(0,10);
+
+  const weekNum=useMemo(()=>Stats.getWeek(hist,planId),[hist,planId]);
+  const totalSessions=useMemo(()=>Stats.getTotal(hist,planId),[hist,planId]);
+  const loggedExercises=useMemo(()=>Stats.getLoggedExercises(hist,planId),[hist,planId]);
+  const exHistory=useMemo(()=>progEx?Stats.getExHistory(hist,planId,progEx):[],[hist,planId,progEx]);
+  const pctChange=useMemo(()=>Stats.getPctChange(exHistory),[exHistory]);
+
+  // AUTH LISTENER
+  useEffect(()=>{const unsub=auth.onAuthStateChanged(u=>{setUser(u||null);setAuthError(null);});return()=>unsub();},[]);
+
+  // CLOUD SYNC
+  useEffect(()=>{
+    unsubs.current.forEach(fn=>fn());unsubs.current=[];
+    if(!user)return;
+    setSyncing(true);const uid=user.uid;
+    Promise.all([Cloud.load(uid,"state"),Cloud.load(uid,"history"),Cloud.load(uid,"swaps"),Cloud.load(uid,"customEx"),Cloud.load(uid,"ssLinks"),Cloud.load(uid,"exOrder"),Cloud.load(uid,"exEdits"),Cloud.load(uid,"bodyWeight"),Cloud.load(uid,"prefs")]).then(([st,h,s,ce,sl,eo,ee,bw,pf])=>{
+      if(st){setPlanId(st.p||"v1");setPhaseIdx(st.ph||0);setDayIdx(st.d||0);}
+      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);setSyncing(false);
+    });
+    unsubs.current.push(
+      Cloud.listen(uid,"history",data=>setHist(data)),
+      Cloud.listen(uid,"swaps",data=>setSwaps(data)),
+      Cloud.listen(uid,"state",data=>{if(data){setPlanId(data.p||"v1");setPhaseIdx(data.ph||0);setDayIdx(data.d||0);}}),
+      Cloud.listen(uid,"customEx",data=>{if(data)setCustomEx(data);}),
+      Cloud.listen(uid,"ssLinks",data=>{if(data)setSsLinks(data);}),
+      Cloud.listen(uid,"exOrder",data=>{if(data)setExOrder(data);}),
+      Cloud.listen(uid,"exEdits",data=>{if(data)setExEdits(data);}),
+      Cloud.listen(uid,"bodyWeight",data=>{if(data)setBodyWt(data);}),
+      Cloud.listen(uid,"prefs",data=>{if(data&&data.theme)setTheme(data.theme);})
+    );
+    return()=>{unsubs.current.forEach(fn=>fn());unsubs.current=[];};
+  },[user]);
+
+  useEffect(()=>{if(!user)return;const t=setTimeout(()=>{Cloud.save(user.uid,"state",{p:planId,ph:phaseIdx,d:dayIdx});},500);return()=>clearTimeout(t);},[planId,phaseIdx,dayIdx,user]);
+
+  // AUTH
+  const signIn=async()=>{setAuthError(null);try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}catch(e){if(e.code==='auth/popup-blocked'){try{await auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());}catch(e2){setAuthError(e2.message);}}else if(e.code!=='auth/popup-closed-by-user'){setAuthError(e.message);}}};
+  const emailSignIn=async()=>{setAuthError(null);if(!emailIn||!passIn)return setAuthError("Please enter email and password.");try{await auth.signInWithEmailAndPassword(emailIn,passIn);}catch(e){const msg=e.code==='auth/user-not-found'?"No account found with that email.":e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'?"Incorrect password.":e.code==='auth/invalid-email'?"Invalid email address.":e.code==='auth/too-many-requests'?"Too many attempts. Try again later.":e.message;setAuthError(msg);}};
+  const emailSignUp=async()=>{setAuthError(null);if(!emailIn||!passIn)return setAuthError("Please enter email and password.");if(passIn.length<6)return setAuthError("Password must be at least 6 characters.");try{await auth.createUserWithEmailAndPassword(emailIn,passIn);}catch(e){const msg=e.code==='auth/email-already-in-use'?"An account with that email already exists.":e.code==='auth/invalid-email'?"Invalid email address.":e.code==='auth/weak-password'?"Password is too weak. Use at least 6 characters.":e.message;setAuthError(msg);}};
+  const resetPassword=async()=>{setAuthError(null);if(!emailIn)return setAuthError("Enter your email above, then tap Reset.");try{await auth.sendPasswordResetEmail(emailIn);setAuthError("Password reset email sent! Check your inbox.");}catch(e){const msg=e.code==='auth/user-not-found'?"No account found with that email.":e.code==='auth/invalid-email'?"Invalid email address.":e.message;setAuthError(msg);}};
+  const signOut=async()=>{unsubs.current.forEach(fn=>fn());unsubs.current=[];await auth.signOut();setHist({});setSwaps({});setCustomEx({});setSsLinks({});setExOrder({});setExEdits({});setBodyWt({});setScreen("home");};
+
+  const dayKey=`${planId}-${phaseIdx}-${dayIdx}`;
+  const getExs=useCallback(()=>{if(!day)return[];const base=day.exercises.map((e,i)=>{const sk=`${planId}-${phaseIdx}-${dayIdx}-${i}`;const sw=swaps[sk];let ex=(sw&&sw!==e.name)?{...e,name:sw,orig:e.name,cues:`Swapped from ${e.name}. Focus on form and controlled reps.`}:{...e};const ek=`${planId}-${phaseIdx}-${dayIdx}-${i}`;const ed=exEdits[ek];if(ed){if(ed.name)ex.name=ed.name;if(ed.sets)ex.sets=ed.sets;if(ed.cues)ex.cues=ed.cues;if(ed.group){ex.group=ed.group;}ex.edited=true;}ex._origIdx=i;return ex;});const ck=`${planId}-${phaseIdx}-${dayIdx}`;const cust=customEx[ck]||[];cust.forEach((c,ci)=>{base.push({name:c.name,sets:c.sets||"3×10–12",cues:c.cues||"Custom exercise. Focus on form and controlled reps.",group:c.group||"other",custom:true,_origIdx:day.exercises.length+ci});});const order=exOrder[ck];if(order&&order.length===base.length){const reordered=order.map(i=>base[i]).filter(Boolean);if(reordered.length===base.length)return reordered;}return base;},[day,swaps,planId,phaseIdx,dayIdx,customEx,exOrder,exEdits]);
+  const getPrev=useCallback(()=>{const pf=`${planId}-${phaseIdx}-${dayIdx}`;const ss=Object.entries(hist).filter(([k])=>k.startsWith(pf)).sort(([a],[b])=>b.localeCompare(a));if(ss.length>0&&ss[0][0]!==`${pf}-${today}`)return ss[0][1];if(ss.length>1)return ss[1][1];return null;},[hist,planId,phaseIdx,dayIdx,today]);
+  const initLog=useCallback(()=>{const k=`${planId}-${phaseIdx}-${dayIdx}-${today}`;if(hist[k]){setLog(hist[k]);setWkNotes(hist[k]._notes||"");return;}const l={};getExs().forEach((e,i)=>{if(DURATION_EX.has(e.name)){l[i]={name:e.name,sets:[{weight:"",reps:""}]};}else{const n=parseInt(e.sets)||3;l[i]={name:e.name,sets:Array(Math.min(n,6)).fill(0).map(()=>({weight:"",reps:""}))};}});setLog(l);setWkNotes("");},[planId,phaseIdx,dayIdx,today,hist,getExs]);
+
+  const go=(p,d)=>{setPhaseIdx(p);setDayIdx(d);setScreen("workout");setOpenEx(null);setSaved(false);setSwapPanel(null);setAddExForm(null);setAddExName("");setDelConfirm(false);setEditPanel(null);history.pushState({screen:"workout"},"");};
+  useEffect(()=>{if(screen==="workout"&&user)initLog();},[screen,phaseIdx,dayIdx,planId,user]);
+  useEffect(()=>{history.replaceState({screen:"home"},"");const onPop=(e)=>{const s=e.state&&e.state.screen||"home";setScreen(s);setOpenEx(null);setSwapPanel(null);setProgOpen(null);};window.addEventListener("popstate",onPop);return()=>window.removeEventListener("popstate",onPop);},[]);
+
+  // REST TIMER
+  const parseRest=(s)=>{if(!s)return 90;const m=s.match(/(\d+)/g);return m?parseInt(m[m.length-1]):90;};
+  const restDefault=parseRest(phase?.rest);
+  useEffect(()=>{if(!restRunning||restSec<=0){if(restSec<=0)setRestRunning(false);return;}const t=setInterval(()=>setRestSec(p=>p-1),1000);return()=>clearInterval(t);},[restRunning,restSec]);
+
+  // SESSION DURATION
+  useEffect(()=>{if(screen==="workout"){setSessionStart(Date.now());setElapsed(0);}else{setSessionStart(null);}},[screen,phaseIdx,dayIdx]);
+  useEffect(()=>{if(!sessionStart||screen!=="workout")return;const t=setInterval(()=>setElapsed(Math.floor((Date.now()-sessionStart)/1000)),1000);return()=>clearInterval(t);},[sessionStart,screen]);
+  const fmtElapsed=(s)=>{const m=Math.floor(s/60);const sec=s%60;return m>0?`${m}m ${sec<10?"0":""}${sec}s`:`${sec}s`;};
+
+  const upd=(ei,si,f,v)=>{setLog(p=>{const n={...p};const el={...n[ei]};const s=[...el.sets];s[si]={...s[si],[f]:v};el.sets=s;n[ei]=el;return n;});setSaved(false);if(v&&f==="reps"&&!DURATION_EX.has(exs[ei]?.name)){setRestSec(restDefault);setRestRunning(true);}};
+  const addS=(ei)=>setLog(p=>{const n={...p};const el={...n[ei]};el.sets=[...el.sets,{weight:"",reps:""}];n[ei]=el;return n;});
+  const rmS=(ei)=>setLog(p=>{const n={...p};const el={...n[ei]};if(el.sets.length>1)el.sets=el.sets.slice(0,-1);n[ei]=el;return n;});
+
+  const save=async()=>{if(!user)return;const k=`${planId}-${phaseIdx}-${dayIdx}-${today}`;
+    // Detect PRs before saving
+    const newPRs=[];Object.values(log).forEach(ex=>{if(!ex.name||DURATION_EX.has(ex.name))return;const oldBest=Stats.getPR(hist,planId,ex.name);let curBest=0;ex.sets.forEach(s=>{const w=parseFloat(s.weight)||0;if(w>curBest)curBest=w;});if(curBest>0&&curBest>oldBest)newPRs.push({name:ex.name,weight:curBest});});
+    const dur=sessionStart?Math.floor((Date.now()-sessionStart)/60000):0;
+    const nh={...hist,[k]:{...log,_duration:dur,_notes:wkNotes||""}};setHist(nh);setSyncing(true);await Cloud.save(user.uid,"history",nh);setSyncing(false);setSaved(true);
+    if(newPRs.length>0){setPrToast(newPRs);setTimeout(()=>setPrToast(null),5000);}
+    setTimeout(()=>setSaved(false),3000);};
+  const doSwap=async(ei,nm)=>{if(!user)return;const sk=`${planId}-${phaseIdx}-${dayIdx}-${ei}`;const ns={...swaps,[sk]:nm};setSwaps(ns);Cloud.save(user.uid,"swaps",ns);setLog(p=>{const n={...p};if(n[ei])n[ei]={...n[ei],name:nm};return n;});setSwapPanel(null);};
+
+  // REORDER
+  const getCurOrder=()=>{const ck=dayKey;const cur=exOrder[ck];const len=exs.length;if(cur&&cur.length===len)return[...cur];return Array.from({length:len},(_,i)=>i);};
+  const isReordered=useMemo(()=>{const ck=dayKey;const cur=exOrder[ck];if(!cur)return false;return cur.some((v,i)=>v!==i);},[exOrder,dayKey]);
+  const moveEx=async(ei,dir)=>{if(!user)return;const cur=getCurOrder();const ni=ei+dir;if(ni<0||ni>=cur.length)return;const tmp=cur[ei];cur[ei]=cur[ni];cur[ni]=tmp;const no={...exOrder,[dayKey]:cur};setExOrder(no);Cloud.save(user.uid,"exOrder",no);setOpenEx(null);};
+  const resetOrder=async()=>{if(!user)return;const no={...exOrder};delete no[dayKey];setExOrder(no);Cloud.save(user.uid,"exOrder",no);};
+
+  // EDIT EXERCISE
+  const startEdit=(ei,ex)=>{setEditPanel(ei);setEditName(ex.name);setEditSets(ex.sets);setEditCues(ex.cues||"");setEditGroup(ex.group||"other");};
+  const saveEdit=async(ei)=>{if(!user)return;const ex=exs[ei];if(ex.custom){const ck=dayKey;const nc={...customEx};const arr=[...(nc[ck]||[])];const ci=ex._origIdx-day.exercises.length;if(ci>=0&&ci<arr.length){arr[ci]={...arr[ci],name:editName.trim()||arr[ci].name,sets:editSets||arr[ci].sets,cues:editCues,group:editGroup};nc[ck]=arr;setCustomEx(nc);Cloud.save(user.uid,"customEx",nc);}}else{const ek=`${dayKey}-${ex._origIdx}`;const ne={...exEdits,[ek]:{name:editName.trim(),sets:editSets,cues:editCues,group:editGroup}};setExEdits(ne);Cloud.save(user.uid,"exEdits",ne);}setEditPanel(null);};
+  const clearEdit=async(ei)=>{if(!user)return;const ex=exs[ei];const ek=`${dayKey}-${ex._origIdx}`;const ne={...exEdits};delete ne[ek];setExEdits(ne);Cloud.save(user.uid,"exEdits",ne);setEditPanel(null);};
+
+  const clearEx=(ei)=>{setLog(p=>{const n={...p};if(n[ei]){const numSets=n[ei].sets?.length||3;n[ei]={...n[ei],sets:Array(numSets).fill(0).map(()=>({weight:"",reps:""}))};}return n;});setSaved(false);};
+  const deleteSession=async(key)=>{if(!user)return;const k=key||`${planId}-${phaseIdx}-${dayIdx}-${today}`;const nh={...hist};delete nh[k];setHist(nh);setSyncing(true);await Cloud.save(user.uid,"history",nh);setSyncing(false);if(!key||k===`${planId}-${phaseIdx}-${dayIdx}-${today}`){initLog();}setDelConfirm(false);setSaved(false);};
+  const addExercise=async()=>{if(!user||!addExName.trim())return;const ck=`${planId}-${phaseIdx}-${dayIdx}`;const nc={...customEx};const arr=[...(nc[ck]||[])];arr.push({name:addExName.trim(),group:addExGroup,sets:`${addExSets}×10–12`});nc[ck]=arr;setCustomEx(nc);Cloud.save(user.uid,"customEx",nc);const newIdx=day.exercises.length+arr.length-1;setLog(p=>({...p,[newIdx]:{name:addExName.trim(),sets:Array(parseInt(addExSets)||3).fill(0).map(()=>({weight:"",reps:""}))}}));setAddExForm(null);setAddExName("");setAddExGroup("chest");setAddExSets("3");};
+  const removeCustomEx=async(ci)=>{if(!user)return;const ck=`${planId}-${phaseIdx}-${dayIdx}`;const nc={...customEx};const arr=[...(nc[ck]||[])];arr.splice(ci,1);nc[ck]=arr;setCustomEx(nc);Cloud.save(user.uid,"customEx",nc);};
+  const toggleSS=async(ei)=>{if(!user)return;const sk=`${planId}-${phaseIdx}-${dayIdx}-${ei}`;const ns={...ssLinks};if(ns[sk])delete ns[sk];else ns[sk]=true;setSsLinks(ns);Cloud.save(user.uid,"ssLinks",ns);};
+
+  // CSV EXPORT
+  const exportCSV=()=>{const rows=[["Date","Day","Exercise","Set","Weight","Reps"]];Object.entries(hist).filter(([k])=>k.startsWith(planId+"-")).sort(([a],[b])=>a.localeCompare(b)).forEach(([k,v])=>{const parts=k.split("-");const date=parts.slice(3).join("-");const pi=parseInt(parts[1]);const di=parseInt(parts[2]);const dayTitle=plan.phases[pi]?.days[di]?.title||"";Object.values(v).forEach(ex=>{if(!ex.name||ex.name.startsWith("_"))return;ex.sets?.forEach((s,si)=>{if(s.weight||s.reps)rows.push([date,dayTitle,ex.name,si+1,s.weight||"",s.reps||""]);});});});const csv=rows.map(r=>r.map(c=>`"${c}"`).join(",")).join("\n");const blob=new Blob([csv],{type:"text/csv"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`wieser_workouts_${planId}_${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);};
+
+  // BODY WEIGHT (weekly)
+  const getWeekKey=(d)=>{const dt=new Date(d+"T12:00:00");const day=dt.getDay();const diff=day===0?6:day-1;dt.setDate(dt.getDate()-diff);return dt.toISOString().slice(0,10);};
+  const weekKey=getWeekKey(today);
+  const bwThisWeek=bodyWt[weekKey];
+  const saveBW=async()=>{if(!user||!bwInput)return;const nb={...bodyWt,[weekKey]:parseFloat(bwInput)};setBodyWt(nb);Cloud.save(user.uid,"bodyWeight",nb);setBwInput("");};
+
+  // THEME TOGGLE
+  const toggleTheme=()=>{const nt=theme==="dark"?"light":"dark";setTheme(nt);if(user)Cloud.save(user.uid,"prefs",{theme:nt});};
+
+  const prev=getPrev();const exs=getExs();
+  const isSS=(ei)=>ssLinks[`${planId}-${phaseIdx}-${dayIdx}-${ei}`];
+  const dayCustomCount=useMemo(()=>(customEx[`${planId}-${phaseIdx}-${dayIdx}`]||[]).length,[customEx,planId,phaseIdx,dayIdx]);
+
+  const dayOptions=useMemo(()=>{const opts=[{value:"all",label:"All Workouts"}];plan.phases.forEach((ph,pi)=>{ph.days.forEach((d,di)=>{if(Object.keys(hist).some(k=>k.startsWith(`${planId}-${pi}-${di}-`)))opts.push({value:`${pi}-${di}`,label:`P${pi+1} ${d.title} — ${d.sub}`});});});return opts;},[plan,hist,planId]);
+
+  const filteredSessions=useMemo(()=>{if(progDay==="all"){const all=[];plan.phases.forEach((ph,pi)=>{ph.days.forEach((d,di)=>{Stats.getSessions(hist,planId,pi,di).forEach(s=>{all.push({...s,phase:pi,day:di,dayTitle:d.title,daySub:d.sub});});});});return all.sort((a,b)=>b.date.localeCompare(a.date));}else{const[pi,di]=progDay.split("-").map(Number);const d=plan.phases[pi]?.days[di];return Stats.getSessions(hist,planId,pi,di).map(s=>({...s,phase:pi,day:di,dayTitle:d?.title||"",daySub:d?.sub||""})).sort((a,b)=>b.date.localeCompare(a.date));}},[hist,planId,plan,progDay]);
+
+  // LOADING
+  if(user===undefined)return<div style={{display:"flex",justifyContent:"center",alignItems:"center",height:"100vh",background:C.bg}}><div style={{textAlign:"center",color:C.fnt}}><DBIcon s={36}/><div style={{marginTop:12,fontFamily:"Outfit",fontWeight:700}}>Loading...</div></div></div>;
+
+  // SIGN IN
+  if(user===null)return(
+    <div style={{display:"flex",justifyContent:"center",alignItems:"center",height:"100vh",background:C.bg,padding:24}}>
+      <div className="fade-in" style={{textAlign:"center",maxWidth:380}}>
+        <div style={{marginBottom:28}}><DBIcon s={44}/><div style={{fontFamily:"Outfit",fontWeight:800,fontSize:28,marginTop:12,letterSpacing:"-0.5px"}}><span style={{color:C.acc}}>WIESER</span> WORKOUTS</div><div style={{color:C.dim,fontSize:14,marginTop:8,lineHeight:1.6}}>12-week hypertrophy training.<br/>Track progress across all your devices.</div></div>
+        <button onClick={signIn} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,width:"100%",padding:"14px 20px",borderRadius:12,border:`1px solid ${C.sbdr}`,background:C.card,color:C.txt,fontSize:15,fontWeight:600,cursor:"pointer"}}><GoogleIcon/> Sign in with Google</button>
+        <div style={{display:"flex",alignItems:"center",gap:12,margin:"20px 0"}}><div style={{flex:1,height:1,background:C.sbdr}}/><span style={{fontSize:12,color:C.fnt,fontWeight:600}}>or</span><div style={{flex:1,height:1,background:C.sbdr}}/></div>
+        <div style={{textAlign:"left"}}>
+          <input type="email" placeholder="Email" value={emailIn} onChange={e=>setEmailIn(e.target.value)} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:"12px 14px",color:C.txt,fontSize:14,outline:"none",marginBottom:8,boxSizing:"border-box",fontFamily:"inherit"}}/>
+          <input type="password" placeholder="Password" value={passIn} onChange={e=>setPassIn(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){authMode==="signin"?emailSignIn():emailSignUp();}}} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:"12px 14px",color:C.txt,fontSize:14,outline:"none",marginBottom:12,boxSizing:"border-box",fontFamily:"inherit"}}/>
+          <button onClick={authMode==="signin"?emailSignIn:emailSignUp} style={{width:"100%",padding:"14px 20px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer"}}>{authMode==="signin"?"Sign In":"Create Account"}</button>
+          {authMode==="signin"&&<button onClick={resetPassword} style={{background:"none",border:"none",color:C.fnt,fontSize:12,cursor:"pointer",marginTop:10,padding:0}}>Forgot password?</button>}
+          <div style={{marginTop:12,fontSize:13,color:C.dim}}>{authMode==="signin"?<>Don't have an account? <button onClick={()=>{setAuthMode("signup");setAuthError(null);}} style={{background:"none",border:"none",color:C.acc,fontWeight:700,cursor:"pointer",padding:0,fontSize:13}}>Sign Up</button></>:<>Already have an account? <button onClick={()=>{setAuthMode("signin");setAuthError(null);}} style={{background:"none",border:"none",color:C.acc,fontWeight:700,cursor:"pointer",padding:0,fontSize:13}}>Sign In</button></>}</div>
+        </div>
+        {authError&&<div style={{marginTop:12,padding:"10px 14px",background:authError.includes("sent")?"#22C55E18":"#EF444418",border:authError.includes("sent")?"1px solid #22C55E30":"1px solid #EF444430",borderRadius:8,color:authError.includes("sent")?"#22C55E":"#EF4444",fontSize:12,textAlign:"left"}}>{authError}</div>}
+        <div style={{marginTop:20,color:C.fnt,fontSize:12,lineHeight:1.6}}>Your workout data syncs securely.<br/>Only you can access your data.</div>
+      </div>
+    </div>);
+
+  // MAIN RETURN
+  return(
+  <div style={{background:C.bg,minHeight:"100vh",color:C.txt,paddingBottom:screen==="workout"?"130px":"0"}}>
+    {/* HEADER */}
+    <div style={{background:`linear-gradient(180deg,${C.card},${C.bg})`,borderBottom:`1px solid ${C.bdr}`,padding:"12px 16px",position:"sticky",top:0,zIndex:50}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",maxWidth:600,margin:"0 auto"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {screen!=="home"&&<button onClick={()=>{history.back();}} style={{background:"none",border:"none",color:C.acc,fontSize:14,fontWeight:600,cursor:"pointer"}}>← Back</button>}
+          <div style={{fontFamily:"Outfit",fontWeight:800,fontSize:18,letterSpacing:"-0.5px",display:"flex",alignItems:"center",gap:6}}><DBIcon s={20}/><span style={{color:C.acc}}>WIESER</span><span> WORKOUTS</span></div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          {syncing&&<span className="syncing" style={{fontSize:10,color:C.acc}}>syncing...</span>}
+          <div style={{position:"relative"}}>
+            <button onClick={()=>setPlanMenu(!planMenu)} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"6px 12px",color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>{plan.id.toUpperCase()} <Chev up={planMenu} s={14}/></button>
+            {planMenu&&(
+              <div style={{position:"absolute",right:0,top:"100%",marginTop:4,background:C.card,border:`1px solid ${C.sbdr}`,borderRadius:10,overflow:"hidden",minWidth:240,boxShadow:"0 12px 40px rgba(0,0,0,.6)",zIndex:60}}>
+                {ALL.map(p=>(<button key={p.id} onClick={()=>{setPlanId(p.id);setPhaseIdx(0);setDayIdx(0);setPlanMenu(false);setScreen("home");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:p.id===planId?C.srf:"transparent",border:"none",borderBottom:`1px solid ${C.bdr}`,color:C.txt,cursor:"pointer"}}><div style={{fontWeight:700,fontSize:13,color:p.id===planId?C.acc:C.txt}}>{p.name}</div><div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}</div></button>))}
+                <div style={{borderTop:`1px solid ${C.bdr}`,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>{user.photoURL&&<img src={user.photoURL} style={{width:24,height:24,borderRadius:12}} referrerPolicy="no-referrer"/>}<span style={{fontSize:11,color:C.dim,maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user.displayName||user.email}</span></div>
+                  <button onClick={toggleTheme} style={{background:"none",border:`1px solid ${C.sbdr}`,borderRadius:6,padding:"4px 10px",color:C.dim,fontSize:11,fontWeight:600,cursor:"pointer"}}>{theme==="dark"?"☀️":"🌙"}</button><button onClick={signOut} style={{background:"none",border:`1px solid ${C.sbdr}`,borderRadius:6,padding:"4px 10px",color:"#EF4444",fontSize:11,fontWeight:600,cursor:"pointer"}}>Sign Out</button>
+                </div>
+              </div>)}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style={{maxWidth:600,margin:"0 auto"}}>
+
+    {/* ══════ HOME ══════ */}
+    {screen==="home"&&(
+      <div className="fade-in" style={{padding:"16px 16px 80px"}}>
+        <div style={{background:"linear-gradient(135deg,#1A1420,#141A22)",borderRadius:16,padding:"20px 18px",marginBottom:12,border:`1px solid ${C.bdr}`}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+            <div><div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:C.acc,lineHeight:1.2}}>{plan.name}</div><div style={{color:C.dim,fontSize:13,marginTop:4}}>{plan.subtitle}</div></div>
+            {weekNum>0&&(<div style={{background:C.acc+"18",border:`1px solid ${C.acc}30`,borderRadius:10,padding:"8px 12px",textAlign:"center",flexShrink:0}}><div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:C.acc,lineHeight:1}}>{weekNum}</div><div style={{fontSize:9,color:C.acc,fontWeight:600,letterSpacing:"0.5px",marginTop:2}}>WEEK</div></div>)}
+          </div>
+          <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
+            {weekNum>0?(<><span style={{background:C.grn+"18",color:C.grn,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>Week {weekNum} of 12</span><span style={{background:"#5B8DEF18",color:"#5B8DEF",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{totalSessions} sessions logged</span>{bwThisWeek&&<span style={{background:"#F59E0B18",color:"#F59E0B",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{bwThisWeek} lbs</span>}</>):(["Mon/Wed/Fri","Full Body","12 Weeks","3 Phases"].map(t=>(<span key={t} style={{background:C.acc+"18",color:C.acc,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{t}</span>)))}
+          </div>
+          {weekNum>0&&(<div style={{marginTop:12}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:10,color:C.fnt}}>Progress</span><span style={{fontSize:10,color:C.fnt}}>{Math.round((weekNum/12)*100)}%</span></div><div style={{height:6,background:C.srf,borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${(weekNum/12)*100}%`,background:`linear-gradient(90deg,${C.acc},#FF9F5C)`,borderRadius:3,transition:"width 0.5s"}}/></div></div>)}
+        </div>
+
+        {totalSessions>0&&(<button onClick={()=>{setScreen("progress");setProgEx(loggedExercises[0]||"");setProgDay("all");setProgOpen(null);history.pushState({screen:"progress"},"");}} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",padding:"14px",background:"linear-gradient(135deg,#1A1A2E,#16213E)",border:`1px solid #5B8DEF30`,borderRadius:12,color:"#5B8DEF",fontSize:14,fontWeight:700,cursor:"pointer",marginBottom:20}}><ChartIcon s={18}/> View Progress & History</button>)}
+
+{/* BODY WEIGHT LOG - weekly */}
+        {!bwThisWeek?(
+        <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"14px 16px",marginBottom:16}}>
+          <div style={{fontSize:11,color:"#F59E0B",fontWeight:700,letterSpacing:"0.5px",marginBottom:8}}>WEEKLY WEIGH-IN</div>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <input type="number" inputMode="decimal" step="0.1" placeholder="This week's weight" value={bwInput} onChange={e=>setBwInput(e.target.value)} style={{flex:1,background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"10px 12px",color:C.txt,fontSize:14,fontWeight:600,outline:"none",boxSizing:"border-box",fontFamily:"inherit"}}/>
+            <span style={{fontSize:13,color:C.dim,fontWeight:600}}>lbs</span>
+            <button onClick={saveBW} style={{background:C.acc,border:"none",borderRadius:8,padding:"10px 14px",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>Log</button>
+          </div>
+          {(()=>{const entries=Object.entries(bodyWt).filter(([k,v])=>v>0).sort(([a],[b])=>a.localeCompare(b));if(entries.length>0){const latest=entries[entries.length-1];return(<div style={{marginTop:8,fontSize:11,color:C.dim}}>Last: <b style={{color:C.txt}}>{latest[1]} lbs</b> <span style={{color:C.fnt}}>({Stats.fmtDate(latest[0])})</span></div>);}return null;})()}
+        </div>):null}
+
+        {plan.phases.map((ph,pi)=>(
+          <div key={pi} style={{marginBottom:20}}>
+            <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:8}}><span style={{fontFamily:"Outfit",fontSize:17,fontWeight:700}}>{ph.title}</span><span style={{fontSize:12,color:C.fnt}}>{ph.weeks}</span></div>
+            <div style={{color:C.dim,fontSize:12,marginBottom:8,lineHeight:1.5}}>{ph.desc}</div>
+            <div style={{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}}><span style={{fontSize:11,color:"#5B8DEF",background:"#5B8DEF18",padding:"2px 8px",borderRadius:6}}>{ph.sr}</span><span style={{fontSize:11,color:"#A78BFA",background:"#A78BFA18",padding:"2px 8px",borderRadius:6}}>{ph.rir}</span><span style={{fontSize:11,color:"#F59E0B",background:"#F59E0B18",padding:"2px 8px",borderRadius:6}}>{ph.rest}</span></div>
+            {ph.days.map((d,di)=>{const sc=Stats.getSessions(hist,planId,pi,di).length;return(
+              <button key={di} onClick={()=>go(pi,di)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"14px 16px",cursor:"pointer",textAlign:"left",marginBottom:6}}>
+                <div><div style={{fontWeight:700,fontSize:15,color:C.txt}}>{d.title} <span style={{fontWeight:400,color:C.dim,fontSize:13}}>— {d.sub}</span></div><div style={{fontSize:11,color:C.fnt,marginTop:3}}>{d.exercises.length} exercises{sc>0&&` · ${sc} session${sc>1?'s':''} logged`}</div></div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>{sc>0&&<span style={{width:8,height:8,borderRadius:4,background:C.grn}}/>}<span style={{color:C.acc,fontSize:20}}>→</span></div>
+              </button>);})}
+          </div>))}
+      </div>)}
+
+    {/* ══════ PROGRESS SCREEN ══════ */}
+    {screen==="progress"&&(
+      <div className="fade-in" style={{padding:"16px 16px 80px"}}>
+        {/* Stats row */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
+          <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"14px 12px",textAlign:"center"}}><div style={{fontFamily:"Outfit",fontSize:24,fontWeight:800,color:C.acc}}>{weekNum||"–"}</div><div style={{fontSize:10,color:C.fnt,fontWeight:600,marginTop:2}}>WEEK</div></div>
+          <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"14px 12px",textAlign:"center"}}><div style={{fontFamily:"Outfit",fontSize:24,fontWeight:800,color:C.grn}}>{totalSessions}</div><div style={{fontSize:10,color:C.fnt,fontWeight:600,marginTop:2}}>SESSIONS</div></div>
+          <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"14px 12px",textAlign:"center"}}><div style={{fontFamily:"Outfit",fontSize:24,fontWeight:800,color:"#5B8DEF"}}>{loggedExercises.length}</div><div style={{fontSize:10,color:C.fnt,fontWeight:600,marginTop:2}}>EXERCISES</div></div>
+        </div>
+
+        {/* Total Mileage */}
+        {(()=>{const machines=[...MILES_EX].filter(m=>loggedExercises.includes(m));return machines.length>0&&(
+          <div style={{display:"grid",gridTemplateColumns:machines.length===1?"1fr":"1fr 1fr",gap:8,marginBottom:16}}>
+            {machines.map(m=>{const mi=Stats.getTotalMiles(hist,planId,m);return(
+              <div key={m} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"14px 12px",textAlign:"center"}}>
+                <div style={{fontFamily:"Outfit",fontSize:24,fontWeight:800,color:"#F59E0B"}}>{mi||"0"}</div>
+                <div style={{fontSize:10,color:C.fnt,fontWeight:600,marginTop:2}}>{m.toUpperCase()} MILES</div>
+              </div>);})}
+          </div>);})()}
+
+{/* BODY WEIGHT CHART */}
+        {(()=>{const entries=Object.entries(bodyWt).filter(([k,v])=>v>0).sort(([a],[b])=>a.localeCompare(b));if(entries.length<2)return null;const pts=entries.map(([d,w])=>({date:d,weight:w}));return(
+          <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:14,padding:"16px",marginBottom:16}}>
+            <div style={{fontSize:11,color:"#F59E0B",fontWeight:700,letterSpacing:"0.5px",marginBottom:10}}>⚖️ BODY WEIGHT OVER TIME</div>
+            <MiniChart points={pts} width={340} height={160} unit="lbs" c={C}/>
+            <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
+              <div style={{background:C.srf,borderRadius:8,padding:"6px 10px",flex:1,textAlign:"center"}}><div style={{fontSize:10,color:C.fnt}}>START</div><div style={{fontSize:14,fontWeight:700,color:C.txt}}>{pts[0].weight} lbs</div></div>
+              <div style={{background:C.srf,borderRadius:8,padding:"6px 10px",flex:1,textAlign:"center"}}><div style={{fontSize:10,color:C.fnt}}>CURRENT</div><div style={{fontSize:14,fontWeight:700,color:C.txt}}>{pts[pts.length-1].weight} lbs</div></div>
+              <div style={{background:C.srf,borderRadius:8,padding:"6px 10px",flex:1,textAlign:"center"}}><div style={{fontSize:10,color:C.fnt}}>CHANGE</div><div style={{fontSize:14,fontWeight:700,color:(pts[pts.length-1].weight-pts[0].weight)<=0?C.grn:"#EF4444"}}>{(pts[pts.length-1].weight-pts[0].weight)>0?"+":""}{Math.round((pts[pts.length-1].weight-pts[0].weight)*10)/10} lbs</div></div>
+            </div>
+          </div>);})()}
+
+        {/* EXERCISE PROGRESS CHART */}
+        <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:14,padding:"16px",marginBottom:16}}>
+          <div style={{fontSize:11,color:C.acc,fontWeight:700,letterSpacing:"0.5px",marginBottom:10}}>{DURATION_EX.has(progEx)?"🚴 DURATION OVER TIME":"📈 STRENGTH OVER TIME"}</div>
+          <select value={progEx} onChange={e=>setProgEx(e.target.value)} style={{marginBottom:12}}>
+            {loggedExercises.map(n=><option key={n} value={n}>{n}</option>)}
+          </select>
+          <MiniChart points={exHistory} width={340} height={180} unit={DURATION_EX.has(progEx)?"min":"lbs"} c={C}/>
+
+          {exHistory.length>=2&&(
+            <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}>
+              <div style={{background:C.srf,borderRadius:8,padding:"8px 12px",flex:1}}>
+                <div style={{fontSize:10,color:C.fnt,marginBottom:2}}>FIRST</div>
+                <div style={{fontSize:15,fontWeight:700,color:C.txt}}>{exHistory[0].weight} {DURATION_EX.has(progEx)?"min":"lbs"} {!DURATION_EX.has(progEx)&&<span style={{fontSize:11,color:C.dim}}>× {exHistory[0].reps}</span>}{MILES_EX.has(progEx)&&exHistory[0].reps>0&&<span style={{fontSize:11,color:"#F59E0B",marginLeft:4}}>{exHistory[0].reps} mi</span>}</div>
+                <div style={{fontSize:10,color:C.fnt}}>{Stats.fmtDate(exHistory[0].date)}</div>
+              </div>
+              <div style={{background:C.srf,borderRadius:8,padding:"8px 12px",flex:1}}>
+                <div style={{fontSize:10,color:C.fnt,marginBottom:2}}>LATEST</div>
+                <div style={{fontSize:15,fontWeight:700,color:C.txt}}>{exHistory[exHistory.length-1].weight} {DURATION_EX.has(progEx)?"min":"lbs"} {!DURATION_EX.has(progEx)&&<span style={{fontSize:11,color:C.dim}}>× {exHistory[exHistory.length-1].reps}</span>}{MILES_EX.has(progEx)&&exHistory[exHistory.length-1].reps>0&&<span style={{fontSize:11,color:"#F59E0B",marginLeft:4}}>{exHistory[exHistory.length-1].reps} mi</span>}</div>
+                <div style={{fontSize:10,color:C.fnt}}>{Stats.fmtDate(exHistory[exHistory.length-1].date)}</div>
+              </div>
+              {pctChange!==null&&(
+                <div style={{background:pctChange>=0?C.grn+"12":"#EF444412",border:`1px solid ${pctChange>=0?C.grn+"30":"#EF444430"}`,borderRadius:8,padding:"8px 12px",flex:1,textAlign:"center",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                  <div style={{fontSize:10,color:C.fnt,marginBottom:2}}>CHANGE</div>
+                  <div style={{fontSize:18,fontWeight:800,color:pctChange>=0?C.grn:"#EF4444"}}>{pctChange>=0?"+":""}{pctChange}%</div>
+                </div>)}
+            </div>)}
+
+          {/* All data points table */}
+          {exHistory.length>0&&(
+            <div style={{marginTop:12}}>
+              <div style={{fontSize:10,color:C.fnt,fontWeight:600,marginBottom:6,letterSpacing:"0.5px"}}>ALL SESSIONS — {progEx.toUpperCase()}</div>
+              <div style={{background:C.srf,borderRadius:8,overflow:"hidden",border:`1px solid ${C.sbdr}`}}>
+                {DURATION_EX.has(progEx)?(
+                  <div>
+                    <div style={{display:"grid",gridTemplateColumns:MILES_EX.has(progEx)?"1fr 80px 70px":"1fr 80px",padding:"6px 10px",borderBottom:`1px solid ${C.bdr}`,fontSize:10,color:C.fnt,fontWeight:600}}><span>DATE</span><span style={{textAlign:"right"}}>DURATION</span>{MILES_EX.has(progEx)&&<span style={{textAlign:"right"}}>MILES</span>}</div>
+                    {exHistory.slice().reverse().map((p,i)=>(
+                      <div key={i} style={{display:"grid",gridTemplateColumns:MILES_EX.has(progEx)?"1fr 80px 70px":"1fr 80px",padding:"8px 10px",borderBottom:i<exHistory.length-1?`1px solid ${C.bdr}`:"none",fontSize:13}}>
+                        <span style={{color:C.dim,fontSize:12}}>{Stats.fmtDateFull(p.date)}</span>
+                        <span style={{textAlign:"right",fontWeight:700,color:C.acc}}>{p.weight} min</span>
+                        {MILES_EX.has(progEx)&&<span style={{textAlign:"right",fontWeight:700,color:"#F59E0B"}}>{p.reps||"–"}{p.reps?" mi":""}</span>}
+                      </div>))}
+                  </div>
+                ):(
+                  <div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 70px 50px 80px",padding:"6px 10px",borderBottom:`1px solid ${C.bdr}`,fontSize:10,color:C.fnt,fontWeight:600}}><span>DATE</span><span style={{textAlign:"center"}}>WEIGHT</span><span style={{textAlign:"center"}}>REPS</span><span style={{textAlign:"right"}}>VOLUME</span></div>
+                    {exHistory.slice().reverse().map((p,i)=>(
+                      <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 70px 50px 80px",padding:"8px 10px",borderBottom:i<exHistory.length-1?`1px solid ${C.bdr}`:"none",fontSize:13}}>
+                        <span style={{color:C.dim,fontSize:12}}>{Stats.fmtDateFull(p.date)}</span>
+                        <span style={{textAlign:"center",fontWeight:700,color:C.acc}}>{p.weight}</span>
+                        <span style={{textAlign:"center",color:C.txt}}>{p.reps}</span>
+                        <span style={{textAlign:"right",color:C.fnt,fontSize:12}}>{p.volume.toLocaleString()} lbs</span>
+                      </div>))}
+                  </div>
+                )}
+              </div>
+            </div>)}
+        </div>
+
+        {/* EXPORT */}
+        <button onClick={exportCSV} style={{width:"100%",padding:"12px",background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,color:C.dim,fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>📥 Export All Data (CSV)</button>
+
+        {/* SESSION HISTORY */}
+        <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:14,padding:"16px"}}>
+          <div style={{fontSize:11,color:"#5B8DEF",fontWeight:700,letterSpacing:"0.5px",marginBottom:10}}>📋 SESSION HISTORY</div>
+          <select value={progDay} onChange={e=>{setProgDay(e.target.value);setProgOpen(null);}} style={{marginBottom:12}}>
+            {dayOptions.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          {filteredSessions.length===0&&(<div style={{color:C.fnt,fontSize:13,padding:"20px 0",textAlign:"center"}}>No sessions found for this filter.</div>)}
+          {filteredSessions.map((session,si)=>{
+            const isOpen=progOpen===si;
+            const exEntries=Object.values(session.data).filter(ex=>ex.sets&&ex.sets.some(s=>s.weight||s.reps));
+            const sessKey=`${planId}-${session.phase}-${session.day}-${session.date}`;
+            return(
+              <div key={si} style={{background:C.srf,border:`1px solid ${isOpen?C.acc+"44":C.sbdr}`,borderRadius:10,marginBottom:6,overflow:"hidden"}}>
+                <button onClick={()=>setProgOpen(isOpen?null:si)} style={{display:"flex",width:"100%",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",background:"none",border:"none",cursor:"pointer",textAlign:"left"}}>
+                  <div><div style={{fontWeight:700,fontSize:14,color:C.txt}}>{Stats.fmtDateFull(session.date)}</div><div style={{fontSize:11,color:C.fnt,marginTop:2}}>{session.dayTitle} — {session.daySub} · {exEntries.length} exercises{session.data._duration>0&&<span style={{color:"#5B8DEF"}}> · ⏱ {session.data._duration}m</span>}</div></div>
+                  <Chev up={isOpen} s={16}/>
+                </button>
+                {isOpen&&(
+                  <div style={{padding:"0 14px 14px",borderTop:`1px solid ${C.bdr}`}}>
+                    {exEntries.map((ex,ei)=>(
+                      <div key={ei} style={{marginTop:10}}>
+                        <div style={{fontSize:12,fontWeight:700,color:C.txt,marginBottom:4}}><span style={{color:GC[EX_GRP[ex.name]]||C.fnt}}>●</span> {ex.name}</div>
+                        <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                          {ex.sets.map((s,j)=>(s.weight||s.reps)?(<span key={j} style={{background:C.bg,border:`1px solid ${C.bdr}`,borderRadius:6,padding:"3px 8px",fontSize:12,color:C.dim}}>{DURATION_EX.has(ex.name)?(<><span style={{color:C.acc,fontWeight:700}}>{s.weight||"–"} min</span>{MILES_EX.has(ex.name)&&s.reps&&<span style={{color:"#F59E0B",fontWeight:700,marginLeft:4}}>{s.reps} mi</span>}</>):(<><span style={{color:C.acc,fontWeight:700}}>{s.weight||"–"}</span> × <span style={{fontWeight:600}}>{s.reps||"–"}</span></>)}</span>):null)}
+                        </div>
+                      </div>))}
+                    {delHistKey===sessKey?(
+                      <div style={{marginTop:12,background:"#EF444412",border:"1px solid #EF444430",borderRadius:8,padding:10,textAlign:"center"}}>
+                        <div style={{fontSize:11,color:"#EF4444",marginBottom:6}}>Delete this session?</div>
+                        <div style={{display:"flex",gap:6,justifyContent:"center"}}>
+                          <button onClick={()=>{deleteSession(sessKey);setDelHistKey(null);setProgOpen(null);}} style={{padding:"6px 16px",borderRadius:6,border:"none",background:"#EF4444",color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer"}}>Delete</button>
+                          <button onClick={()=>setDelHistKey(null)} style={{padding:"6px 16px",borderRadius:6,border:`1px solid ${C.sbdr}`,background:C.card,color:C.dim,fontWeight:600,fontSize:11,cursor:"pointer"}}>Cancel</button>
+                        </div>
+                      </div>
+                    ):(
+                      <>{session.data._notes&&<div style={{marginTop:8,padding:"8px 10px",background:C.srf,borderRadius:6,fontSize:11,color:C.dim,lineHeight:1.5,fontStyle:"italic"}}>{session.data._notes}</div>}<button onClick={()=>setDelHistKey(sessKey)} style={{marginTop:12,display:"flex",alignItems:"center",justifyContent:"center",gap:4,width:"100%",padding:"8px",background:"transparent",border:`1px solid #EF444420`,borderRadius:8,color:"#EF4444",fontSize:11,fontWeight:600,cursor:"pointer"}}>🗑 Delete Session</button></>
+                    )}
+                  </div>)}
+              </div>);})}
+        </div>
+      </div>)}
+
+    {/* ══════ WORKOUT ══════ */}
+    {screen==="workout"&&day&&(
+      <div className="fade-in" style={{padding:"10px 12px 20px"}}>
+        <div style={{background:"linear-gradient(135deg,#1A1420,#12161E)",borderRadius:14,padding:"14px 16px",marginBottom:10,border:`1px solid ${C.bdr}`}}>
+          <div style={{fontFamily:"Outfit",fontSize:18,fontWeight:800,color:C.acc}}>{phase.title} <span style={{color:C.dim,fontWeight:500,fontSize:13}}>{phase.weeks}</span></div>
+          <div style={{fontFamily:"Outfit",fontSize:15,fontWeight:700,marginTop:2}}>{day.title} — {day.sub}</div>
+          <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
+            <span style={{fontSize:11,color:"#5B8DEF",background:"#5B8DEF15",padding:"2px 8px",borderRadius:6}}>{phase.sr}</span>
+            <span style={{fontSize:11,color:"#A78BFA",background:"#A78BFA15",padding:"2px 8px",borderRadius:6}}>{phase.rir}</span>
+            {weekNum>0&&<span style={{fontSize:11,color:C.grn,background:C.grn+"15",padding:"2px 8px",borderRadius:6}}>Week {weekNum}</span>}{elapsed>0&&<span style={{fontSize:11,color:"#5B8DEF",background:"#5B8DEF15",padding:"2px 8px",borderRadius:6}}>⏱ {fmtElapsed(elapsed)}</span>}
+            <span style={{fontSize:11,color:C.fnt}}>{today}</span>
+          </div>
+          {prev&&(<div style={{display:"flex",alignItems:"center",gap:6,marginTop:8,padding:"5px 10px",background:C.grn+"15",borderRadius:8,border:`1px solid ${C.grn}30`}}><span style={{fontSize:12,color:C.grn,fontWeight:500}}>📊 Previous session loaded — beat your numbers!</span></div>)}
+        </div>
+
+        {/* RESET ORDER BUTTON */}
+        {isReordered&&(<button onClick={resetOrder} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",padding:"10px",background:"#F59E0B08",border:"1px solid #F59E0B25",borderRadius:10,color:"#F59E0B",fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:8}}>↩ Reset to Default Order</button>)}
+
+        {exs.map((exercise,ei)=>{
+          const open=openEx===ei;const pe=prev?.[ei];const pool=SWAP_POOLS[exercise.group]||[];const le=log[ei];const gc=GC[exercise.group]||"#6B7280";const isDur=DURATION_EX.has(exercise.name);const isRepsOnly=REPS_ONLY_EX.has(exercise.name);const curBest=(()=>{if(isDur||!le?.sets)return 0;let b=0;le.sets.forEach(s=>{const w=parseFloat(s.weight)||0;if(w>b)b=w;});return b;})();const prevPR=Stats.getPR(hist,planId,exercise.name);const isNewPR=curBest>0&&curBest>prevPR;
+          const linked=isSS(ei);const linkedFromAbove=ei>0&&isSS(ei-1);const isCustom=exercise.custom;const customIdx=isCustom?exercise._origIdx-day.exercises.length:-1;const isEditing=editPanel===ei;
+          return(
+            <div key={ei}>
+              {linkedFromAbove&&(<div style={{display:"flex",justifyContent:"center",margin:"-3px 0"}}><span style={{fontSize:10,color:"#F59E0B",fontWeight:700,background:"#F59E0B18",border:"1px solid #F59E0B30",borderRadius:6,padding:"2px 10px"}}>⚡ SUPERSET — no rest</span></div>)}
+            <div style={{background:C.card,border:`1px solid ${linked?"#F59E0B44":linkedFromAbove?"#F59E0B44":open?C.acc+"44":C.bdr}`,borderRadius:linkedFromAbove?"0 0 12px 12px":linked?"12px 12px 0 0":"12px",marginBottom:linked?0:6,overflow:"hidden"}}>
+              <div style={{display:"flex",alignItems:"center"}}>
+                {/* REORDER ARROWS */}
+                <div style={{display:"flex",flexDirection:"column",padding:"4px 0 4px 6px",gap:2,flexShrink:0}}>
+                  <button onClick={(e)=>{e.stopPropagation();moveEx(ei,-1);}} disabled={ei===0} style={{background:"none",border:"none",cursor:ei===0?"default":"pointer",padding:0,lineHeight:1,fontSize:14,color:ei===0?C.bdr:C.dim,opacity:ei===0?.3:1}}>▲</button>
+                  <button onClick={(e)=>{e.stopPropagation();moveEx(ei,1);}} disabled={ei===exs.length-1} style={{background:"none",border:"none",cursor:ei===exs.length-1?"default":"pointer",padding:0,lineHeight:1,fontSize:14,color:ei===exs.length-1?C.bdr:C.dim,opacity:ei===exs.length-1?.3:1}}>▼</button>
+                </div>
+                <button onClick={()=>{setOpenEx(open?null:ei);setSwapPanel(null);if(open)setEditPanel(null);}} style={{display:"flex",flex:1,alignItems:"center",justifyContent:"space-between",padding:"12px 14px 12px 8px",background:"none",border:"none",cursor:"pointer",textAlign:"left",minWidth:0}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{background:C.acc,color:"#000",fontWeight:800,fontSize:11,minWidth:22,height:22,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{ei+1}</span>
+                    <div style={{overflow:"hidden"}}>
+                      <div style={{fontWeight:700,fontSize:14,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:C.txt}}>{exercise.name}{isCustom&&<span style={{fontSize:9,color:"#A78BFA",marginLeft:6}}>★ custom</span>}{exercise.edited&&!isCustom&&<span style={{fontSize:9,color:"#22C55E",marginLeft:6}}>✎ edited</span>}{isNewPR&&<span style={{fontSize:9,color:"#F59E0B",fontWeight:700,marginLeft:6,background:"#F59E0B18",padding:"1px 4px",borderRadius:3}}>🏆 PR</span>}</div>
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginTop:2}}><span style={{fontSize:12,color:C.dim}}>{exercise.sets}</span><span style={{fontSize:10,color:gc,background:gc+"18",padding:"1px 6px",borderRadius:4,fontWeight:600,textTransform:"capitalize"}}>{exercise.group}</span></div>
+                    </div>
+                  </div>
+                </div>
+                <div style={{color:C.fnt,flexShrink:0,marginLeft:8}}><Chev up={open} s={18}/></div>
+                </button>
+              </div>
+              {open&&(
+                <div style={{padding:"0 14px 14px",borderTop:`1px solid ${C.bdr}`}}>
+                  {/* EDIT PANEL */}
+                  {isEditing?(
+                    <div style={{background:C.srf,borderRadius:10,padding:14,marginTop:8,marginBottom:10,border:`1px solid ${C.grn}30`}}>
+                      <div style={{fontSize:11,color:C.grn,fontWeight:700,letterSpacing:"0.5px",marginBottom:10}}>✎ EDIT EXERCISE</div>
+                      <div style={{marginBottom:8}}><label style={{fontSize:10,color:C.dim,fontWeight:600,display:"block",marginBottom:3}}>NAME</label><input type="text" value={editName} onChange={e=>setEditName(e.target.value)} style={{width:"100%",background:C.card,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"8px 10px",color:C.txt,fontSize:13,outline:"none",boxSizing:"border-box",fontFamily:"inherit"}}/></div>
+                      <div style={{display:"flex",gap:8,marginBottom:8}}>
+                        <div style={{flex:1}}><label style={{fontSize:10,color:C.dim,fontWeight:600,display:"block",marginBottom:3}}>SETS</label><input type="text" value={editSets} onChange={e=>setEditSets(e.target.value)} style={{width:"100%",background:C.card,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"8px 10px",color:C.txt,fontSize:13,outline:"none",boxSizing:"border-box",fontFamily:"inherit"}}/></div>
+                        <div style={{flex:1}}><label style={{fontSize:10,color:C.dim,fontWeight:600,display:"block",marginBottom:3}}>GROUP</label><select value={editGroup} onChange={e=>setEditGroup(e.target.value)}>{Object.keys(SWAP_POOLS).map(g=><option key={g} value={g}>{g.charAt(0).toUpperCase()+g.slice(1)}</option>)}</select></div>
+                      </div>
+                      <div style={{marginBottom:10}}><label style={{fontSize:10,color:C.dim,fontWeight:600,display:"block",marginBottom:3}}>COACHING CUES</label><textarea value={editCues} onChange={e=>setEditCues(e.target.value)} rows={2} style={{width:"100%",background:C.card,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"8px 10px",color:C.txt,fontSize:13,outline:"none",boxSizing:"border-box",fontFamily:"inherit",resize:"vertical"}}/></div>
+                      <div style={{display:"flex",gap:6}}>
+                        <button onClick={()=>saveEdit(ei)} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:C.grn,color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>Save Changes</button>
+                        {exercise.edited&&!isCustom&&<button onClick={()=>clearEdit(ei)} style={{padding:"9px 14px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.card,color:"#EF4444",fontWeight:600,fontSize:12,cursor:"pointer"}}>Reset</button>}
+                        <button onClick={()=>setEditPanel(null)} style={{padding:"9px 14px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.card,color:C.dim,fontWeight:600,fontSize:12,cursor:"pointer"}}>Cancel</button>
+                      </div>
+                    </div>
+                  ):(
+                    <div style={{background:C.srf,borderRadius:8,padding:"10px 12px",marginTop:8,marginBottom:10}}><div style={{fontSize:11,color:C.acc,fontWeight:700,marginBottom:4,letterSpacing:"0.5px"}}>💡 COACHING CUES</div><div style={{fontSize:13,color:"#C0C0CC",lineHeight:1.6}}>{exercise.cues}</div></div>
+                  )}
+                  <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
+                    <a href={getVidUrl(exercise.name)} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",gap:5,padding:"8px 14px",background:"#FF000015",border:"1px solid #FF000030",borderRadius:8,color:"#FF4444",fontSize:12,fontWeight:600,textDecoration:"none"}}><YT s={16}/> Watch Form</a>
+                    {pool.length>1&&(<button onClick={()=>setSwapPanel(swapPanel===ei?null:ei)} style={{display:"flex",alignItems:"center",gap:4,padding:"8px 14px",background:"#A78BFA12",border:"1px solid #A78BFA28",borderRadius:8,color:"#A78BFA",fontSize:12,fontWeight:600,cursor:"pointer"}}>↔ Swap</button>)}
+                    {!isEditing&&(<button onClick={()=>startEdit(ei,exercise)} style={{display:"flex",alignItems:"center",gap:4,padding:"8px 14px",background:C.grn+"08",border:`1px solid ${C.grn}20`,borderRadius:8,color:C.grn,fontSize:12,fontWeight:600,cursor:"pointer"}}>✎ Edit</button>)}
+                    {ei<exs.length-1&&(<button onClick={()=>toggleSS(ei)} style={{display:"flex",alignItems:"center",gap:4,padding:"8px 14px",background:linked?"#F59E0B22":"#F59E0B08",border:`1px solid ${linked?"#F59E0B44":"#F59E0B20"}`,borderRadius:8,color:"#F59E0B",fontSize:12,fontWeight:600,cursor:"pointer"}}>{linked?"⚡ Linked":"⚡ Superset"}</button>)}
+                    {isCustom&&(<button onClick={()=>removeCustomEx(customIdx)} style={{display:"flex",alignItems:"center",gap:4,padding:"8px 14px",background:"#EF444412",border:"1px solid #EF444430",borderRadius:8,color:"#EF4444",fontSize:12,fontWeight:600,cursor:"pointer"}}>🗑 Remove</button>)}
+                  </div>
+                  {swapPanel===ei&&pool.length>1&&(
+                    <div style={{marginBottom:10,background:C.srf,borderRadius:8,border:`1px solid ${C.sbdr}`,overflow:"hidden"}}>
+                      <div style={{padding:"8px 12px",borderBottom:`1px solid ${C.bdr}`,fontSize:11,color:C.dim,fontWeight:600}}>SWAP — {exercise.group.toUpperCase()}</div>
+                      <div style={{maxHeight:200,overflowY:"auto"}}>{pool.map(nm=>(<button key={nm} onClick={()=>doSwap(ei,nm)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",padding:"10px 12px",background:nm===exercise.name?C.acc+"15":"transparent",border:"none",borderBottom:`1px solid ${C.bdr}`,color:nm===exercise.name?C.acc:C.txt,fontSize:13,cursor:"pointer",textAlign:"left"}}><span>{nm}</span>{nm===exercise.name&&<span style={{fontSize:10,color:C.acc,fontWeight:600}}>✓</span>}</button>))}</div>
+                    </div>)}
+                  {exercise.orig&&<div style={{marginBottom:10,fontSize:11,color:"#A78BFA",background:"#A78BFA12",borderRadius:6,padding:"5px 10px"}}>↩ Swapped from: {exercise.orig}</div>}
+                  {pe&&pe.sets&&pe.sets.some(s=>s.weight||s.reps)&&(
+                    <div style={{marginBottom:10}}>
+                      <div style={{fontSize:11,color:C.grn,fontWeight:700,marginBottom:5,letterSpacing:"0.5px"}}>📊 LAST SESSION</div>
+                      <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>{isDur?(<><span style={{background:C.grn+"12",border:`1px solid ${C.grn}22`,borderRadius:6,padding:"4px 8px",fontSize:12,color:C.grn,fontWeight:600}}>{pe.sets[0]?.weight||"–"} min</span>{MILES_EX.has(exercise.name)&&pe.sets[0]?.reps&&<span style={{background:C.grn+"12",border:`1px solid ${C.grn}22`,borderRadius:6,padding:"4px 8px",fontSize:12,color:C.grn,fontWeight:600}}>{pe.sets[0].reps} mi</span>}</>):pe.sets.map((s,i)=>(s.weight||s.reps)?(<span key={i} style={{background:C.grn+"12",border:`1px solid ${C.grn}22`,borderRadius:6,padding:"4px 8px",fontSize:12,color:C.grn,fontWeight:600}}>S{i+1}: {s.weight||"–"} × {s.reps||"–"}</span>):null)}</div>
+                    </div>)}
+                  <div>
+                    {isDur?(
+                      <div>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                          <span style={{fontSize:11,color:C.dim,fontWeight:700,letterSpacing:"0.5px"}}>LOG DURATION</span>
+                          <button onClick={()=>clearEx(ei)} style={{background:C.srf,border:`1px solid #EF444425`,borderRadius:6,height:28,padding:"0 8px",color:"#EF4444",fontSize:11,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:3}}>✕ Clear</button>
+                        </div>
+                        <div style={{display:"flex",alignItems:"center",gap:10}}>
+                          <span style={{fontSize:13,color:C.fnt,fontWeight:600}}>🚴</span>
+                          <input type="number" inputMode="numeric" placeholder="—" value={le?.sets?.[0]?.weight||""} onChange={e=>upd(ei,0,"weight",e.target.value)} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"10px 14px",color:C.txt,fontSize:18,fontWeight:700,textAlign:"center",outline:"none",height:48,width:100,boxSizing:"border-box"}}/>
+                          <span style={{fontSize:14,color:C.dim,fontWeight:600}}>minutes</span>
+                        </div>
+                        {MILES_EX.has(exercise.name)&&(<div style={{display:"flex",alignItems:"center",gap:10,marginTop:8}}>
+                          <span style={{fontSize:13,color:C.fnt,fontWeight:600}}>📍</span>
+                          <input type="number" inputMode="decimal" step="0.1" placeholder="—" value={le?.sets?.[0]?.reps||""} onChange={e=>upd(ei,0,"reps",e.target.value)} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"10px 14px",color:C.txt,fontSize:18,fontWeight:700,textAlign:"center",outline:"none",height:48,width:100,boxSizing:"border-box"}}/>
+                          <span style={{fontSize:14,color:C.dim,fontWeight:600}}>miles</span>
+                        </div>)}
+                      </div>
+                    ):(
+                      <div>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                          <span style={{fontSize:11,color:C.dim,fontWeight:700,letterSpacing:"0.5px"}}>LOG SETS</span>
+                          <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                            <button onClick={()=>rmS(ei)} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:6,width:28,height:28,color:C.dim,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                            <button onClick={()=>addS(ei)} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:6,width:28,height:28,color:C.dim,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+                            <button onClick={()=>clearEx(ei)} style={{background:C.srf,border:`1px solid #EF444425`,borderRadius:6,height:28,padding:"0 8px",color:"#EF4444",fontSize:11,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:3}}>✕ Clear</button>
+                          </div>
+                        </div>
+                        <div style={{display:"grid",gridTemplateColumns:isRepsOnly?"32px 1fr":"32px 1fr 1fr",gap:5,marginBottom:4}}><span style={{fontSize:10,color:C.fnt,textAlign:"center"}}>SET</span>{!isRepsOnly&&<span style={{fontSize:10,color:C.fnt,textAlign:"center"}}>LBS</span>}<span style={{fontSize:10,color:C.fnt,textAlign:"center"}}>{isRepsOnly?"TIME/REPS":"REPS"}</span></div>
+                        {le?.sets?.map((set,si)=>(
+                          <div key={si} style={{display:"grid",gridTemplateColumns:isRepsOnly?"32px 1fr":"32px 1fr 1fr",gap:5,marginBottom:4}}>
+                            <div style={{display:"flex",alignItems:"center",justifyContent:"center",background:C.srf,borderRadius:6,fontSize:12,fontWeight:700,color:C.fnt,height:40}}>{si+1}</div>
+                            {!isRepsOnly&&<input type="number" inputMode="decimal" placeholder="—" value={set.weight} onChange={e=>upd(ei,si,"weight",e.target.value)} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"8px",color:C.txt,fontSize:15,fontWeight:600,textAlign:"center",outline:"none",height:40,width:"100%",boxSizing:"border-box"}}/>}
+                            <input type="number" inputMode="numeric" placeholder="—" value={isRepsOnly?(set.weight||""):set.reps} onChange={e=>upd(ei,si,isRepsOnly?"weight":"reps",e.target.value)} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"8px",color:C.txt,fontSize:15,fontWeight:600,textAlign:"center",outline:"none",height:40,width:"100%",boxSizing:"border-box"}}/>
+                          </div>))}
+                      </div>
+                    )}
+                  </div>
+                </div>)}
+            </div>
+            </div>);})}
+
+        {/* WORKOUT NOTES */}
+        <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"14px 16px",marginTop:8,marginBottom:4}}>
+          <div style={{fontSize:11,color:"#A78BFA",fontWeight:700,letterSpacing:"0.5px",marginBottom:8}}>WORKOUT NOTES</div>
+          <textarea placeholder="How did the workout feel? Any difficulties or things to remember..." value={wkNotes} onChange={e=>{setWkNotes(e.target.value);setSaved(false);}} style={{width:"100%",minHeight:70,background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"10px 12px",color:C.txt,fontSize:13,outline:"none",resize:"vertical",boxSizing:"border-box",fontFamily:"inherit",lineHeight:1.5}}/>
+        </div>
+
+        {/* ADD EXERCISE BUTTON */}
+        {!addExForm&&(<button onClick={()=>setAddExForm(true)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",padding:"12px",background:C.card,border:`1px dashed ${C.sbdr}`,borderRadius:12,color:C.dim,fontSize:13,fontWeight:600,cursor:"pointer",marginTop:4}}>+ Add Exercise</button>)}
+
+        {/* ADD EXERCISE FORM */}
+        {addExForm&&(
+          <div style={{background:C.card,border:`1px solid ${C.acc}44`,borderRadius:12,padding:16,marginTop:4}}>
+            <div style={{fontSize:11,color:C.acc,fontWeight:700,letterSpacing:"0.5px",marginBottom:10}}>➕ ADD CUSTOM EXERCISE</div>
+            <input type="text" placeholder="Exercise name" value={addExName} onChange={e=>setAddExName(e.target.value)} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"10px 12px",color:C.txt,fontSize:14,outline:"none",marginBottom:8,boxSizing:"border-box",fontFamily:"inherit"}}/>
+            <div style={{display:"flex",gap:8,marginBottom:10}}>
+              <select value={addExGroup} onChange={e=>setAddExGroup(e.target.value)} style={{flex:1}}>{Object.keys(SWAP_POOLS).map(g=><option key={g} value={g}>{g.charAt(0).toUpperCase()+g.slice(1)}</option>)}</select>
+              <select value={addExSets} onChange={e=>setAddExSets(e.target.value)} style={{width:80}}><option value="2">2 sets</option><option value="3">3 sets</option><option value="4">4 sets</option><option value="5">5 sets</option></select>
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={addExercise} style={{flex:1,padding:"10px",borderRadius:8,border:"none",background:C.acc,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Add</button>
+              <button onClick={()=>{setAddExForm(null);setAddExName("");}} style={{padding:"10px 16px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontWeight:600,fontSize:13,cursor:"pointer"}}>Cancel</button>
+            </div>
+          </div>)}
+
+      </div>)}
+    </div>
+
+    {/* PR TOAST */}
+    {prToast&&(<div style={{position:"fixed",top:70,left:"50%",transform:"translateX(-50%)",zIndex:99,background:"linear-gradient(135deg,#F59E0B,#D97706)",borderRadius:12,padding:"12px 20px",boxShadow:"0 8px 32px rgba(245,158,11,.4)",animation:"fadeIn 0.3s",maxWidth:340}}>
+      <div style={{fontWeight:800,fontSize:14,color:"#fff",marginBottom:4}}>🏆 New Personal Record{prToast.length>1?"s":""}!</div>
+      {prToast.map((pr,i)=>(<div key={i} style={{fontSize:12,color:"#fff",opacity:0.95}}>{pr.name}: {pr.weight} lbs</div>))}
+    </div>)}
+
+    {/* REST TIMER */}
+    {restRunning&&restSec>0&&screen==="workout"&&(
+      <div onClick={()=>{setRestRunning(false);setRestSec(0);}} style={{position:"fixed",bottom:screen==="workout"?140:80,left:"50%",transform:"translateX(-50%)",zIndex:55,background:restSec<=10?"linear-gradient(135deg,#EF4444,#DC2626)":"linear-gradient(135deg,#1E293B,#0F172A)",border:`2px solid ${restSec<=10?"#EF444460":"#5B8DEF40"}`,borderRadius:50,padding:"10px 24px",boxShadow:"0 8px 32px rgba(0,0,0,.5)",cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
+        <span style={{fontSize:13,color:restSec<=10?"#fff":"#5B8DEF",fontWeight:700}}>⏳ Rest</span>
+        <span style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:"#fff"}}>{Math.floor(restSec/60)}:{(restSec%60)<10?"0":""}{restSec%60}</span>
+        <span style={{fontSize:10,color:"#ffffff80"}}>tap to dismiss</span>
+      </div>)}
+
+    {/* SAVE BUTTON + DELETE SESSION */}
+    {screen==="workout"&&(
+      <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"12px 16px 24px",background:`linear-gradient(180deg,transparent,${C.bg} 40%)`,zIndex:40}}>
+        <div style={{maxWidth:600,margin:"0 auto"}}>
+          <button onClick={save} style={{width:"100%",padding:"14px",borderRadius:12,border:"none",fontWeight:700,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all .3s",background:saved?"linear-gradient(135deg,#16A34A,#15803D)":`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",boxShadow:saved?"0 4px 24px rgba(34,197,94,.3)":"0 4px 24px rgba(255,107,44,.3)"}}>
+            {saved?<><Check/> Saved{elapsed>0?" · "+fmtElapsed(elapsed):""}</>:syncing?<><span className="syncing">Syncing...</span></>:<><DBIcon s={18}/> Save Workout</>}
+          </button>
+          {hist[`${planId}-${phaseIdx}-${dayIdx}-${today}`]&&!delConfirm&&(
+            <button onClick={()=>setDelConfirm(true)} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:8,border:`1px solid #EF444425`,background:"transparent",color:"#EF4444",fontSize:12,fontWeight:600,cursor:"pointer"}}>Delete Today's Session</button>
+          )}
+          {delConfirm&&(
+            <div style={{marginTop:6,background:"#EF444412",border:"1px solid #EF444430",borderRadius:10,padding:12,textAlign:"center"}}>
+              <div style={{fontSize:12,color:"#EF4444",marginBottom:8}}>Delete all logged data for today's workout?</div>
+              <div style={{display:"flex",gap:8,justifyContent:"center"}}>
+                <button onClick={deleteSession} style={{padding:"8px 20px",borderRadius:8,border:"none",background:"#EF4444",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>Yes, Delete</button>
+                <button onClick={()=>setDelConfirm(false)} style={{padding:"8px 20px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontWeight:600,fontSize:12,cursor:"pointer"}}>Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>)}
+  </div>);
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
