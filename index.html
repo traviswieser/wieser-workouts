@@ -336,6 +336,9 @@ function App(){
   const [aiProvider,setAiProvider]=useState("openai");
   const [aiPrompt,setAiPrompt]=useState("");
   const [aiPaste,setAiPaste]=useState("");
+  const [aiFileName,setAiFileName]=useState("");
+  const [aiFileData,setAiFileData]=useState(null);
+  const fileRef=useRef(null);
   const [aiLoading,setAiLoading]=useState(false);
   const [aiError,setAiError]=useState("");
   const unsubs=useRef([]);
@@ -395,6 +398,54 @@ function App(){
 The plan must match this structure: {"name":"Plan Name","subtitle":"Short description","phases":[{"title":"Phase 1: Name","weeks":"Weeks 1-4","desc":"Description","rest":"60-90s","sr":"3x10-12","rir":"RIR 3-4","days":[{"title":"Day 1","sub":"Muscle Group","exercises":[{"name":"Exercise Name","sets":"3x10-12","cues":"Form cues.","group":"chest"}]}]}]}
 Valid groups: chest, back, shoulders, biceps, triceps, quads, hamstrings, glutes, core, calves, cardio.
 Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exercises per day. Include form cues for every exercise. Create 3 phases of 4 weeks each with progressive difficulty (more volume/intensity).`;
+
+  const handleFile=async(e)=>{
+    const file=e.target.files?.[0];if(!file)return;
+    setAiFileName(file.name);
+    if(file.type.startsWith("text/")||file.name.endsWith(".txt")||file.name.endsWith(".csv")){
+      const text=await file.text();setAiPaste(text);setAiFileData(null);setAiFileName(file.name+" (text loaded)");
+    }else{
+      const reader=new FileReader();
+      reader.onload=()=>{const b64=reader.result.split(",")[1];const mt=file.type||"application/octet-stream";setAiFileData({base64:b64,mediaType:mt,name:file.name});};
+      reader.readAsDataURL(file);
+    }
+    e.target.value="";
+  };
+
+  const generateWithFile=async()=>{
+    if(!aiKey){setAiError("Enter your API key in settings below.");return;}
+    if(!aiFileData){setAiError("No file loaded. Upload an image or PDF first.");return;}
+    setAiLoading(true);setAiError("");
+    const sysPrompt=AI_PROMPT;
+    const userText="Convert this workout plan into the structured JSON format. Preserve all exercises, sets, and reps exactly. Organize into phases and days."+(aiPaste?"\n\nAdditional context: "+aiPaste:"");
+    try{
+      let text="";
+      if(aiProvider==="openai"){
+        const content=[{type:"text",text:userText}];
+        if(aiFileData.mediaType.startsWith("image/")){content.push({type:"image_url",image_url:{url:"data:"+aiFileData.mediaType+";base64,"+aiFileData.base64}});}
+        else{content.unshift({type:"text",text:"[Attached file: "+aiFileData.name+"]"});}
+        const r=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+aiKey,"Content-Type":"application/json"},body:JSON.stringify({model:"gpt-4o",messages:[{role:"system",content:sysPrompt},{role:"user",content}],temperature:0.7})});
+        const d=await r.json();if(d.error)throw new Error(d.error.message);text=d.choices[0].message.content;
+      }else if(aiProvider==="claude"){
+        const content=[];
+        if(aiFileData.mediaType.startsWith("image/")){content.push({type:"image",source:{type:"base64",media_type:aiFileData.mediaType,data:aiFileData.base64}});}
+        else if(aiFileData.mediaType==="application/pdf"){content.push({type:"document",source:{type:"base64",media_type:"application/pdf",data:aiFileData.base64}});}
+        content.push({type:"text",text:userText});
+        const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"x-api-key":aiKey,"anthropic-version":"2023-06-01","content-type":"application/json","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-5-20250514",max_tokens:8000,system:sysPrompt,messages:[{role:"user",content}]})});
+        const d=await r.json();if(d.error)throw new Error(d.error.message);text=d.content[0].text;
+      }else if(aiProvider==="gemini"){
+        const parts=[{text:sysPrompt+"\n\n"+userText}];
+        if(aiFileData.mediaType.startsWith("image/")||aiFileData.mediaType==="application/pdf"){parts.push({inline_data:{mime_type:aiFileData.mediaType,data:aiFileData.base64}});}
+        const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+aiKey,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts}]})});
+        const d=await r.json();if(d.error)throw new Error(d.error.message);text=d.candidates[0].content.parts[0].text;
+      }
+      const clean=text.replace(/```json\n?/g,"").replace(/```\n?/g,"").trim();
+      const parsed=JSON.parse(clean);
+      const plan={...parsed,id:"custom_"+Date.now(),_createdBy:user.uid,_createdAt:Date.now(),_published:false};
+      setCpDraft(plan);setCpScreen("edit");setAiFileData(null);setAiFileName("");
+    }catch(e){setAiError(e.message||"Failed to convert. Check your API key and try again.");}
+    finally{setAiLoading(false);}
+  };
 
   const generateAIPlan=async(prompt)=>{
     if(!aiKey){setAiError("Enter your API key in settings below.");return;}
@@ -567,9 +618,15 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           </div>
 
           <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:16,marginBottom:12}}>
-            <div style={{fontSize:13,fontWeight:700,color:C.txt,marginBottom:8}}>Paste an existing workout plan</div>
-            <textarea placeholder="Paste your workout plan here as text — from a PDF, image OCR, notes, spreadsheet, or any format. AI will convert it into a structured plan." value={aiPaste} onChange={e=>setAiPaste(e.target.value)} style={{width:"100%",minHeight:80,background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"10px 12px",color:C.txt,fontSize:13,outline:"none",resize:"vertical",boxSizing:"border-box",fontFamily:"inherit",lineHeight:1.5}}/>
-            <button onClick={()=>generateAIPlan("Convert this existing workout plan into the structured format. Preserve all exercises, sets, and reps exactly. Organize into phases and days as described:\n\n"+aiPaste)} disabled={aiLoading||!aiPaste.trim()} style={{width:"100%",marginTop:8,padding:"12px",borderRadius:10,border:"none",background:aiLoading?"#555":`linear-gradient(135deg,#F59E0B,#D97706)`,color:"#fff",fontSize:14,fontWeight:700,cursor:aiLoading?"wait":"pointer",opacity:(!aiPaste.trim()&&!aiLoading)?0.5:1}}>{aiLoading?"Converting...":"📋 Convert with AI"}</button>
+            <div style={{fontSize:13,fontWeight:700,color:C.txt,marginBottom:8}}>Import an existing workout plan</div>
+            <input ref={fileRef} type="file" accept="image/*,.pdf,.txt,.csv" onChange={handleFile} style={{display:"none"}}/>
+            <button onClick={()=>fileRef.current?.click()} style={{width:"100%",padding:"14px",borderRadius:10,border:`2px dashed ${aiFileData?C.acc+"60":C.sbdr}`,background:aiFileData?C.acc+"08":"transparent",color:aiFileData?C.acc:C.dim,fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:8,transition:"all 0.2s"}}>{aiFileData?("\u2705 "+aiFileName):("\U0001f4f7 Upload Image, PDF, or Text File")}</button>
+            <textarea placeholder="Or paste your workout plan as text here. You can also add notes alongside an uploaded file." value={aiPaste} onChange={e=>setAiPaste(e.target.value)} style={{width:"100%",minHeight:70,background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"10px 12px",color:C.txt,fontSize:13,outline:"none",resize:"vertical",boxSizing:"border-box",fontFamily:"inherit",lineHeight:1.5}}/>
+            <div style={{display:"flex",gap:8,marginTop:8}}>
+              {aiFileData&&<button onClick={()=>generateWithFile()} disabled={aiLoading} style={{flex:1,padding:"12px",borderRadius:10,border:"none",background:aiLoading?"#555":`linear-gradient(135deg,#F59E0B,#D97706)`,color:"#fff",fontSize:14,fontWeight:700,cursor:aiLoading?"wait":"pointer"}}>{aiLoading?"Converting...":"\U0001f4f7 Convert File with AI"}</button>}
+              <button onClick={()=>generateAIPlan("Convert this existing workout plan into the structured format. Preserve all exercises, sets, and reps exactly. Organize into phases and days as described:\n\n"+aiPaste)} disabled={aiLoading||!aiPaste.trim()} style={{flex:1,padding:"12px",borderRadius:10,border:"none",background:aiLoading?"#555":aiFileData?C.srf:`linear-gradient(135deg,#F59E0B,#D97706)`,color:aiFileData?C.dim:"#fff",fontSize:14,fontWeight:700,cursor:aiLoading?"wait":"pointer",opacity:(!aiPaste.trim()&&!aiLoading)?0.5:1}}>{aiLoading?"Converting...":"\U0001f4cb Convert Text with AI"}</button>
+            </div>
+            {aiFileData&&<div style={{marginTop:6,fontSize:10,color:C.fnt}}>Supported: JPG, PNG, PDF, TXT, CSV. Images and PDFs are sent directly to the AI for visual reading.</div>}
           </div>
 
           {aiError&&<div style={{padding:"10px 14px",background:aiError.includes("Enter")?"#F59E0B18":"#EF444418",border:aiError.includes("Enter")?"1px solid #F59E0B30":"1px solid #EF444430",borderRadius:8,color:aiError.includes("Enter")?"#F59E0B":"#EF4444",fontSize:12,marginBottom:12}}>{aiError}</div>}
