@@ -392,7 +392,7 @@ function App(){
   if(user===null)return(
     <div style={{display:"flex",justifyContent:"center",alignItems:"center",height:"100vh",background:C.bg,padding:24}}>
       <div className="fade-in" style={{textAlign:"center",maxWidth:380}}>
-        <div style={{marginBottom:28}}><DBIcon s={44}/><div style={{fontFamily:"Outfit",fontWeight:800,fontSize:28,marginTop:12,letterSpacing:"-0.5px"}}><span style={{color:C.acc}}>WIESER</span> WORKOUTS</div><div style={{color:C.dim,fontSize:14,marginTop:8,lineHeight:1.6}}>12-week hypertrophy training.<br/>Track progress across all your devices.</div></div>
+        <div style={{marginBottom:28}}><DBIcon s={44}/><div style={{fontFamily:"Outfit",fontWeight:800,fontSize:28,marginTop:12,letterSpacing:"-0.5px"}}><span style={{color:C.acc}}>WIESER</span> WORKOUTS</div><div style={{color:C.dim,fontSize:14,marginTop:8,lineHeight:1.6}}>Choose from pre-loaded training plans or create your own!<br/>Track progress across all your devices.</div></div>
         <button onClick={signIn} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,width:"100%",padding:"14px 20px",borderRadius:12,border:`1px solid ${C.sbdr}`,background:C.card,color:C.txt,fontSize:15,fontWeight:600,cursor:"pointer"}}><GoogleIcon/> Sign in with Google</button>
         <div style={{display:"flex",alignItems:"center",gap:12,margin:"20px 0"}}><div style={{flex:1,height:1,background:C.sbdr}}/><span style={{fontSize:12,color:C.fnt,fontWeight:600}}>or</span><div style={{flex:1,height:1,background:C.sbdr}}/></div>
         <div style={{textAlign:"left"}}>
