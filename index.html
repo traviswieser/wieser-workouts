@@ -1330,7 +1330,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
             <div style={{marginTop:6,background:"#EF444412",border:"1px solid #EF444430",borderRadius:10,padding:12,textAlign:"center"}}>
               <div style={{fontSize:12,color:"#EF4444",marginBottom:8}}>Delete all logged data for today's workout?</div>
               <div style={{display:"flex",gap:8,justifyContent:"center"}}>
-                <button onClick={deleteSession} style={{padding:"8px 20px",borderRadius:8,border:"none",background:"#EF4444",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>Yes, Delete</button>
+                <button onClick={()=>deleteSession()} style={{padding:"8px 20px",borderRadius:8,border:"none",background:"#EF4444",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>Yes, Delete</button>
                 <button onClick={()=>setDelConfirm(false)} style={{padding:"8px 20px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontWeight:600,fontSize:12,cursor:"pointer"}}>Cancel</button>
               </div>
             </div>
