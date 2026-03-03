@@ -563,8 +563,8 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
 
   // LEADERBOARD
   const getLbMonth=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
-  const countSessions=(h)=>Object.keys(h).filter(k=>{const p=k.split("-");const dt=p.length>=4?p.slice(-3).join("-");return dt&&dt.match(/^\d{4}-\d{2}-\d{2}$/);}).length;
-  const countMonthSessions=(h)=>{const mo=getLbMonth();return Object.keys(h).filter(k=>{const p=k.split("-");const dt=p.length>=4?p.slice(-3).join("-");return dt&&dt.startsWith(mo);}).length;};
+  const countSessions=(h)=>{return Object.keys(h).filter(k=>{const p=k.split("-");const dt=p.length>=4?p.slice(-3).join("-"):"";return dt.match(/^\d{4}-\d{2}-\d{2}$/);}).length;};
+  const countMonthSessions=(h)=>{const mo=getLbMonth();return Object.keys(h).filter(k=>{const p=k.split("-");const dt=p.length>=4?p.slice(-3).join("-"):"";return dt.startsWith(mo);}).length;};
   const updateLeaderboard=async()=>{if(!user||!userName)return;const mo=countMonthSessions(hist);const lt=countSessions(hist);try{await db.collection("leaderboard").doc(user.uid).set({name:userName,month:mo,lifetime:lt,monthKey:getLbMonth(),updatedAt:Date.now()});}catch(e){console.error("LB update:",e);}};
   const loadLeaderboard=async()=>{try{const snap=await db.collection("leaderboard").get();const arr=[];snap.forEach(d=>{const data=d.data();arr.push({uid:d.id,...data});});setLbData(arr);}catch(e){console.error("LB load:",e);}};
   useEffect(()=>{if(user&&userName&&Object.keys(hist).length>0)updateLeaderboard();},[hist,userName,user]);
