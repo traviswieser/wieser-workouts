@@ -45,7 +45,7 @@ const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const
 const link=document.createElement('link');link.rel='manifest';link.href=mUrl;document.head.appendChild(link);
 const iconLink=document.createElement('link');iconLink.rel='icon';iconLink.href=iconUrl;iconLink.type='image/svg+xml';document.head.appendChild(iconLink);
 const appleIcon=document.createElement('link');appleIcon.rel='apple-touch-icon';appleIcon.href=iconUrl;document.head.appendChild(appleIcon);
-if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v26';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
+if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v27';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
 const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.auth();const db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
 </script>
 </head>
@@ -271,6 +271,7 @@ const TEMPLATES=[
 const ALL=[V1,V2,V3];
 
 const CHANGELOG=[
+  {ver:"v27",date:"2026-03-03",title:"Coach-Athlete Chat",items:["Real-time messaging between coaches and athletes","Auto-notifications: session completed alerts sent to coaches","Auto-notifications: plan assigned alerts sent to athletes","Unread message badge on chat icon in header","Chat list with conversation previews and timestamps","Notification toggle: turn session/plan auto-messages on or off","Quick chat buttons on coach roster"]},
   {ver:"v26",date:"2026-03-03",title:"Coach Plan Management",items:["Coaches can assign plans to individual athletes","Bulk plan assignment to multiple athletes at once","Enhanced athlete detail: expandable sessions with weights/reps","Plans tab showing assigned and athlete-owned plans","Coach Instructions: notes visible on athlete home screen","Remove assigned plans from athletes"]},
   {ver:"v25",date:"2026-03-03",title:"Coaching System",items:["Coach registration with unique 6-character invite codes","Athletes join coaches by entering the invite code","Coach dashboard with full athlete roster","View athlete session history and stats","Remove athletes or disconnect from coach","Role selection: Coach or Athlete"]},
   {ver:"v24b",date:"2026-03-03",title:"Leaderboard Fix",items:["Leaderboard now counts total sessions instead of unique dates","Multiple workouts on the same day each count separately"]},
@@ -420,6 +421,15 @@ function App(){
   const [expandSession,setExpandSession]=useState(null);
   const [athleteDetailTab,setAthleteDetailTab]=useState("sessions");
   const [coachPlans,setCoachPlans]=useState({});
+  const [chatList,setChatList]=useState([]);
+  const [chatWith,setChatWith]=useState(null);
+  const [chatMsgs,setChatMsgs]=useState([]);
+  const [chatInput,setChatInput]=useState("");
+  const [chatUnread,setChatUnread]=useState(0);
+  const [notifySession,setNotifySession]=useState(true);
+  const [notifyPlan,setNotifyPlan]=useState(true);
+  const chatEndRef=useRef(null);
+  const chatUnsub=useRef(null);
   const [cpDraft,setCpDraft]=useState(null);
   const [cpScreen,setCpScreen]=useState("main");
   const [aiKey,setAiKey]=useState("");
@@ -458,7 +468,7 @@ function App(){
     setSyncing(true);const uid=user.uid;
     Promise.all([Cloud.load(uid,"state"),Cloud.load(uid,"history"),Cloud.load(uid,"swaps"),Cloud.load(uid,"customEx"),Cloud.load(uid,"ssLinks"),Cloud.load(uid,"exOrder"),Cloud.load(uid,"exEdits"),Cloud.load(uid,"bodyWeight"),Cloud.load(uid,"prefs"),Cloud.load(uid,"myPlans"),Cloud.load(uid,"hiddenPlans"),Cloud.load(uid,"coachPlans"),Cloud.load(uid,"coachNotes")]).then(([st,h,s,ce,sl,eo,ee,bw,pf,mp,hp,cp,cn])=>{
       if(st){setPlanId(st.p||"v1");setPhaseIdx(st.ph||0);setDayIdx(st.d||0);}
-      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(pf&&pf.userName)setUserName(pf.userName);if(pf&&pf.role)setUserRole(pf.role);if(pf&&pf.coachCode)setCoachCode(pf.coachCode);if(mp)setMyPlans(mp);if(hp&&hp.ids)setHiddenPlans(hp.ids);if(cp)setCoachPlans(cp);if(cn)setCoachNotes(cn);setSyncing(false);if(!pf?.userName)setNamePrompt(true);
+      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(pf&&pf.userName)setUserName(pf.userName);if(pf&&pf.role)setUserRole(pf.role);if(pf&&pf.coachCode)setCoachCode(pf.coachCode);if(pf?.notifySession===false)setNotifySession(false);if(pf?.notifyPlan===false)setNotifyPlan(false);if(mp)setMyPlans(mp);if(hp&&hp.ids)setHiddenPlans(hp.ids);if(cp)setCoachPlans(cp);if(cn)setCoachNotes(cn);setSyncing(false);if(!pf?.userName)setNamePrompt(true);
     });
     unsubs.current.push(
       Cloud.listen(uid,"history",data=>setHist(data)),
@@ -469,7 +479,7 @@ function App(){
       Cloud.listen(uid,"exOrder",data=>{if(data)setExOrder(data);}),
       Cloud.listen(uid,"exEdits",data=>{if(data)setExEdits(data);}),
       Cloud.listen(uid,"bodyWeight",data=>{if(data)setBodyWt(data);}),
-      Cloud.listen(uid,"prefs",data=>{if(data&&data.theme)setTheme(data.theme);if(data&&data.aiKey)setAiKey(data.aiKey);if(data&&data.aiProvider)setAiProvider(data.aiProvider);if(data?.bwEnabled===false)setBwEnabled(false);else if(data?.bwEnabled===true)setBwEnabled(true);if(data&&data.userName)setUserName(data.userName);if(data&&data.role)setUserRole(data.role);if(data&&data.coachCode)setCoachCode(data.coachCode);}),
+      Cloud.listen(uid,"prefs",data=>{if(data&&data.theme)setTheme(data.theme);if(data&&data.aiKey)setAiKey(data.aiKey);if(data&&data.aiProvider)setAiProvider(data.aiProvider);if(data?.bwEnabled===false)setBwEnabled(false);else if(data?.bwEnabled===true)setBwEnabled(true);if(data&&data.userName)setUserName(data.userName);if(data&&data.role)setUserRole(data.role);if(data&&data.coachCode)setCoachCode(data.coachCode);if(data?.notifySession===false)setNotifySession(false);else if(data?.notifySession===true)setNotifySession(true);if(data?.notifyPlan===false)setNotifyPlan(false);else if(data?.notifyPlan===true)setNotifyPlan(true);}),
       Cloud.listen(uid,"myPlans",data=>{if(data)setMyPlans(data);}),
       Cloud.listen(uid,"hiddenPlans",data=>{if(data&&data.ids)setHiddenPlans(data.ids);}),
       Cloud.listen(uid,"coachPlans",data=>{if(data)setCoachPlans(data);}),
@@ -478,7 +488,7 @@ function App(){
     return()=>{unsubs.current.forEach(fn=>fn());unsubs.current=[];};
   },[user]);
 
-  useEffect(()=>{if(user)loadMyCoaches();},[user]);
+  useEffect(()=>{if(user){loadMyCoaches();loadChatList();const iv=setInterval(loadChatList,30000);return()=>clearInterval(iv);}},[user]);
   useEffect(()=>{if(!user)return;const t=setTimeout(()=>{Cloud.save(user.uid,"state",{p:planId,ph:phaseIdx,d:dayIdx});},500);return()=>clearTimeout(t);},[planId,phaseIdx,dayIdx,user]);
 
   // AUTH
@@ -486,7 +496,7 @@ function App(){
   const emailSignIn=async()=>{setAuthError(null);if(!emailIn||!passIn)return setAuthError("Please enter email and password.");try{await auth.signInWithEmailAndPassword(emailIn,passIn);}catch(e){const msg=e.code==='auth/user-not-found'?"No account found with that email.":e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'?"Incorrect password.":e.code==='auth/invalid-email'?"Invalid email address.":e.code==='auth/too-many-requests'?"Too many attempts. Try again later.":e.message;setAuthError(msg);}};
   const emailSignUp=async()=>{setAuthError(null);if(!emailIn||!passIn)return setAuthError("Please enter email and password.");if(passIn.length<6)return setAuthError("Password must be at least 6 characters.");try{await auth.createUserWithEmailAndPassword(emailIn,passIn);}catch(e){const msg=e.code==='auth/email-already-in-use'?"An account with that email already exists.":e.code==='auth/invalid-email'?"Invalid email address.":e.code==='auth/weak-password'?"Password is too weak. Use at least 6 characters.":e.message;setAuthError(msg);}};
   const resetPassword=async()=>{setAuthError(null);if(!emailIn)return setAuthError("Enter your email above, then tap Reset.");try{await auth.sendPasswordResetEmail(emailIn);setAuthError("Password reset email sent! Check your inbox.");}catch(e){const msg=e.code==='auth/user-not-found'?"No account found with that email.":e.code==='auth/invalid-email'?"Invalid email address.":e.message;setAuthError(msg);}};
-  const signOut=async()=>{unsubs.current.forEach(fn=>fn());unsubs.current=[];await auth.signOut();setHist({});setSwaps({});setCustomEx({});setSsLinks({});setExOrder({});setExEdits({});setBodyWt({});setMyPlans({});setScreen("home");};
+  const signOut=async()=>{unsubs.current.forEach(fn=>fn());unsubs.current=[];if(chatUnsub.current){chatUnsub.current();chatUnsub.current=null;}setChatList([]);setChatUnread(0);setChatWith(null);setChatMsgs([]);await auth.signOut();setHist({});setSwaps({});setCustomEx({});setSsLinks({});setExOrder({});setExEdits({});setBodyWt({});setMyPlans({});setScreen("home");};
         const getProviders=()=>user?user.providerData.map(p=>p.providerId):[];
   const linkGoogle=async()=>{setLinkMsg("");try{await user.linkWithPopup(new firebase.auth.GoogleAuthProvider());setLinkMsg("Google account linked!");}catch(e){setLinkMsg(e.code==="auth/credential-already-in-use"?"That Google account is linked to another user.":e.code==="auth/provider-already-linked"?"Google already linked.":e.message);}};
   const linkEmail=async()=>{setLinkMsg("");if(!linkEmailIn||!linkPassIn)return setLinkMsg("Enter email and password.");if(linkPassIn.length<6)return setLinkMsg("Password must be at least 6 characters.");try{const cr=firebase.auth.EmailAuthProvider.credential(linkEmailIn,linkPassIn);await user.linkWithCredential(cr);setLinkMsg("Email linked!");setLinkEmailIn("");setLinkPassIn("");}catch(e){setLinkMsg(e.code==="auth/email-already-in-use"?"That email is linked to another account.":e.message);}};
@@ -498,12 +508,29 @@ function App(){
   const leaveCoach=async(coach)=>{if(!coach?.connId)return;try{await db.collection("connections").doc(coach.connId).update({status:"inactive"});setMyCoaches(prev=>prev.filter(c=>c.connId!==coach.connId));setCoachMsg("Disconnected from "+coach.name+".");}catch(e){setCoachMsg(e.message);}};
   const removeAthlete=async(connId,name)=>{if(!confirm("Remove "+name+" from your roster?"))return;try{await db.collection("connections").doc(connId).update({status:"inactive"});setCoachRoster(r=>r.filter(a=>a.connId!==connId));setCoachMsg(name+" removed.");}catch(e){setCoachMsg(e.message);}};
   const loadAthleteData=async(uid)=>{try{const[h,pf,mp,cp,cn]=await Promise.all([Cloud.load(uid,"history"),Cloud.load(uid,"prefs"),Cloud.load(uid,"myPlans"),Cloud.load(uid,"coachPlans"),Cloud.load(uid,"coachNotes")]);setAthleteData({hist:h||{},prefs:pf||{},myPlans:mp||{},coachPlans:cp||{},coachNotes:cn||{}});if(cn&&cn._instructions)setAthleteNoteInput(cn._instructions||"");}catch(e){console.error("Load athlete:",e);}};
-  const assignPlanToAthlete=async(athleteUid,plan)=>{if(!user)return;try{const existing=await Cloud.load(athleteUid,"coachPlans")||{};const cp={...existing,[plan.id]:{...plan,_published:true,_assignedBy:user.uid,_assignedByName:userName,_assignedAt:Date.now()}};await Cloud.doc(athleteUid,"coachPlans").set(cp);setCoachMsg("Plan assigned to athlete!");if(athleteData)setAthleteData(prev=>({...prev,coachPlans:cp}));}catch(e){setCoachMsg("Failed: "+e.message);}};
+  const assignPlanToAthlete=async(athleteUid,plan)=>{if(!user)return;try{const existing=await Cloud.load(athleteUid,"coachPlans")||{};const cp={...existing,[plan.id]:{...plan,_published:true,_assignedBy:user.uid,_assignedByName:userName,_assignedAt:Date.now()}};await Cloud.doc(athleteUid,"coachPlans").set(cp);setCoachMsg("Plan assigned to athlete!");if(athleteData)setAthleteData(prev=>({...prev,coachPlans:cp}));
+      const chatId=getChatId(user.uid,athleteUid);try{const chatDoc=await db.collection("chats").doc(chatId).get();if(!chatDoc.exists)await db.collection("chats").doc(chatId).set({coachUid:user.uid,athleteUid,coachName:userName,athleteName:"Athlete",lastMsg:"",lastTs:Date.now(),unread:{}});await sendSystemMsg(chatId,athleteUid,"\ud83d\udccb "+userName+" assigned a new plan: "+plan.name);}catch(e2){console.error("notify athlete:",e2);}
+    }catch(e){setCoachMsg("Failed: "+e.message);}};
   const assignPlanBulk=async(plan)=>{if(!user||bulkSelect.length===0)return;setCoachMsg("");let ok=0;for(const uid of bulkSelect){try{const existing=await Cloud.load(uid,"coachPlans")||{};const cp={...existing,[plan.id]:{...plan,_published:true,_assignedBy:user.uid,_assignedByName:userName,_assignedAt:Date.now()}};await Cloud.doc(uid,"coachPlans").set(cp);ok++;}catch(e){console.error("Bulk assign "+uid,e);}}setCoachMsg("Plan assigned to "+ok+" athlete"+(ok!==1?"s":"")+"!");setBulkSelect([]);setBulkAssignPlan(null);};
   const removePlanFromAthlete=async(athleteUid,planId)=>{if(!user)return;try{const existing=await Cloud.load(athleteUid,"coachPlans")||{};delete existing[planId];await Cloud.doc(athleteUid,"coachPlans").set(existing);setCoachMsg("Plan removed from athlete.");if(athleteData)setAthleteData(prev=>{const cp={...prev.coachPlans};delete cp[planId];return{...prev,coachPlans:cp};});}catch(e){setCoachMsg("Failed: "+e.message);}};
   const saveCoachInstructions=async(athleteUid,text)=>{if(!user)return;try{const existing=await Cloud.load(athleteUid,"coachNotes")||{};const cn={...existing,_instructions:text,_updatedBy:user.uid,_updatedAt:Date.now()};await Cloud.doc(athleteUid,"coachNotes").set(cn);setCoachMsg("Instructions saved!");if(athleteData)setAthleteData(prev=>({...prev,coachNotes:cn}));}catch(e){setCoachMsg("Failed: "+e.message);}};
   const unlinkProvider=async(pid)=>{setLinkMsg("");if(user.providerData.length<=1){setLinkMsg("Can't remove your only sign-in method.");return;}try{await user.unlink(pid);setLinkMsg("Unlinked successfully.");}catch(e){setLinkMsg(e.message);}};
 
+
+  // CHAT SYSTEM
+  const getChatId=(uid1,uid2)=>[uid1,uid2].sort().join("_");
+  const loadChatList=async()=>{if(!user)return;try{const snaps=await Promise.all([db.collection("chats").where("coachUid","==",user.uid).get(),db.collection("chats").where("athleteUid","==",user.uid).get()]);const chats=[];const seen=new Set();snaps.forEach(snap=>snap.forEach(d=>{if(!seen.has(d.id)){seen.add(d.id);chats.push({id:d.id,...d.data()});}}));chats.sort((a,b)=>(b.lastTs||0)-(a.lastTs||0));setChatList(chats);let total=0;chats.forEach(ch=>{const u=ch.unread||{};total+=(u[user.uid]||0);});setChatUnread(total);}catch(e){console.error("ChatList:",e);}};
+  const openChat=async(partnerUid,partnerName,isCoach)=>{if(!user)return;const chatId=getChatId(user.uid,partnerUid);setChatWith({uid:partnerUid,name:partnerName,chatId});setChatMsgs([]);setChatInput("");setScreen("chat");history.pushState({screen:"chat"},"");
+    try{const chatDoc=await db.collection("chats").doc(chatId).get();if(!chatDoc.exists){const coachUid=isCoach?partnerUid:user.uid;const athleteUid=isCoach?user.uid:partnerUid;await db.collection("chats").doc(chatId).set({coachUid,athleteUid,coachName:isCoach?partnerName:userName,athleteName:isCoach?userName:partnerName,lastMsg:"",lastTs:Date.now(),unread:{}});}
+      const unr={...((chatDoc.exists?chatDoc.data():{}).unread||{})};unr[user.uid]=0;await db.collection("chats").doc(chatId).update({unread:unr}).catch(()=>{});
+    }catch(e){console.error("openChat:",e);}
+    if(chatUnsub.current)chatUnsub.current();
+    chatUnsub.current=db.collection("chats").doc(chatId).collection("messages").orderBy("ts","asc").limitToLast(100).onSnapshot(snap=>{const msgs=[];snap.forEach(d=>msgs.push({id:d.id,...d.data()}));setChatMsgs(msgs);setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:"smooth"}),100);
+      db.collection("chats").doc(chatId).update({["unread."+user.uid]:0}).catch(()=>{});
+    },()=>{});};
+  const sendChatMsg=async(text,type)=>{if(!user||!chatWith)return;const t=type||"msg";const msg={from:user.uid,fromName:userName||"User",text,type:t,ts:Date.now()};try{await db.collection("chats").doc(chatWith.chatId).collection("messages").add(msg);const unrUpdate={};unrUpdate["unread."+chatWith.uid]=firebase.firestore.FieldValue.increment(1);await db.collection("chats").doc(chatWith.chatId).update({lastMsg:text.slice(0,80),lastTs:Date.now(),...unrUpdate});}catch(e){console.error("sendMsg:",e);}};
+  const sendSystemMsg=async(chatId,recipientUid,text)=>{if(!user)return;try{const msg={from:"system",fromName:"System",text,type:"system",ts:Date.now()};await db.collection("chats").doc(chatId).collection("messages").add(msg);const unrUpdate={};unrUpdate["unread."+recipientUid]=firebase.firestore.FieldValue.increment(1);await db.collection("chats").doc(chatId).update({lastMsg:text.slice(0,80),lastTs:Date.now(),...unrUpdate});}catch(e){console.error("sysMsg:",e);}};
+  const closeChat=()=>{if(chatUnsub.current){chatUnsub.current();chatUnsub.current=null;}setChatWith(null);setChatMsgs([]);};
 
   // AI PLAN GENERATION
   const AI_PROMPT=`You are a fitness coach. Generate a workout plan in EXACT JSON format. Respond ONLY with valid JSON, no markdown.
@@ -592,7 +619,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     finally{setAiLoading(false);}
   };
 
-  const savePrefs=(extra={})=>{if(!user)return;Cloud.save(user.uid,"prefs",{theme,aiKey,aiProvider,bwEnabled,userName,role:userRole,coachCode,...extra});};
+  const savePrefs=(extra={})=>{if(!user)return;Cloud.save(user.uid,"prefs",{theme,aiKey,aiProvider,bwEnabled,userName,role:userRole,coachCode,notifySession,notifyPlan,...extra});};
   const saveAIKey=()=>savePrefs();
 
   // LEADERBOARD
@@ -603,6 +630,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
   const loadLeaderboard=async()=>{try{const snap=await db.collection("leaderboard").get();const arr=[];snap.forEach(d=>{const data=d.data();arr.push({uid:d.id,...data});});setLbData(arr);}catch(e){console.error("LB load:",e);}};
   useEffect(()=>{if(user&&userName&&Object.keys(hist).length>0)updateLeaderboard();},[hist,userName,user]);
   useEffect(()=>{if(user&&screen==="leaderboard")loadLeaderboard();},[screen,user]);
+  useEffect(()=>{if(screen!=="chat"&&chatUnsub.current){chatUnsub.current();chatUnsub.current=null;}},[screen]);
   useEffect(()=>{if(user&&screen==="coaching"&&userRole==="coach")loadRoster();},[screen,user,userRole]);
   const publishPlan=(p)=>{if(!user)return;const pub={...p,_published:true};const nm={...myPlans,[p.id]:pub};setMyPlans(nm);Cloud.save(user.uid,"myPlans",nm);setCpDraft(null);setCpScreen("main");setPlanId(p.id);setPhaseIdx(0);setDayIdx(0);setScreen("home");};
   const togglePlanVisibility=(pid)=>{if(!user)return;const nh=hiddenPlans.includes(pid)?hiddenPlans.filter(id=>id!==pid):[...hiddenPlans,pid];setHiddenPlans(nh);Cloud.save(user.uid,"hiddenPlans",{ids:nh});};
@@ -638,7 +666,8 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     const dur=sessionStart?Math.floor((Date.now()-sessionStart)/60000):0;
     const nh={...hist,[k]:{...log,_duration:dur,_notes:wkNotes||""}};setHist(nh);setSyncing(true);await Cloud.save(user.uid,"history",nh);setSyncing(false);setSaved(true);
     if(newPRs.length>0){setPrToast(newPRs);setTimeout(()=>setPrToast(null),5000);}
-    setTimeout(()=>setSaved(false),3000);};
+    setTimeout(()=>setSaved(false),3000);
+    if(notifySession&&myCoaches.length>0){const dayTitle=day?.title||"workout";for(const coach of myCoaches){const chatId=getChatId(user.uid,coach.uid);try{const chatDoc=await db.collection("chats").doc(chatId).get();if(!chatDoc.exists)await db.collection("chats").doc(chatId).set({coachUid:coach.uid,athleteUid:user.uid,coachName:coach.name,athleteName:userName,lastMsg:"",lastTs:Date.now(),unread:{}});await sendSystemMsg(chatId,coach.uid,"\u2705 "+userName+" completed "+dayTitle+(dur?" ("+dur+" min)":""));}catch(e){console.error("notify coach:",e);}}}};
   const doSwap=async(ei,nm)=>{if(!user)return;const sk=`${planId}-${phaseIdx}-${dayIdx}-${ei}`;const ns={...swaps,[sk]:nm};setSwaps(ns);Cloud.save(user.uid,"swaps",ns);setLog(p=>{const n={...p};if(n[ei])n[ei]={...n[ei],name:nm};return n;});setSwapPanel(null);};
 
   // REORDER
@@ -718,6 +747,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           {syncing&&<span className="syncing" style={{fontSize:10,color:C.acc}}>syncing...</span>}
+          <button onClick={()=>{setScreen("chatlist");loadChatList();history.pushState({screen:"chatlist"},"");}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"6px 8px",cursor:"pointer",fontSize:16,lineHeight:1,position:"relative"}} title="Messages">💬{chatUnread>0&&<span style={{position:"absolute",top:-4,right:-4,background:"#EF4444",color:"#fff",fontSize:9,fontWeight:800,borderRadius:10,padding:"1px 5px",minWidth:14,textAlign:"center"}}>{chatUnread>9?"9+":chatUnread}</span>}</button>
           <button onClick={()=>{setScreen("leaderboard");loadLeaderboard();history.pushState({screen:"leaderboard"},"");}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"6px 8px",cursor:"pointer",fontSize:16,lineHeight:1}} title="Leaderboard">🏆</button>
           <div style={{position:"relative"}}>
             <button onClick={()=>setPlanMenu(!planMenu)} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"6px 12px",color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>{plan.name.length>18?plan.name.slice(0,18)+"...":plan.name} <Chev up={planMenu} s={14}/></button>
@@ -862,7 +892,52 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     {namePrompt&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.7)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setNamePrompt(false)}><div onClick={e=>e.stopPropagation()} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:16,padding:24,maxWidth:340,width:"100%"}}><div style={{fontFamily:"Outfit",fontSize:18,fontWeight:800,marginBottom:4}}>Set Your Name</div><div style={{fontSize:12,color:C.dim,marginBottom:16}}>This appears on the leaderboard and personalizes your app header.</div><input autoFocus placeholder="Your full name" value={userName} onChange={e=>setUserName(e.target.value)} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"12px",color:C.txt,fontSize:15,outline:"none",boxSizing:"border-box",fontFamily:"inherit",marginBottom:12}}/><div style={{display:"flex",gap:8}}><button onClick={()=>setNamePrompt(false)} style={{flex:1,padding:"12px",borderRadius:10,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button><button onClick={()=>{savePrefs();setNamePrompt(false);}} style={{flex:2,padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>Save Name</button></div></div></div>)}
 
     {/* ══════ MANAGE PLANS ══════ */}
-        {screen==="coaching"&&user&&(
+        {/* ══════ CHAT LIST ══════ */}
+    {screen==="chatlist"&&user&&(
+      <div className="fade-in" style={{padding:"16px 16px 80px"}}>
+        <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,marginBottom:16}}>Messages</div>
+        {chatList.length===0&&<div style={{textAlign:"center",color:C.fnt,fontSize:13,padding:24}}>No conversations yet. Connect with a coach or athlete through the Coaching screen to start messaging.</div>}
+        {chatList.map(ch=>{const isCoach=ch.coachUid===user?.uid;const partnerName=isCoach?ch.athleteName:ch.coachName;const partnerUid=isCoach?ch.athleteUid:ch.coachUid;const unread=(ch.unread||{})[user?.uid]||0;return(<div key={ch.id} onClick={()=>openChat(partnerUid,partnerName,!isCoach)} style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",background:C.card,border:`1px solid ${unread>0?C.acc+"40":C.bdr}`,borderRadius:12,marginBottom:6,cursor:"pointer"}}>
+          <div style={{width:40,height:40,borderRadius:20,background:C.acc+"20",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,color:C.acc}}>{(partnerName||"?")[0].toUpperCase()}</div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontWeight:700,fontSize:14,color:C.txt}}>{partnerName}</div><div style={{fontSize:10,color:C.fnt}}>{ch.lastTs?new Date(ch.lastTs).toLocaleDateString():""}</div></div>
+            <div style={{fontSize:12,color:C.fnt,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ch.lastMsg||"Start a conversation"}</div>
+          </div>
+          {unread>0&&<div style={{background:C.acc,color:"#fff",fontSize:10,fontWeight:800,borderRadius:10,padding:"2px 7px",minWidth:18,textAlign:"center"}}>{unread}</div>}
+        </div>);})}
+
+        {/* QUICK START: list coaches/athletes to start new chat */}
+        {(myCoaches.length>0||coachRoster.length>0)&&(<div style={{marginTop:20}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Start New Conversation</div>
+          {myCoaches.map(coach=>(<button key={coach.uid} onClick={()=>openChat(coach.uid,coach.name,true)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"10px 14px",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,color:C.txt,cursor:"pointer",marginBottom:4,textAlign:"left"}}><span style={{fontSize:14}}>&#x1f3af;</span><div><div style={{fontWeight:600,fontSize:13}}>{coach.name}</div><div style={{fontSize:10,color:C.fnt}}>Coach</div></div></button>))}
+          {coachRoster.map(a=>(<button key={a.uid} onClick={()=>openChat(a.uid,a.name,false)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"10px 14px",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,color:C.txt,cursor:"pointer",marginBottom:4,textAlign:"left"}}><span style={{fontSize:14}}>&#x1f3cb;</span><div><div style={{fontWeight:600,fontSize:13}}>{a.name}</div><div style={{fontSize:10,color:C.fnt}}>Athlete</div></div></button>))}
+        </div>)}
+      </div>)}
+
+    {/* ══════ CHAT CONVERSATION ══════ */}
+    {screen==="chat"&&user&&chatWith&&(
+      <div className="fade-in" style={{display:"flex",flexDirection:"column",height:"calc(100vh - 60px - env(safe-area-inset-top, 0px))",padding:0}}>
+        <div style={{padding:"12px 16px",borderBottom:`1px solid ${C.bdr}`,display:"flex",alignItems:"center",gap:10}}>
+          <div style={{width:32,height:32,borderRadius:16,background:C.acc+"20",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:14,color:C.acc}}>{(chatWith.name||"?")[0].toUpperCase()}</div>
+          <div style={{fontWeight:700,fontSize:15,color:C.txt}}>{chatWith.name}</div>
+        </div>
+        <div style={{flex:1,overflow:"auto",padding:"12px 16px"}}>
+          {chatMsgs.map(m=>{const mine=m.from===user.uid;const sys=m.type==="system";return(<div key={m.id} style={{marginBottom:8,display:"flex",justifyContent:sys?"center":mine?"flex-end":"flex-start"}}>
+            <div style={{maxWidth:sys?"90%":"75%",padding:sys?"6px 12px":"10px 14px",borderRadius:sys?8:mine?"14px 14px 4px 14px":"14px 14px 14px 4px",background:sys?C.srf+"80":mine?C.acc+"25":C.card,border:`1px solid ${sys?C.sbdr:mine?C.acc+"30":C.bdr}`,fontSize:sys?11:13,color:sys?C.fnt:C.txt,lineHeight:1.5,fontStyle:sys?"italic":"normal"}}>
+              {!mine&&!sys&&<div style={{fontSize:10,fontWeight:700,color:C.acc,marginBottom:2}}>{m.fromName}</div>}
+              <div style={{whiteSpace:"pre-wrap"}}>{m.text}</div>
+              <div style={{fontSize:9,color:C.fnt,marginTop:4,textAlign:mine?"right":"left"}}>{new Date(m.ts).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}</div>
+            </div>
+          </div>);})}
+          <div ref={chatEndRef}/>
+        </div>
+        <div style={{padding:"10px 16px",borderTop:`1px solid ${C.bdr}`,display:"flex",gap:8}}>
+          <input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&chatInput.trim()){sendChatMsg(chatInput.trim());setChatInput("");}}} placeholder="Type a message..." style={{flex:1,background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:"12px 14px",color:C.txt,fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"inherit"}}/>
+          <button onClick={()=>{if(chatInput.trim()){sendChatMsg(chatInput.trim());setChatInput("");}}} style={{padding:"12px 18px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}}>Send</button>
+        </div>
+      </div>)}
+
+    {screen==="coaching"&&user&&(
       <div className="fade-in" style={{padding:"16px 16px 80px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
           <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800}}>Coaching</div>
@@ -905,7 +980,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
               <div style={{fontWeight:700,fontSize:14,color:C.txt}}>{a.name}</div>
               <div style={{fontSize:10,color:C.fnt}}>Joined {a.joinedAt?new Date(a.joinedAt).toLocaleDateString():""}</div>
             </div>
-            {!bulkAssignPlan&&<button onClick={()=>{setViewAthlete(a);loadAthleteData(a.uid);}} style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${C.acc}40`,background:C.acc+"10",color:C.acc,fontSize:11,fontWeight:700,cursor:"pointer"}}>View</button>}
+            {!bulkAssignPlan&&<button onClick={()=>openChat(a.uid,a.name,false)} style={{padding:"6px 8px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:14,cursor:"pointer",lineHeight:1}} title="Chat">💬</button>}{!bulkAssignPlan&&<button onClick={()=>{setViewAthlete(a);loadAthleteData(a.uid);}} style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${C.acc}40`,background:C.acc+"10",color:C.acc,fontSize:11,fontWeight:700,cursor:"pointer"}}>View</button>}
             {!bulkAssignPlan&&<button onClick={()=>removeAthlete(a.connId,a.name)} style={{padding:"6px 10px",borderRadius:8,border:"1px solid #EF444425",background:"transparent",color:"#EF4444",fontSize:11,fontWeight:600,cursor:"pointer"}}>Remove</button>}
           </div>))}
 
@@ -1015,6 +1090,19 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
             </div>
           </div>
         </>)}
+
+        {/* NOTIFICATION PREFERENCES */}
+        {userRole&&(<div style={{marginTop:20,background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"14px 16px"}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Chat Notifications</div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div><div style={{fontSize:13,fontWeight:600,color:C.txt}}>Session Completed</div><div style={{fontSize:10,color:C.fnt}}>Auto-message coaches when you finish a workout</div></div>
+            <button onClick={()=>{const nv=!notifySession;setNotifySession(nv);savePrefs({notifySession:nv});}} style={{width:44,height:24,borderRadius:12,border:"none",background:notifySession?C.acc:"#444",cursor:"pointer",position:"relative",transition:"background .2s"}}><div style={{width:18,height:18,borderRadius:9,background:"#fff",position:"absolute",top:3,left:notifySession?23:3,transition:"left .2s"}}/></button>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div><div style={{fontSize:13,fontWeight:600,color:C.txt}}>Plan Assigned</div><div style={{fontSize:10,color:C.fnt}}>Auto-message when coach assigns a new plan</div></div>
+            <button onClick={()=>{const nv=!notifyPlan;setNotifyPlan(nv);savePrefs({notifyPlan:nv});}} style={{width:44,height:24,borderRadius:12,border:"none",background:notifyPlan?C.acc:"#444",cursor:"pointer",position:"relative",transition:"background .2s"}}><div style={{width:18,height:18,borderRadius:9,background:"#fff",position:"absolute",top:3,left:notifyPlan?23:3,transition:"left .2s"}}/></button>
+          </div>
+        </div>)}
 
         {/* RESET ROLE */}
         {userRole&&(<div style={{marginTop:24,textAlign:"center"}}><button onClick={()=>{if(confirm("Reset your coaching role? This won't delete connections.")){setUserRole(null);savePrefs({role:null});}}} style={{background:"none",border:"none",color:C.fnt,fontSize:11,cursor:"pointer",textDecoration:"underline"}}>Reset coaching role</button></div>)}
