@@ -45,7 +45,7 @@ const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const
 const link=document.createElement('link');link.rel='manifest';link.href=mUrl;document.head.appendChild(link);
 const iconLink=document.createElement('link');iconLink.rel='icon';iconLink.href=iconUrl;iconLink.type='image/svg+xml';document.head.appendChild(iconLink);
 const appleIcon=document.createElement('link');appleIcon.rel='apple-touch-icon';appleIcon.href=iconUrl;document.head.appendChild(appleIcon);
-if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v27';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
+if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v28';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
 const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.auth();const db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
 </script>
 </head>
@@ -271,6 +271,7 @@ const TEMPLATES=[
 const ALL=[V1,V2,V3];
 
 const CHANGELOG=[
+  {ver:"v28",date:"2026-03-03",title:"Clean Onboarding & UI Polish",items:["New users start with a clean home screen and onboarding tips","Built-in plans (V1, V2, V3) available in Manage Plans instead of shown by default","App title is now clickable to return to the home screen","Moved Leaderboard to dropdown menu for a cleaner header","Progress button moved inside plan card next to the progress bar"]},
   {ver:"v27",date:"2026-03-03",title:"Coach-Athlete Chat",items:["Real-time messaging between coaches and athletes","Auto-notifications: session completed alerts sent to coaches","Auto-notifications: plan assigned alerts sent to athletes","Unread message badge on chat icon in header","Chat list with conversation previews and timestamps","Notification toggle: turn session/plan auto-messages on or off","Quick chat buttons on coach roster"]},
   {ver:"v26",date:"2026-03-03",title:"Coach Plan Management",items:["Coaches can assign plans to individual athletes","Bulk plan assignment to multiple athletes at once","Enhanced athlete detail: expandable sessions with weights/reps","Plans tab showing assigned and athlete-owned plans","Coach Instructions: notes visible on athlete home screen","Remove assigned plans from athletes"]},
   {ver:"v25",date:"2026-03-03",title:"Coaching System",items:["Coach registration with unique 6-character invite codes","Athletes join coaches by entering the invite code","Coach dashboard with full athlete roster","View athlete session history and stats","Remove athletes or disconnect from coach","Role selection: Coach or Athlete"]},
@@ -447,6 +448,7 @@ function App(){
 
   const allPlans=useMemo(()=>[...ALL,...Object.values(myPlans).filter(p=>p._published!==false),...Object.values(coachPlans).filter(p=>p._published!==false)],[myPlans,coachPlans]);
   const visiblePlans=useMemo(()=>allPlans.filter(p=>!hiddenPlans.includes(p.id)),[allPlans,hiddenPlans]);
+  const hasNoPlan=visiblePlans.length===0;
   const plan=visiblePlans.find(p=>p.id===planId)||visiblePlans[0]||allPlans[0];
   const phase=plan.phases[phaseIdx];
   const day=phase?.days[dayIdx];
@@ -468,7 +470,7 @@ function App(){
     setSyncing(true);const uid=user.uid;
     Promise.all([Cloud.load(uid,"state"),Cloud.load(uid,"history"),Cloud.load(uid,"swaps"),Cloud.load(uid,"customEx"),Cloud.load(uid,"ssLinks"),Cloud.load(uid,"exOrder"),Cloud.load(uid,"exEdits"),Cloud.load(uid,"bodyWeight"),Cloud.load(uid,"prefs"),Cloud.load(uid,"myPlans"),Cloud.load(uid,"hiddenPlans"),Cloud.load(uid,"coachPlans"),Cloud.load(uid,"coachNotes")]).then(([st,h,s,ce,sl,eo,ee,bw,pf,mp,hp,cp,cn])=>{
       if(st){setPlanId(st.p||"v1");setPhaseIdx(st.ph||0);setDayIdx(st.d||0);}
-      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(pf&&pf.userName)setUserName(pf.userName);if(pf&&pf.role)setUserRole(pf.role);if(pf&&pf.coachCode)setCoachCode(pf.coachCode);if(pf?.notifySession===false)setNotifySession(false);if(pf?.notifyPlan===false)setNotifyPlan(false);if(mp)setMyPlans(mp);if(hp&&hp.ids)setHiddenPlans(hp.ids);if(cp)setCoachPlans(cp);if(cn)setCoachNotes(cn);setSyncing(false);if(!pf?.userName)setNamePrompt(true);
+      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(pf&&pf.userName)setUserName(pf.userName);if(pf&&pf.role)setUserRole(pf.role);if(pf&&pf.coachCode)setCoachCode(pf.coachCode);if(pf?.notifySession===false)setNotifySession(false);if(pf?.notifyPlan===false)setNotifyPlan(false);if(mp)setMyPlans(mp);if(hp&&hp.ids)setHiddenPlans(hp.ids);if(cp)setCoachPlans(cp);if(cn)setCoachNotes(cn);setSyncing(false);if(!pf?.userName){setNamePrompt(true);if(!hp||!hp.ids){const defaultHidden=["v1","v2","v3"];setHiddenPlans(defaultHidden);Cloud.save(uid,"hiddenPlans",{ids:defaultHidden});}}
     });
     unsubs.current.push(
       Cloud.listen(uid,"history",data=>setHist(data)),
@@ -743,12 +745,11 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",maxWidth:600,margin:"0 auto"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           {screen!=="home"&&<button onClick={()=>{history.back();}} style={{background:"none",border:"none",color:C.acc,fontSize:14,fontWeight:600,cursor:"pointer"}}>← Back</button>}
-          {(()=>{const ln=userName?userName.trim().split(/\s+/).pop().toUpperCase():"";return(<div style={{fontFamily:"Outfit",fontWeight:800,fontSize:18,letterSpacing:"-0.5px",display:"flex",alignItems:"center",gap:6}}><DBIcon s={20}/><span style={{color:C.acc}}>{ln||"WIESER"}</span><span> WORKOUTS</span></div>);})()}
+          {(()=>{const ln=userName?userName.trim().split(/\s+/).pop().toUpperCase():"";return(<div onClick={()=>{setScreen("home");history.pushState({screen:"home"},"");setPlanMenu(false);}} style={{fontFamily:"Outfit",fontWeight:800,fontSize:18,letterSpacing:"-0.5px",display:"flex",alignItems:"center",gap:6,cursor:"pointer"}}><DBIcon s={20}/><span style={{color:C.acc}}>{ln||"WIESER"}</span><span> WORKOUTS</span></div>);})()}
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           {syncing&&<span className="syncing" style={{fontSize:10,color:C.acc}}>syncing...</span>}
           <button onClick={()=>{setScreen("chatlist");loadChatList();history.pushState({screen:"chatlist"},"");}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"6px 8px",cursor:"pointer",fontSize:16,lineHeight:1,position:"relative"}} title="Messages">💬{chatUnread>0&&<span style={{position:"absolute",top:-4,right:-4,background:"#EF4444",color:"#fff",fontSize:9,fontWeight:800,borderRadius:10,padding:"1px 5px",minWidth:14,textAlign:"center"}}>{chatUnread>9?"9+":chatUnread}</span>}</button>
-          <button onClick={()=>{setScreen("leaderboard");loadLeaderboard();history.pushState({screen:"leaderboard"},"");}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"6px 8px",cursor:"pointer",fontSize:16,lineHeight:1}} title="Leaderboard">🏆</button>
           <div style={{position:"relative"}}>
             <button onClick={()=>setPlanMenu(!planMenu)} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"6px 12px",color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>{plan.name.length>18?plan.name.slice(0,18)+"...":plan.name} <Chev up={planMenu} s={14}/></button>
             {planMenu&&(
@@ -758,6 +759,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
                 <button onClick={()=>{setPlanMenu(false);setCpScreen("main");setCpDraft(null);setAiError("");setScreen("create");history.pushState({screen:"create"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.acc}30`,color:C.acc,cursor:"pointer",fontWeight:700,fontSize:13}}>✨ Create New Plan</button>
                 <button onClick={()=>{setPlanMenu(false);setCoachMsg("");setScreen("coaching");loadRoster();history.pushState({screen:"coaching"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontWeight:600,fontSize:13}}>🎯 Coaching</button>
                 <button onClick={()=>{setPlanMenu(false);setScreen("plans");history.pushState({screen:"plans"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontWeight:600,fontSize:13}}>⚙️ Manage Plans</button>
+                <button onClick={()=>{setPlanMenu(false);setScreen("leaderboard");loadLeaderboard();history.pushState({screen:"leaderboard"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontWeight:600,fontSize:13}}>🏆 Leaderboard</button>
                 <button onClick={()=>{setScreen("changelog");setPlanMenu(false);history.pushState({screen:"changelog"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontSize:12,fontWeight:600}}>📋 Latest App Updates</button>
                 <div style={{borderTop:`1px solid ${C.bdr}`,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>{user.photoURL&&<img src={user.photoURL} style={{width:24,height:24,borderRadius:12}} referrerPolicy="no-referrer"/>}<span onClick={()=>setNamePrompt(true)} style={{fontSize:11,color:userName?C.dim:C.acc,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",cursor:"pointer"}}>{userName||"Set your name ✎"}</span></div>
@@ -1259,7 +1261,61 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           <div style={{fontSize:13,color:C.txt,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{coachNotes._instructions}</div>
           {coachNotes._updatedAt&&<div style={{fontSize:9,color:C.fnt,marginTop:6}}>Updated {new Date(coachNotes._updatedAt).toLocaleDateString()}</div>}
         </div>)}
-        <div style={{background:"linear-gradient(135deg,#1A1420,#141A22)",borderRadius:16,padding:"20px 18px",marginBottom:12,border:`1px solid ${C.bdr}`}}>
+
+        {/* ONBOARDING - blank slate for new users */}
+        {hasNoPlan&&(<div style={{marginBottom:20}}>
+          <div style={{background:"linear-gradient(135deg,#1A1420,#141A22)",borderRadius:16,padding:"24px 20px",marginBottom:16,border:`1px solid ${C.bdr}`,textAlign:"center"}}>
+            <div style={{fontSize:36,marginBottom:12}}>💪</div>
+            <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:C.acc,marginBottom:6}}>Welcome to Wieser Workouts!</div>
+            <div style={{fontSize:14,color:C.dim,lineHeight:1.7}}>Your personal workout tracker. Let's get you set up.</div>
+          </div>
+
+          <div style={{fontSize:11,color:C.acc,fontWeight:700,letterSpacing:"0.5px",marginBottom:10}}>GETTING STARTED</div>
+
+          <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"16px",marginBottom:8}}>
+            <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
+              <div style={{background:C.acc+"18",borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:16}}>1</div>
+              <div><div style={{fontWeight:700,fontSize:14,color:C.txt,marginBottom:4}}>Create or Choose a Workout Plan</div><div style={{fontSize:12,color:C.dim,lineHeight:1.6}}>Use AI to generate a custom plan tailored to your equipment and goals, or enable one of the built-in plans from Manage Plans.</div>
+              <button onClick={()=>{setCpScreen("main");setCpDraft(null);setAiError("");setScreen("create");history.pushState({screen:"create"},"");}} style={{marginTop:10,padding:"10px 16px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>✨ Create a Plan</button>
+              <button onClick={()=>{setScreen("plans");history.pushState({screen:"plans"},"");}} style={{marginTop:10,marginLeft:8,padding:"10px 16px",borderRadius:10,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:13,fontWeight:600,cursor:"pointer"}}>Browse Plans</button>
+              </div>
+            </div>
+          </div>
+
+          <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"16px",marginBottom:8}}>
+            <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
+              <div style={{background:"#5B8DEF18",borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:16,color:"#5B8DEF"}}>2</div>
+              <div><div style={{fontWeight:700,fontSize:14,color:C.txt,marginBottom:4}}>Track Your Workouts</div><div style={{fontSize:12,color:C.dim,lineHeight:1.6}}>Log weight and reps for each exercise. The app tracks personal records, session history, and progress over time.</div></div>
+            </div>
+          </div>
+
+          <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"16px",marginBottom:8}}>
+            <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
+              <div style={{background:"#22C55E18",borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:16,color:"#22C55E"}}>3</div>
+              <div><div style={{fontWeight:700,fontSize:14,color:C.txt,marginBottom:4}}>Customize Everything</div><div style={{fontSize:12,color:C.dim,lineHeight:1.6}}>Swap exercises, add custom ones, reorder your workout, and edit sets and cues. Every plan is fully adjustable to fit your gym.</div></div>
+            </div>
+          </div>
+
+          <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"16px",marginBottom:8}}>
+            <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
+              <div style={{background:"#A78BFA18",borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:16,color:"#A78BFA"}}>4</div>
+              <div><div style={{fontWeight:700,fontSize:14,color:C.txt,marginBottom:4}}>Connect with a Coach</div><div style={{fontSize:12,color:C.dim,lineHeight:1.6}}>Coaches can assign plans, send instructions, and track your progress. Enter a coach code to connect, or register as a coach yourself.</div></div>
+            </div>
+          </div>
+
+          <div style={{fontSize:11,color:C.fnt,fontWeight:700,letterSpacing:"0.5px",marginTop:16,marginBottom:10}}>QUICK TIPS</div>
+          <div style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:12,padding:"14px 16px",fontSize:12,color:C.dim,lineHeight:1.8}}>
+            <div>📲 <b style={{color:C.txt}}>Install as an app</b> — use your browser's "Add to Home Screen" for the best experience.</div>
+            <div>🔄 <b style={{color:C.txt}}>Sync across devices</b> — your data is saved to the cloud automatically.</div>
+            <div>📊 <b style={{color:C.txt}}>View progress charts</b> — after logging sessions, track your strength gains over time.</div>
+            <div>↔ <b style={{color:C.txt}}>Swap exercises</b> — tap any exercise during a workout to swap it for an alternative.</div>
+            <div>⏱ <b style={{color:C.txt}}>Rest timer</b> — auto-starts when you log a set. Tap to dismiss.</div>
+            <div>🏆 <b style={{color:C.txt}}>Leaderboard</b> — compete with others on total sessions logged.</div>
+          </div>
+        </div>)}
+
+        {/* PLAN VIEW - shown when user has an active plan */}
+        {!hasNoPlan&&<div style={{background:"linear-gradient(135deg,#1A1420,#141A22)",borderRadius:16,padding:"20px 18px",marginBottom:12,border:`1px solid ${C.bdr}`}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
             <div><div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:C.acc,lineHeight:1.2}}>{plan.name}</div><div style={{color:C.dim,fontSize:13,marginTop:4}}>{plan.subtitle}</div></div>
             {weekNum>0&&(<div style={{background:C.acc+"18",border:`1px solid ${C.acc}30`,borderRadius:10,padding:"8px 12px",textAlign:"center",flexShrink:0}}><div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:C.acc,lineHeight:1}}>{weekNum}</div><div style={{fontSize:9,color:C.acc,fontWeight:600,letterSpacing:"0.5px",marginTop:2}}>WEEK</div></div>)}
@@ -1267,10 +1323,9 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
             {weekNum>0?(<><span style={{background:C.grn+"18",color:C.grn,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>Week {weekNum} of 12</span><span style={{background:"#5B8DEF18",color:"#5B8DEF",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{totalSessions} sessions logged</span>{bwEnabled&&bwThisWeek&&<span style={{background:"#F59E0B18",color:"#F59E0B",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{bwThisWeek} lbs</span>}</>):(["Mon/Wed/Fri","Full Body","12 Weeks","3 Phases"].map(t=>(<span key={t} style={{background:C.acc+"18",color:C.acc,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{t}</span>)))}
           </div>
-          {weekNum>0&&(<div style={{marginTop:12}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:10,color:C.fnt}}>Progress</span><span style={{fontSize:10,color:C.fnt}}>{Math.round((weekNum/12)*100)}%</span></div><div style={{height:6,background:C.srf,borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${(weekNum/12)*100}%`,background:`linear-gradient(90deg,${C.acc},#FF9F5C)`,borderRadius:3,transition:"width 0.5s"}}/></div></div>)}
+          {weekNum>0&&(<div style={{marginTop:12}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:10,color:C.fnt}}>Progress</span><span style={{fontSize:10,color:C.fnt}}>{Math.round((weekNum/12)*100)}%</span></div><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{flex:1,height:6,background:C.srf,borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${(weekNum/12)*100}%`,background:`linear-gradient(90deg,${C.acc},#FF9F5C)`,borderRadius:3,transition:"width 0.5s"}}/></div>{totalSessions>0&&<button onClick={()=>{setScreen("progress");setProgEx(loggedExercises[0]||"");setProgDay("all");setProgOpen(null);history.pushState({screen:"progress"},"");}} style={{padding:"5px 12px",borderRadius:8,border:`1px solid #5B8DEF30`,background:"#5B8DEF12",color:"#5B8DEF",fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4,flexShrink:0}}><ChartIcon s={14}/> Progress</button>}</div></div>)}
+          {totalSessions>0&&!weekNum&&<div style={{marginTop:10}}><button onClick={()=>{setScreen("progress");setProgEx(loggedExercises[0]||"");setProgDay("all");setProgOpen(null);history.pushState({screen:"progress"},"");}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid #5B8DEF30`,background:"#5B8DEF12",color:"#5B8DEF",fontSize:12,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}><ChartIcon s={14}/> View Progress & History</button></div>}
         </div>
-
-        {totalSessions>0&&(<button onClick={()=>{setScreen("progress");setProgEx(loggedExercises[0]||"");setProgDay("all");setProgOpen(null);history.pushState({screen:"progress"},"");}} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",padding:"14px",background:"linear-gradient(135deg,#1A1A2E,#16213E)",border:`1px solid #5B8DEF30`,borderRadius:12,color:"#5B8DEF",fontSize:14,fontWeight:700,cursor:"pointer",marginBottom:20}}><ChartIcon s={18}/> View Progress & History</button>)}
 
 {/* BODY WEIGHT LOG - weekly */}
         {bwEnabled&&!bwThisWeek?(
@@ -1300,6 +1355,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
                 <div style={{display:"flex",alignItems:"center",gap:8}}>{sc>0&&<span style={{width:8,height:8,borderRadius:4,background:C.grn}}/>}<span style={{color:C.acc,fontSize:20}}>→</span></div>
               </button>);})}
           </div>))}
+      </div>}
       </div>)}
 
     {/* ══════ PROGRESS SCREEN ══════ */}
