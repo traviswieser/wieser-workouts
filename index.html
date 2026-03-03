@@ -45,7 +45,7 @@ const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const
 const link=document.createElement('link');link.rel='manifest';link.href=mUrl;document.head.appendChild(link);
 const iconLink=document.createElement('link');iconLink.rel='icon';iconLink.href=iconUrl;iconLink.type='image/svg+xml';document.head.appendChild(iconLink);
 const appleIcon=document.createElement('link');appleIcon.rel='apple-touch-icon';appleIcon.href=iconUrl;document.head.appendChild(appleIcon);
-if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v25';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
+if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v26';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
 const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.auth();const db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
 </script>
 </head>
@@ -271,6 +271,7 @@ const TEMPLATES=[
 const ALL=[V1,V2,V3];
 
 const CHANGELOG=[
+  {ver:"v26",date:"2026-03-03",title:"Coach Plan Management",items:["Coaches can assign plans to individual athletes","Bulk plan assignment to multiple athletes at once","Enhanced athlete detail: expandable sessions with weights/reps","Plans tab showing assigned and athlete-owned plans","Coach Instructions: notes visible on athlete home screen","Remove assigned plans from athletes"]},
   {ver:"v25",date:"2026-03-03",title:"Coaching System",items:["Coach registration with unique 6-character invite codes","Athletes join coaches by entering the invite code","Coach dashboard with full athlete roster","View athlete session history and stats","Remove athletes or disconnect from coach","Role selection: Coach or Athlete"]},
   {ver:"v24b",date:"2026-03-03",title:"Leaderboard Fix",items:["Leaderboard now counts total sessions instead of unique dates","Multiple workouts on the same day each count separately"]},
   {ver:"v24",date:"2026-03-03",title:"iOS Fix & Cleanup",items:["Fixed iOS status bar overlap in standalone mode","Removed phone auth (requires paid Firebase plan)","Account linking for Google and email still available"]},
@@ -411,6 +412,14 @@ function App(){
   const [rosterLoading,setRosterLoading]=useState(false);
   const [viewAthlete,setViewAthlete]=useState(null);
   const [athleteData,setAthleteData]=useState(null);
+  const [assignModal,setAssignModal]=useState(null);
+  const [bulkSelect,setBulkSelect]=useState([]);
+  const [bulkAssignPlan,setBulkAssignPlan]=useState(null);
+  const [coachNotes,setCoachNotes]=useState({});
+  const [athleteNoteInput,setAthleteNoteInput]=useState("");
+  const [expandSession,setExpandSession]=useState(null);
+  const [athleteDetailTab,setAthleteDetailTab]=useState("sessions");
+  const [coachPlans,setCoachPlans]=useState({});
   const [cpDraft,setCpDraft]=useState(null);
   const [cpScreen,setCpScreen]=useState("main");
   const [aiKey,setAiKey]=useState("");
@@ -426,7 +435,7 @@ function App(){
   const unsubs=useRef([]);
   const C=theme==="dark"?DARK:LIGHT;
 
-  const allPlans=useMemo(()=>[...ALL,...Object.values(myPlans).filter(p=>p._published!==false)],[myPlans]);
+  const allPlans=useMemo(()=>[...ALL,...Object.values(myPlans).filter(p=>p._published!==false),...Object.values(coachPlans).filter(p=>p._published!==false)],[myPlans,coachPlans]);
   const visiblePlans=useMemo(()=>allPlans.filter(p=>!hiddenPlans.includes(p.id)),[allPlans,hiddenPlans]);
   const plan=visiblePlans.find(p=>p.id===planId)||visiblePlans[0]||allPlans[0];
   const phase=plan.phases[phaseIdx];
@@ -447,9 +456,9 @@ function App(){
     unsubs.current.forEach(fn=>fn());unsubs.current=[];
     if(!user)return;
     setSyncing(true);const uid=user.uid;
-    Promise.all([Cloud.load(uid,"state"),Cloud.load(uid,"history"),Cloud.load(uid,"swaps"),Cloud.load(uid,"customEx"),Cloud.load(uid,"ssLinks"),Cloud.load(uid,"exOrder"),Cloud.load(uid,"exEdits"),Cloud.load(uid,"bodyWeight"),Cloud.load(uid,"prefs"),Cloud.load(uid,"myPlans"),Cloud.load(uid,"hiddenPlans")]).then(([st,h,s,ce,sl,eo,ee,bw,pf,mp,hp])=>{
+    Promise.all([Cloud.load(uid,"state"),Cloud.load(uid,"history"),Cloud.load(uid,"swaps"),Cloud.load(uid,"customEx"),Cloud.load(uid,"ssLinks"),Cloud.load(uid,"exOrder"),Cloud.load(uid,"exEdits"),Cloud.load(uid,"bodyWeight"),Cloud.load(uid,"prefs"),Cloud.load(uid,"myPlans"),Cloud.load(uid,"hiddenPlans"),Cloud.load(uid,"coachPlans"),Cloud.load(uid,"coachNotes")]).then(([st,h,s,ce,sl,eo,ee,bw,pf,mp,hp,cp,cn])=>{
       if(st){setPlanId(st.p||"v1");setPhaseIdx(st.ph||0);setDayIdx(st.d||0);}
-      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(pf&&pf.userName)setUserName(pf.userName);if(pf&&pf.role)setUserRole(pf.role);if(pf&&pf.coachCode)setCoachCode(pf.coachCode);if(mp)setMyPlans(mp);if(hp&&hp.ids)setHiddenPlans(hp.ids);setSyncing(false);if(!pf?.userName)setNamePrompt(true);
+      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(pf&&pf.userName)setUserName(pf.userName);if(pf&&pf.role)setUserRole(pf.role);if(pf&&pf.coachCode)setCoachCode(pf.coachCode);if(mp)setMyPlans(mp);if(hp&&hp.ids)setHiddenPlans(hp.ids);if(cp)setCoachPlans(cp);if(cn)setCoachNotes(cn);setSyncing(false);if(!pf?.userName)setNamePrompt(true);
     });
     unsubs.current.push(
       Cloud.listen(uid,"history",data=>setHist(data)),
@@ -462,7 +471,9 @@ function App(){
       Cloud.listen(uid,"bodyWeight",data=>{if(data)setBodyWt(data);}),
       Cloud.listen(uid,"prefs",data=>{if(data&&data.theme)setTheme(data.theme);if(data&&data.aiKey)setAiKey(data.aiKey);if(data&&data.aiProvider)setAiProvider(data.aiProvider);if(data?.bwEnabled===false)setBwEnabled(false);else if(data?.bwEnabled===true)setBwEnabled(true);if(data&&data.userName)setUserName(data.userName);if(data&&data.role)setUserRole(data.role);if(data&&data.coachCode)setCoachCode(data.coachCode);}),
       Cloud.listen(uid,"myPlans",data=>{if(data)setMyPlans(data);}),
-      Cloud.listen(uid,"hiddenPlans",data=>{if(data&&data.ids)setHiddenPlans(data.ids);})
+      Cloud.listen(uid,"hiddenPlans",data=>{if(data&&data.ids)setHiddenPlans(data.ids);}),
+      Cloud.listen(uid,"coachPlans",data=>{if(data)setCoachPlans(data);}),
+      Cloud.listen(uid,"coachNotes",data=>{if(data)setCoachNotes(data);})
     );
     return()=>{unsubs.current.forEach(fn=>fn());unsubs.current=[];};
   },[user]);
@@ -486,7 +497,11 @@ function App(){
   const loadMyCoaches=async()=>{if(!user)return;try{const snap=await db.collection("connections").where("athleteUid","==",user.uid).where("status","==","active").get();const coaches=[];for(const doc of snap.docs){const d=doc.data();const cSnap=await db.collection("coaches").doc(d.coachUid).get();if(cSnap.exists)coaches.push({uid:d.coachUid,name:cSnap.data().name,connId:doc.id});}setMyCoaches(coaches);}catch(e){console.error("LoadCoaches:",e);}};
   const leaveCoach=async(coach)=>{if(!coach?.connId)return;try{await db.collection("connections").doc(coach.connId).update({status:"inactive"});setMyCoaches(prev=>prev.filter(c=>c.connId!==coach.connId));setCoachMsg("Disconnected from "+coach.name+".");}catch(e){setCoachMsg(e.message);}};
   const removeAthlete=async(connId,name)=>{if(!confirm("Remove "+name+" from your roster?"))return;try{await db.collection("connections").doc(connId).update({status:"inactive"});setCoachRoster(r=>r.filter(a=>a.connId!==connId));setCoachMsg(name+" removed.");}catch(e){setCoachMsg(e.message);}};
-  const loadAthleteData=async(uid)=>{try{const[h,pf,mp]=await Promise.all([Cloud.load(uid,"history"),Cloud.load(uid,"prefs"),Cloud.load(uid,"myPlans")]);setAthleteData({hist:h||{},prefs:pf||{},myPlans:mp||{}});}catch(e){console.error("Load athlete:",e);}};
+  const loadAthleteData=async(uid)=>{try{const[h,pf,mp,cp,cn]=await Promise.all([Cloud.load(uid,"history"),Cloud.load(uid,"prefs"),Cloud.load(uid,"myPlans"),Cloud.load(uid,"coachPlans"),Cloud.load(uid,"coachNotes")]);setAthleteData({hist:h||{},prefs:pf||{},myPlans:mp||{},coachPlans:cp||{},coachNotes:cn||{}});if(cn&&cn._instructions)setAthleteNoteInput(cn._instructions||"");}catch(e){console.error("Load athlete:",e);}};
+  const assignPlanToAthlete=async(athleteUid,plan)=>{if(!user)return;try{const existing=await Cloud.load(athleteUid,"coachPlans")||{};const cp={...existing,[plan.id]:{...plan,_published:true,_assignedBy:user.uid,_assignedByName:userName,_assignedAt:Date.now()}};await Cloud.doc(athleteUid,"coachPlans").set(cp);setCoachMsg("Plan assigned to athlete!");if(athleteData)setAthleteData(prev=>({...prev,coachPlans:cp}));}catch(e){setCoachMsg("Failed: "+e.message);}};
+  const assignPlanBulk=async(plan)=>{if(!user||bulkSelect.length===0)return;setCoachMsg("");let ok=0;for(const uid of bulkSelect){try{const existing=await Cloud.load(uid,"coachPlans")||{};const cp={...existing,[plan.id]:{...plan,_published:true,_assignedBy:user.uid,_assignedByName:userName,_assignedAt:Date.now()}};await Cloud.doc(uid,"coachPlans").set(cp);ok++;}catch(e){console.error("Bulk assign "+uid,e);}}setCoachMsg("Plan assigned to "+ok+" athlete"+(ok!==1?"s":"")+"!");setBulkSelect([]);setBulkAssignPlan(null);};
+  const removePlanFromAthlete=async(athleteUid,planId)=>{if(!user)return;try{const existing=await Cloud.load(athleteUid,"coachPlans")||{};delete existing[planId];await Cloud.doc(athleteUid,"coachPlans").set(existing);setCoachMsg("Plan removed from athlete.");if(athleteData)setAthleteData(prev=>{const cp={...prev.coachPlans};delete cp[planId];return{...prev,coachPlans:cp};});}catch(e){setCoachMsg("Failed: "+e.message);}};
+  const saveCoachInstructions=async(athleteUid,text)=>{if(!user)return;try{const existing=await Cloud.load(athleteUid,"coachNotes")||{};const cn={...existing,_instructions:text,_updatedBy:user.uid,_updatedAt:Date.now()};await Cloud.doc(athleteUid,"coachNotes").set(cn);setCoachMsg("Instructions saved!");if(athleteData)setAthleteData(prev=>({...prev,coachNotes:cn}));}catch(e){setCoachMsg("Failed: "+e.message);}};
   const unlinkProvider=async(pid)=>{setLinkMsg("");if(user.providerData.length<=1){setLinkMsg("Can't remove your only sign-in method.");return;}try{await user.unlink(pid);setLinkMsg("Unlinked successfully.");}catch(e){setLinkMsg(e.message);}};
 
 
@@ -883,30 +898,103 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
             <button onClick={loadRoster} style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:11,fontWeight:600,cursor:"pointer"}}>{rosterLoading?"Loading...":"Refresh"}</button>
           </div>
           {coachRoster.length===0&&!rosterLoading&&<div style={{padding:"24px",textAlign:"center",color:C.fnt,fontSize:13}}>No athletes yet. Share your coach code to get started.</div>}
-          {coachRoster.map(a=>(<div key={a.uid} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,marginBottom:6}}>
+          {coachRoster.map(a=>(<div key={a.uid} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:C.card,border:`1px solid ${bulkAssignPlan?bulkSelect.includes(a.uid)?C.acc+"60":C.bdr:C.bdr}`,borderRadius:12,marginBottom:6}}>
+            {bulkAssignPlan&&<div onClick={()=>setBulkSelect(prev=>prev.includes(a.uid)?prev.filter(u=>u!==a.uid):[...prev,a.uid])} style={{width:22,height:22,borderRadius:6,border:`2px solid ${bulkSelect.includes(a.uid)?C.acc:C.sbdr}`,background:bulkSelect.includes(a.uid)?C.acc:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>{bulkSelect.includes(a.uid)&&<span style={{color:"#fff",fontSize:12,fontWeight:800}}>✓</span>}</div>}
             <div style={{width:36,height:36,borderRadius:18,background:C.acc+"20",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:14,color:C.acc}}>{(a.name||"?")[0].toUpperCase()}</div>
             <div style={{flex:1}}>
               <div style={{fontWeight:700,fontSize:14,color:C.txt}}>{a.name}</div>
               <div style={{fontSize:10,color:C.fnt}}>Joined {a.joinedAt?new Date(a.joinedAt).toLocaleDateString():""}</div>
             </div>
-            <button onClick={()=>{setViewAthlete(a);loadAthleteData(a.uid);}} style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${C.acc}40`,background:C.acc+"10",color:C.acc,fontSize:11,fontWeight:700,cursor:"pointer"}}>View</button>
-            <button onClick={()=>removeAthlete(a.connId,a.name)} style={{padding:"6px 10px",borderRadius:8,border:"1px solid #EF444425",background:"transparent",color:"#EF4444",fontSize:11,fontWeight:600,cursor:"pointer"}}>Remove</button>
+            {!bulkAssignPlan&&<button onClick={()=>{setViewAthlete(a);loadAthleteData(a.uid);}} style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${C.acc}40`,background:C.acc+"10",color:C.acc,fontSize:11,fontWeight:700,cursor:"pointer"}}>View</button>}
+            {!bulkAssignPlan&&<button onClick={()=>removeAthlete(a.connId,a.name)} style={{padding:"6px 10px",borderRadius:8,border:"1px solid #EF444425",background:"transparent",color:"#EF4444",fontSize:11,fontWeight:600,cursor:"pointer"}}>Remove</button>}
           </div>))}
+
+          {/* BULK ASSIGN */}
+          {coachRoster.length>0&&!bulkAssignPlan&&(<button onClick={()=>setBulkAssignPlan("choosing")} style={{width:"100%",marginTop:12,padding:"12px",borderRadius:10,border:`1px dashed ${C.acc}40`,background:C.acc+"08",color:C.acc,fontSize:13,fontWeight:700,cursor:"pointer"}}>📋 Bulk Assign Plan to Multiple Athletes</button>)}
+          {bulkAssignPlan==="choosing"&&(<div style={{marginTop:12,background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:16}}>
+            <div style={{fontWeight:700,fontSize:14,color:C.txt,marginBottom:8}}>Select a plan to assign:</div>
+            {allPlans.map(p=>(<button key={p.id} onClick={()=>{setBulkAssignPlan(p);setBulkSelect([]);}} style={{display:"block",width:"100%",textAlign:"left",padding:"8px 12px",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,color:C.txt,cursor:"pointer",marginBottom:4}}><div style={{fontWeight:600,fontSize:12}}>{p.name}</div><div style={{fontSize:10,color:C.fnt}}>{p.subtitle||""}</div></button>))}
+            <button onClick={()=>setBulkAssignPlan(null)} style={{width:"100%",marginTop:6,padding:"8px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:"transparent",color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+          </div>)}
+          {bulkAssignPlan&&bulkAssignPlan!=="choosing"&&(<div style={{marginTop:12,background:C.acc+"08",border:`1px solid ${C.acc}30`,borderRadius:12,padding:14}}>
+            <div style={{fontSize:13,fontWeight:700,color:C.acc,marginBottom:4}}>Assigning: {bulkAssignPlan.name}</div>
+            <div style={{fontSize:11,color:C.dim,marginBottom:8}}>Select athletes above, then confirm.</div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>assignPlanBulk(bulkAssignPlan)} disabled={bulkSelect.length===0} style={{flex:2,padding:"10px",borderRadius:8,border:"none",background:bulkSelect.length>0?`linear-gradient(135deg,${C.acc},#E85D1A)`:"#333",color:"#fff",fontSize:13,fontWeight:700,cursor:bulkSelect.length>0?"pointer":"not-allowed"}}>Assign to {bulkSelect.length} Athlete{bulkSelect.length!==1?"s":""}</button>
+              <button onClick={()=>{setBulkAssignPlan(null);setBulkSelect([]);}} style={{flex:1,padding:"10px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:"transparent",color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+            </div>
+          </div>)}
         </>)}
 
         {/* ─── COACH VIEW: ATHLETE DETAIL ─── */}
         {userRole==="coach"&&viewAthlete&&(<>
-          <button onClick={()=>{setViewAthlete(null);setAthleteData(null);}} style={{padding:"6px 14px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:12}}>&#x2190; Back to Roster</button>
+          <button onClick={()=>{setViewAthlete(null);setAthleteData(null);setExpandSession(null);setAthleteDetailTab("sessions");setAthleteNoteInput("");}} style={{padding:"6px 14px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:12}}>&#x2190; Back to Roster</button>
           <div style={{fontFamily:"Outfit",fontSize:18,fontWeight:800,marginBottom:12}}>{viewAthlete.name}</div>
           {!athleteData?<div style={{color:C.dim,fontSize:13}}>Loading athlete data...</div>:(<>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
-              <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"14px 16px",textAlign:"center"}}><div style={{fontSize:24,fontWeight:800,color:C.acc}}>{Object.keys(athleteData.hist).length}</div><div style={{fontSize:11,color:C.fnt,marginTop:2}}>Total Sessions</div></div>
-              <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"14px 16px",textAlign:"center"}}><div style={{fontSize:24,fontWeight:800,color:C.acc}}>{Object.keys(athleteData.myPlans||{}).length+3}</div><div style={{fontSize:11,color:C.fnt,marginTop:2}}>Plans Available</div></div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
+              <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"12px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:800,color:C.acc}}>{Object.keys(athleteData.hist).length}</div><div style={{fontSize:10,color:C.fnt,marginTop:2}}>Sessions</div></div>
+              <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"12px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:800,color:C.acc}}>{Object.keys(athleteData.myPlans||{}).length+Object.keys(athleteData.coachPlans||{}).length+3}</div><div style={{fontSize:10,color:C.fnt,marginTop:2}}>Plans</div></div>
+              <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"12px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:800,color:C.acc}}>{athleteData.prefs?.userName||"—"}</div><div style={{fontSize:10,color:C.fnt,marginTop:2}}>Active Plan</div></div>
             </div>
-            <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Recent Sessions</div>
-            {(()=>{const keys=Object.keys(athleteData.hist).sort().reverse().slice(0,10);if(keys.length===0)return<div style={{color:C.dim,fontSize:13,padding:12}}>No sessions logged yet.</div>;return keys.map(k=>{const parts=k.split("-");const date=parts.slice(-3).join("-");const exCount=Object.keys(athleteData.hist[k]).filter(x=>!x.startsWith("_")).length;return(<div key={k} style={{padding:"10px 14px",background:C.card,border:`1px solid ${C.bdr}`,borderRadius:10,marginBottom:4,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:13,fontWeight:600,color:C.txt}}>{date}</div><div style={{fontSize:11,color:C.fnt}}>{exCount} exercises</div></div>);});})()}
+
+            {/* TABS */}
+            <div style={{display:"flex",gap:4,marginBottom:16}}>
+              {["sessions","plans","instructions"].map(t=>(<button key={t} onClick={()=>setAthleteDetailTab(t)} style={{flex:1,padding:"8px",borderRadius:8,border:`1px solid ${athleteDetailTab===t?C.acc+"60":C.sbdr}`,background:athleteDetailTab===t?C.acc+"15":"transparent",color:athleteDetailTab===t?C.acc:C.dim,fontSize:11,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{t}</button>))}
+            </div>
+
+            {/* ── SESSIONS TAB ── */}
+            {athleteDetailTab==="sessions"&&(<>
+              <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Recent Sessions</div>
+              {(()=>{const keys=Object.keys(athleteData.hist).sort().reverse().slice(0,20);if(keys.length===0)return<div style={{color:C.dim,fontSize:13,padding:12}}>No sessions logged yet.</div>;return keys.map(k=>{const session=athleteData.hist[k];const parts=k.split("-");const date=parts.slice(-3).join("-");const exercises=Object.entries(session).filter(([x])=>!x.startsWith("_"));const dur=session._duration?Math.round(session._duration/60000):null;const expanded=expandSession===k;return(<div key={k} style={{background:C.card,border:`1px solid ${expanded?C.acc+"40":C.bdr}`,borderRadius:10,marginBottom:6,overflow:"hidden"}}>
+                <div onClick={()=>setExpandSession(expanded?null:k)} style={{padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
+                  <div><div style={{fontSize:13,fontWeight:600,color:C.txt}}>{date}</div>{dur&&<div style={{fontSize:10,color:C.fnt}}>{dur} min</div>}</div>
+                  <div style={{fontSize:11,color:C.fnt}}>{exercises.length} exercises {expanded?"▲":"▼"}</div>
+                </div>
+                {expanded&&<div style={{padding:"0 14px 12px",borderTop:`1px solid ${C.bdr}`}}>
+                  {session._notes&&<div style={{padding:"8px 0",fontSize:11,color:C.dim,fontStyle:"italic"}}>{session._notes}</div>}
+                  {exercises.map(([idx,ex])=>(<div key={idx} style={{padding:"6px 0",borderBottom:`1px solid ${C.bdr}08`}}>
+                    <div style={{fontSize:12,fontWeight:700,color:C.txt}}>{ex.name}</div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:2}}>{ex.sets?.map((s,si)=>(s.weight||s.reps)?<span key={si} style={{fontSize:10,color:C.fnt,background:C.srf,borderRadius:4,padding:"2px 6px"}}>{s.weight||0}×{s.reps||0}</span>:null)}</div>
+                  </div>))}
+                </div>}
+              </div>);});})()}
+            </>)}
+
+            {/* ── PLANS TAB ── */}
+            {athleteDetailTab==="plans"&&(<>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1}}>Assigned Plans</div>
+                <button onClick={()=>setAssignModal(viewAthlete)} style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${C.acc}40`,background:C.acc+"10",color:C.acc,fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Assign Plan</button>
+              </div>
+              {Object.values(athleteData.coachPlans||{}).length===0&&<div style={{color:C.dim,fontSize:13,padding:12}}>No plans assigned yet.</div>}
+              {Object.values(athleteData.coachPlans||{}).map(p=>(<div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:C.card,border:`1px solid ${C.bdr}`,borderRadius:10,marginBottom:4}}>
+                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:C.txt}}>{p.name}</div><div style={{fontSize:10,color:C.fnt,marginTop:1}}>{p.subtitle||""} — assigned by {p._assignedByName||"Coach"}</div></div>
+                <button onClick={()=>removePlanFromAthlete(viewAthlete.uid,p.id)} style={{padding:"4px 10px",borderRadius:6,border:"1px solid #EF444425",background:"transparent",color:"#EF4444",fontSize:10,fontWeight:600,cursor:"pointer"}}>Remove</button>
+              </div>))}
+
+              <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginTop:16,marginBottom:8}}>Athlete's Own Plans</div>
+              <div style={{color:C.dim,fontSize:12,marginBottom:4}}>3 official plans + {Object.keys(athleteData.myPlans||{}).length} custom</div>
+              {Object.values(athleteData.myPlans||{}).filter(p=>p._published!==false).map(p=>(<div key={p.id} style={{padding:"8px 14px",background:C.card,border:`1px solid ${C.bdr}`,borderRadius:10,marginBottom:4}}><div style={{fontSize:13,fontWeight:600,color:C.txt}}>{p.name}</div><div style={{fontSize:10,color:C.fnt}}>{p.subtitle||""}</div></div>))}
+            </>)}
+
+            {/* ── INSTRUCTIONS TAB ── */}
+            {athleteDetailTab==="instructions"&&(<>
+              <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Coach Instructions</div>
+              <div style={{fontSize:12,color:C.dim,marginBottom:10}}>These notes are visible to {viewAthlete.name} on their workout screen.</div>
+              <textarea value={athleteNoteInput} onChange={e=>setAthleteNoteInput(e.target.value)} placeholder={"Write instructions for "+viewAthlete.name+"...\n\nExamples:\n• Focus on controlled negatives this week\n• Increase weight on compound lifts by 5lbs\n• Skip cardio if knee still hurts"} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:14,color:C.txt,fontSize:13,outline:"none",boxSizing:"border-box",fontFamily:"inherit",minHeight:160,resize:"vertical",lineHeight:1.6}}/>
+              <button onClick={()=>saveCoachInstructions(viewAthlete.uid,athleteNoteInput)} style={{width:"100%",marginTop:8,padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>Save Instructions</button>
+              {athleteData.coachNotes?._updatedAt&&<div style={{fontSize:10,color:C.fnt,marginTop:6}}>Last updated: {new Date(athleteData.coachNotes._updatedAt).toLocaleString()}</div>}
+            </>)}
           </>)}
         </>)}
+
+        {/* ASSIGN PLAN MODAL */}
+        {assignModal&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.7)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setAssignModal(null)}><div onClick={e=>e.stopPropagation()} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:16,padding:20,maxWidth:380,width:"100%",maxHeight:"80vh",overflow:"auto"}}>
+          <div style={{fontFamily:"Outfit",fontSize:16,fontWeight:800,marginBottom:4}}>Assign Plan to {assignModal.name}</div>
+          <div style={{fontSize:11,color:C.dim,marginBottom:14}}>Select a plan from your library to assign.</div>
+          {allPlans.map(p=>(<button key={p.id} onClick={()=>{assignPlanToAthlete(assignModal.uid,p);setAssignModal(null);}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 14px",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,color:C.txt,cursor:"pointer",marginBottom:4}}><div style={{fontWeight:700,fontSize:13}}>{p.name}</div><div style={{fontSize:10,color:C.fnt,marginTop:1}}>{p.subtitle||""}</div></button>))}
+          <button onClick={()=>setAssignModal(null)} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:10,border:`1px solid ${C.sbdr}`,background:"transparent",color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+        </div></div>)}
 
         {/* ─── ATHLETE VIEW ─── */}
         {(userRole==="athlete"||(!userRole&&myCoaches.length>0))&&(<>
@@ -1078,6 +1166,11 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     {/* ══════ HOME ══════ */}
     {screen==="home"&&(
       <div className="fade-in" style={{padding:"16px 16px 80px"}}>
+        {coachNotes._instructions&&(<div style={{background:"#5B8DEF10",border:"1px solid #5B8DEF25",borderRadius:12,padding:"12px 14px",marginBottom:16}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}><span style={{fontSize:14}}>&#x1f3af;</span><span style={{fontSize:11,fontWeight:700,color:"#5B8DEF",textTransform:"uppercase",letterSpacing:1}}>Coach Instructions</span></div>
+          <div style={{fontSize:13,color:C.txt,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{coachNotes._instructions}</div>
+          {coachNotes._updatedAt&&<div style={{fontSize:9,color:C.fnt,marginTop:6}}>Updated {new Date(coachNotes._updatedAt).toLocaleDateString()}</div>}
+        </div>)}
         <div style={{background:"linear-gradient(135deg,#1A1420,#141A22)",borderRadius:16,padding:"20px 18px",marginBottom:12,border:`1px solid ${C.bdr}`}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
             <div><div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:C.acc,lineHeight:1.2}}>{plan.name}</div><div style={{color:C.dim,fontSize:13,marginTop:4}}>{plan.subtitle}</div></div>
