@@ -45,7 +45,7 @@ const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const
 const link=document.createElement('link');link.rel='manifest';link.href=mUrl;document.head.appendChild(link);
 const iconLink=document.createElement('link');iconLink.rel='icon';iconLink.href=iconUrl;iconLink.type='image/svg+xml';document.head.appendChild(iconLink);
 const appleIcon=document.createElement('link');appleIcon.rel='apple-touch-icon';appleIcon.href=iconUrl;document.head.appendChild(appleIcon);
-if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v23';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
+if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v24';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
 const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.auth();const db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
 </script>
 </head>
@@ -271,6 +271,7 @@ const TEMPLATES=[
 const ALL=[V1,V2,V3];
 
 const CHANGELOG=[
+  {ver:"v24",date:"2026-03-03",title:"iOS Fix & Cleanup",items:["Fixed iOS status bar overlap in standalone mode","Removed phone auth (requires paid Firebase plan)","Account linking for Google and email still available"]},
   {ver:"v23",date:"2026-03-03",title:"Phone Auth & Account Linking",items:["Phone number sign-in via SMS verification","Account screen to manage sign-in methods","Link Google, email, and phone to one account","Unlink any method (keeps at least one)"]},
   {ver:"v22",date:"2026-03-03",title:"Plan Management",items:["Manage Plans screen — organize all workout plans in one place","Toggle plans visible/hidden for the quick-switch dropdown","Plans organized by Official Plans and My Plans","Hidden plans preserve workout history"]},
   {ver:"v21",date:"2026-03-03",title:"Leaderboard, Start Over & Personalization",items:["Leaderboard — see who's logging the most sessions (monthly + lifetime)","Set your name — personalizes app header with your last name","Start Plan Over — reset to Day 1 without losing history","Plan dropdown shows plan name instead of ID","Send your plan to be added as a permanent option","Name prompt on first login"]},
@@ -362,18 +363,9 @@ function App(){
   const [authMode,setAuthMode]=useState("signin");
   const [emailIn,setEmailIn]=useState("");
   const [passIn,setPassIn]=useState("");
-  const [phoneIn,setPhoneIn]=useState("");
-  const [phoneCode,setPhoneCode]=useState("");
-  const [phoneStep,setPhoneStep]=useState("input");
-  const [confirmResult,setConfirmResult]=useState(null);
-  const recaptchaVerifier=useRef(null);
   const [linkMsg,setLinkMsg]=useState("");
   const [linkEmailIn,setLinkEmailIn]=useState("");
   const [linkPassIn,setLinkPassIn]=useState("");
-  const [linkPhoneIn,setLinkPhoneIn]=useState("");
-  const [linkPhoneCode,setLinkPhoneCode]=useState("");
-  const [linkPhoneStep,setLinkPhoneStep]=useState("input");
-  const [linkConfirmResult,setLinkConfirmResult]=useState(null);
   const [progEx,setProgEx]=useState("");
   const [progDay,setProgDay]=useState("all");
   const [progOpen,setProgOpen]=useState(null);
@@ -472,15 +464,10 @@ function App(){
   const emailSignUp=async()=>{setAuthError(null);if(!emailIn||!passIn)return setAuthError("Please enter email and password.");if(passIn.length<6)return setAuthError("Password must be at least 6 characters.");try{await auth.createUserWithEmailAndPassword(emailIn,passIn);}catch(e){const msg=e.code==='auth/email-already-in-use'?"An account with that email already exists.":e.code==='auth/invalid-email'?"Invalid email address.":e.code==='auth/weak-password'?"Password is too weak. Use at least 6 characters.":e.message;setAuthError(msg);}};
   const resetPassword=async()=>{setAuthError(null);if(!emailIn)return setAuthError("Enter your email above, then tap Reset.");try{await auth.sendPasswordResetEmail(emailIn);setAuthError("Password reset email sent! Check your inbox.");}catch(e){const msg=e.code==='auth/user-not-found'?"No account found with that email.":e.code==='auth/invalid-email'?"Invalid email address.":e.message;setAuthError(msg);}};
   const signOut=async()=>{unsubs.current.forEach(fn=>fn());unsubs.current=[];await auth.signOut();setHist({});setSwaps({});setCustomEx({});setSsLinks({});setExOrder({});setExEdits({});setBodyWt({});setMyPlans({});setScreen("home");};
-  const setupRecaptcha=(id)=>{if(recaptchaVerifier.current)return;recaptchaVerifier.current=new firebase.auth.RecaptchaVerifier(id,{size:"invisible",callback:()=>{}});};
-  const sendPhoneCode=async()=>{setAuthError(null);if(!phoneIn)return setAuthError("Enter your phone number.");try{setupRecaptcha("recaptcha-container");const r=await auth.signInWithPhoneNumber(phoneIn,recaptchaVerifier.current);setConfirmResult(r);setPhoneStep("verify");}catch(e){recaptchaVerifier.current=null;setAuthError(e.code==="auth/invalid-phone-number"?"Invalid phone number. Use +1XXXXXXXXXX format.":e.code==="auth/too-many-requests"?"Too many attempts. Try later.":e.message);}};
-  const verifyPhoneCode=async()=>{setAuthError(null);if(!phoneCode)return setAuthError("Enter the verification code.");try{await confirmResult.confirm(phoneCode);setPhoneStep("input");setPhoneCode("");setPhoneIn("");}catch(e){setAuthError(e.code==="auth/invalid-verification-code"?"Invalid code. Try again.":e.code==="auth/code-expired"?"Code expired. Request a new one.":e.message);}};
-  const getProviders=()=>user?user.providerData.map(p=>p.providerId):[];
+        const getProviders=()=>user?user.providerData.map(p=>p.providerId):[];
   const linkGoogle=async()=>{setLinkMsg("");try{await user.linkWithPopup(new firebase.auth.GoogleAuthProvider());setLinkMsg("Google account linked!");}catch(e){setLinkMsg(e.code==="auth/credential-already-in-use"?"That Google account is linked to another user.":e.code==="auth/provider-already-linked"?"Google already linked.":e.message);}};
   const linkEmail=async()=>{setLinkMsg("");if(!linkEmailIn||!linkPassIn)return setLinkMsg("Enter email and password.");if(linkPassIn.length<6)return setLinkMsg("Password must be at least 6 characters.");try{const cr=firebase.auth.EmailAuthProvider.credential(linkEmailIn,linkPassIn);await user.linkWithCredential(cr);setLinkMsg("Email linked!");setLinkEmailIn("");setLinkPassIn("");}catch(e){setLinkMsg(e.code==="auth/email-already-in-use"?"That email is linked to another account.":e.message);}};
-  const linkPhoneSend=async()=>{setLinkMsg("");if(!linkPhoneIn)return setLinkMsg("Enter phone number.");try{setupRecaptcha("recaptcha-link");const r=await auth.signInWithPhoneNumber(linkPhoneIn,recaptchaVerifier.current);setLinkConfirmResult(r);setLinkPhoneStep("verify");}catch(e){recaptchaVerifier.current=null;setLinkMsg(e.code==="auth/invalid-phone-number"?"Invalid phone. Use +1XXXXXXXXXX.":e.message);}};
-  const linkPhoneVerify=async()=>{setLinkMsg("");if(!linkPhoneCode)return setLinkMsg("Enter the code.");try{const cr=firebase.auth.PhoneAuthProvider.credential(linkConfirmResult.verificationId,linkPhoneCode);await user.linkWithCredential(cr);setLinkMsg("Phone linked!");setLinkPhoneStep("input");setLinkPhoneCode("");setLinkPhoneIn("");}catch(e){setLinkMsg(e.code==="auth/invalid-verification-code"?"Invalid code.":e.code==="auth/credential-already-in-use"?"That phone is linked to another account.":e.message);}};
-  const unlinkProvider=async(pid)=>{setLinkMsg("");if(user.providerData.length<=1){setLinkMsg("Can't remove your only sign-in method.");return;}try{await user.unlink(pid);setLinkMsg("Unlinked successfully.");}catch(e){setLinkMsg(e.message);}};
+      const unlinkProvider=async(pid)=>{setLinkMsg("");if(user.providerData.length<=1){setLinkMsg("Can't remove your only sign-in method.");return;}try{await user.unlink(pid);setLinkMsg("Unlinked successfully.");}catch(e){setLinkMsg(e.message);}};
 
 
   // AI PLAN GENERATION
@@ -665,27 +652,12 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         <div style={{marginBottom:28}}><DBIcon s={44}/><div style={{fontFamily:"Outfit",fontWeight:800,fontSize:28,marginTop:12,letterSpacing:"-0.5px"}}><span style={{color:C.acc}}>WIESER</span> WORKOUTS</div><div style={{color:C.dim,fontSize:14,marginTop:8,lineHeight:1.6}}>Build, track, and crush your workouts.<br/>AI-powered plans. Progress synced across all devices.</div></div>
         <button onClick={signIn} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,width:"100%",padding:"14px 20px",borderRadius:12,border:`1px solid ${C.sbdr}`,background:C.card,color:C.txt,fontSize:15,fontWeight:600,cursor:"pointer",marginBottom:8}}><GoogleIcon/> Sign in with Google</button>
         <div style={{display:"flex",alignItems:"center",gap:12,margin:"20px 0"}}><div style={{flex:1,height:1,background:C.sbdr}}/><span style={{fontSize:12,color:C.fnt,fontWeight:600}}>or</span><div style={{flex:1,height:1,background:C.sbdr}}/></div>
-        <div style={{display:"flex",gap:6,marginBottom:14}}><button onClick={()=>{setAuthMode("signin");setAuthError(null);}} style={{flex:1,padding:"8px",borderRadius:8,border:`1px solid ${authMode!=="phone"?C.acc+"60":C.sbdr}`,background:authMode!=="phone"?C.acc+"15":"transparent",color:authMode!=="phone"?C.acc:C.dim,fontSize:12,fontWeight:700,cursor:"pointer"}}>Email</button><button onClick={()=>{setAuthMode("phone");setAuthError(null);setPhoneStep("input");}} style={{flex:1,padding:"8px",borderRadius:8,border:`1px solid ${authMode==="phone"?C.acc+"60":C.sbdr}`,background:authMode==="phone"?C.acc+"15":"transparent",color:authMode==="phone"?C.acc:C.dim,fontSize:12,fontWeight:700,cursor:"pointer"}}>Phone</button></div>
-        <div id="recaptcha-container"></div>
         <div style={{textAlign:"left"}}>
-          {authMode!=="phone"?(<><input type="email" placeholder="Email" value={emailIn} onChange={e=>setEmailIn(e.target.value)} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:"12px 14px",color:C.txt,fontSize:14,outline:"none",marginBottom:8,boxSizing:"border-box",fontFamily:"inherit"}}/>
+          <input type="email" placeholder="Email" value={emailIn} onChange={e=>setEmailIn(e.target.value)} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:"12px 14px",color:C.txt,fontSize:14,outline:"none",marginBottom:8,boxSizing:"border-box",fontFamily:"inherit"}}/>
           <input type="password" placeholder="Password" value={passIn} onChange={e=>setPassIn(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){authMode==="signin"?emailSignIn():emailSignUp();}}} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:"12px 14px",color:C.txt,fontSize:14,outline:"none",marginBottom:12,boxSizing:"border-box",fontFamily:"inherit"}}/>
           <button onClick={authMode==="signin"?emailSignIn:emailSignUp} style={{width:"100%",padding:"14px 20px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer"}}>{authMode==="signin"?"Sign In":"Create Account"}</button>
           {authMode==="signin"&&<button onClick={resetPassword} style={{background:"none",border:"none",color:C.fnt,fontSize:12,cursor:"pointer",marginTop:10,padding:0}}>Forgot password?</button>}
           <div style={{marginTop:12,fontSize:13,color:C.dim}}>{authMode==="signin"?<>Don't have an account? <button onClick={()=>{setAuthMode("signup");setAuthError(null);}} style={{background:"none",border:"none",color:C.acc,fontWeight:700,cursor:"pointer",padding:0,fontSize:13}}>Sign Up</button></>:<>Already have an account? <button onClick={()=>{setAuthMode("signin");setAuthError(null);}} style={{background:"none",border:"none",color:C.acc,fontWeight:700,cursor:"pointer",padding:0,fontSize:13}}>Sign In</button></>}</div>
-        </>):(
-          <div>
-            {phoneStep==="input"?(<>
-              <input type="tel" placeholder="Phone number (+1 555 123 4567)" value={phoneIn} onChange={e=>setPhoneIn(e.target.value)} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:"14px",color:C.txt,fontSize:15,outline:"none",marginBottom:8,boxSizing:"border-box",fontFamily:"inherit"}}/>
-              <button onClick={sendPhoneCode} style={{width:"100%",padding:"14px 20px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer"}}>Send Verification Code</button>
-            </>):(<>
-              <div style={{fontSize:13,color:C.dim,marginBottom:8}}>Enter the 6-digit code sent to {phoneIn}</div>
-              <input type="text" placeholder="123456" value={phoneCode} onChange={e=>setPhoneCode(e.target.value)} maxLength={6} onKeyDown={e=>{if(e.key==="Enter")verifyPhoneCode();}} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:"14px",color:C.txt,fontSize:20,outline:"none",marginBottom:8,boxSizing:"border-box",fontFamily:"inherit",textAlign:"center",letterSpacing:8}}/>
-              <button onClick={verifyPhoneCode} style={{width:"100%",padding:"14px 20px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:8}}>Verify Code</button>
-              <button onClick={()=>{setPhoneStep("input");setPhoneCode("");setConfirmResult(null);recaptchaVerifier.current=null;}} style={{background:"none",border:"none",color:C.fnt,fontSize:12,cursor:"pointer",padding:4}}>Back to phone input</button>
-            </>)}
-          </div>
-        )}
         </div>
         {authError&&<div style={{marginTop:12,padding:"10px 14px",background:authError.includes("sent")?"#22C55E18":"#EF444418",border:authError.includes("sent")?"1px solid #22C55E30":"1px solid #EF444430",borderRadius:8,color:authError.includes("sent")?"#22C55E":"#EF4444",fontSize:12,textAlign:"left"}}>{authError}</div>}
         <div style={{marginTop:20,color:C.fnt,fontSize:12,lineHeight:1.6}}>Your workout data syncs securely.<br/>Only you can access your data.</div>
@@ -702,7 +674,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
   return(
   <div style={{background:C.bg,minHeight:"100vh",color:C.txt,paddingBottom:screen==="workout"?"130px":"0"}}>
     {/* HEADER */}
-    <div style={{background:`linear-gradient(180deg,${C.card},${C.bg})`,borderBottom:`1px solid ${C.bdr}`,padding:"12px 16px",position:"sticky",top:0,zIndex:50}}>
+    <div style={{background:`linear-gradient(180deg,${C.card},${C.bg})`,borderBottom:`1px solid ${C.bdr}`,padding:`calc(12px + env(safe-area-inset-top, 0px)) 16px 12px 16px`,position:"sticky",top:0,zIndex:50}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",maxWidth:600,margin:"0 auto"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           {screen!=="home"&&<button onClick={()=>{history.back();}} style={{background:"none",border:"none",color:C.acc,fontSize:14,fontWeight:600,cursor:"pointer"}}>← Back</button>}
@@ -882,20 +854,8 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           <input type="password" placeholder="Password (min 6 chars)" value={linkPassIn} onChange={e=>setLinkPassIn(e.target.value)} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:"12px",color:C.txt,fontSize:14,outline:"none",marginBottom:8,boxSizing:"border-box",fontFamily:"inherit"}}/>
           <button onClick={linkEmail} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>Link Email</button>
         </div>)}
-        {!getProviders().includes("phone")&&(<div style={{marginBottom:16}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Link Phone Number</div>
-          <div id="recaptcha-link"></div>
-          {linkPhoneStep==="input"?(<>
-            <input type="tel" placeholder="Phone (+1 555 123 4567)" value={linkPhoneIn} onChange={e=>setLinkPhoneIn(e.target.value)} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:"12px",color:C.txt,fontSize:14,outline:"none",marginBottom:8,boxSizing:"border-box",fontFamily:"inherit"}}/>
-            <button onClick={linkPhoneSend} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>Send Code</button>
-          </>):(<>
-            <div style={{fontSize:12,color:C.dim,marginBottom:6}}>Code sent to {linkPhoneIn}</div>
-            <input type="text" placeholder="123456" value={linkPhoneCode} onChange={e=>setLinkPhoneCode(e.target.value)} maxLength={6} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:"12px",color:C.txt,fontSize:18,outline:"none",marginBottom:8,boxSizing:"border-box",fontFamily:"inherit",textAlign:"center",letterSpacing:6}}/>
-            <button onClick={linkPhoneVerify} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",marginBottom:6}}>Verify & Link</button>
-            <button onClick={()=>{setLinkPhoneStep("input");setLinkPhoneCode("");}} style={{background:"none",border:"none",color:C.fnt,fontSize:12,cursor:"pointer"}}>Cancel</button>
-          </>)}
-        </div>)}
-        {getProviders().includes("google.com")&&getProviders().includes("password")&&getProviders().includes("phone")&&(
+
+        {getProviders().includes("google.com")&&getProviders().includes("password")&&(
           <div style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:12,padding:"14px 16px",textAlign:"center"}}>
             <div style={{fontSize:14,color:C.grn,fontWeight:700}}>All sign-in methods linked!</div>
           </div>
