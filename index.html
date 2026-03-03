@@ -45,7 +45,7 @@ const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const
 const link=document.createElement('link');link.rel='manifest';link.href=mUrl;document.head.appendChild(link);
 const iconLink=document.createElement('link');iconLink.rel='icon';iconLink.href=iconUrl;iconLink.type='image/svg+xml';document.head.appendChild(iconLink);
 const appleIcon=document.createElement('link');appleIcon.rel='apple-touch-icon';appleIcon.href=iconUrl;document.head.appendChild(appleIcon);
-if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v19';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
+if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v20';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
 const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.auth();const db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
 </script>
 </head>
@@ -88,6 +88,27 @@ const DURATION_EX=new Set(["Biking","Air Bike","Rower"]);
 const MILES_EX=new Set(["Biking","Air Bike","Rower"]);
 const REPS_ONLY_EX=new Set(["Stretches","Jumping Jacks"]);
 const ADMIN_EMAILS=new Set(["traviswieser@gmail.com"]);
+
+const EQUIPMENT=[
+  {key:"dumbbells",label:"Dumbbells",icon:"🏋️"},{key:"barbell",label:"Barbell & Rack",icon:"🔩"},{key:"cables",label:"Cable Machine",icon:"🔗"},{key:"machines",label:"Gym Machines",icon:"⚙️"},{key:"bodyweight",label:"Bodyweight",icon:"🤸"},{key:"kettlebell",label:"Kettlebells",icon:"🔔"},{key:"bands",label:"Resistance Bands",icon:"〰️"},{key:"bench",label:"Adjustable Bench",icon:"🪑"},{key:"pullupbar",label:"Pull-Up Bar",icon:"📏"},{key:"airbike",label:"Air Bike",icon:"🚴"},{key:"rower",label:"Rower",icon:"🚣"},{key:"treadmill",label:"Treadmill",icon:"🏃"},
+];
+const EX_BY_EQUIP={
+  chest:{dumbbells:["DB Flat Bench Press","DB Incline Bench Press","DB Decline Bench Press","DB Squeeze Press","DB Pullover","DB Fly","Incline DB Fly"],barbell:["Barbell Bench Press","Incline Barbell Bench","Decline Barbell Bench","Close-Grip Bench Press","Floor Press"],cables:["Cable Chest Fly","Incline Cable Fly","Cable Crossover","Cable Low-to-High Fly"],machines:["Machine Chest Press","Pec Deck","Smith Machine Bench Press","Machine Incline Press"],bodyweight:["Push-Ups","Decline Push-Ups","Diamond Push-Ups","Wide Push-Ups","Incline Push-Ups","Dips (Chest)"],bands:["Band Chest Fly","Band Push-Up","Band Chest Press"]},
+  back:{dumbbells:["DB Bent-Over Row","DB Single-Arm Row","DB Pullover (Back)","DB Reverse Fly","DB Shrug"],barbell:["Barbell Bent-Over Row","Barbell Deadlift","Pendlay Row","T-Bar Row","Barbell Shrug"],cables:["Lat Pulldown","Seated Cable Row","Single-Arm Cable Row","Cable Straight-Arm Pulldown","Cable Face Pull","V-Bar Cable Row"],machines:["Machine Row","Assisted Pull-Up Machine","Machine Lat Pulldown","Machine Reverse Fly"],bodyweight:["Pull-Ups","Chin-Ups","Inverted Row","Scapular Pull-Ups"],bands:["Band Pull-Apart","Band Lat Pulldown","Band Row","Band Face Pull"],pullupbar:["Pull-Ups","Chin-Ups","Neutral Grip Pull-Ups","Scapular Pull-Ups"]},
+  shoulders:{dumbbells:["DB Overhead Press","DB Lateral Raise","DB Rear Delt Fly","DB Arnold Press","DB Front Raise","DB Shrugs","Standing DB Press"],barbell:["Barbell Overhead Press","Barbell Upright Row","Push Press","Barbell Front Raise"],cables:["Cable Lateral Raise","Cable Front Raise","Cable Rear Delt Fly","Cable Upright Row","Cable Y-Raise","Cable Face Pull"],machines:["Machine Shoulder Press","Machine Lateral Raise","Machine Rear Delt Fly","Smith Machine OHP"],bodyweight:["Pike Push-Ups","Handstand Hold"],bands:["Band Lateral Raise","Band Pull-Apart","Band Overhead Press","Band Face Pull"],kettlebell:["KB Press","KB Halo","KB Upright Row"]},
+  biceps:{dumbbells:["DB Bicep Curl","DB Hammer Curl","DB Incline Curl","DB Concentration Curl","DB Preacher Curl","DB Zottman Curl"],barbell:["Barbell Curl","EZ-Bar Curl","Barbell Preacher Curl","Barbell Drag Curl","Barbell Reverse Curl"],cables:["Cable Bicep Curl","Cable Hammer Curl (Rope)","Cable Preacher Curl","Cable Bayesian Curl"],machines:["Machine Preacher Curl","Machine Bicep Curl"],bodyweight:["Chin-Ups"],bands:["Band Bicep Curl","Band Hammer Curl"]},
+  triceps:{dumbbells:["DB Overhead Tricep Ext.","DB Skull Crusher","DB Kickback","DB Close-Grip Press"],barbell:["Close-Grip Bench Press","Barbell Skull Crusher","EZ-Bar Skull Crusher","Barbell Overhead Ext."],cables:["Cable Tricep Pushdown (Rope)","Cable Tricep Pushdown (V-Bar)","Cable Overhead Tricep Ext.","Cable Kickback"],machines:["Machine Tricep Dip","Tricep Pushdown Machine"],bodyweight:["Diamond Push-Ups","Dips","Bench Dips","Close-Grip Push-Ups"],bands:["Band Tricep Pushdown","Band Overhead Ext."]},
+  quads:{dumbbells:["DB Goblet Squat","DB Bulgarian Split Squat","DB Lunge (Walking)","DB Reverse Lunge","DB Step-Up","DB Sumo Squat","DB Front Squat"],barbell:["Barbell Back Squat","Barbell Front Squat","Barbell Lunge","Barbell Bulgarian Split Squat","Barbell Hack Squat"],cables:["Cable Leg Ext. (Ankle Strap)"],machines:["Leg Press","Leg Extension","Hack Squat Machine","Smith Machine Squat","Pendulum Squat"],bodyweight:["Prisoner Squats","Lunges","Side Lunges","Jump Squats","Pistol Squat","Wall Sit","Reverse Lunges"],bands:["Band Squat","Band Leg Extension"],kettlebell:["KB Goblet Squat","KB Lunge","KB Swing"]},
+  hamstrings:{dumbbells:["DB Romanian Deadlift","DB Single-Leg RDL","DB Lying Leg Curl"],barbell:["Barbell Romanian Deadlift","Barbell Stiff-Leg Deadlift","Barbell Good Morning"],cables:["Cable Hamstring Curl (Ankle Strap)","Cable Pull-Through"],machines:["Lying Leg Curl","Seated Leg Curl","GHD Raise"],bodyweight:["Nordic Curl","Stability Ball Hamstring Curl","Glute-Ham Raise"],bands:["Band Leg Curl","Band Romanian Deadlift"],kettlebell:["KB Swing","KB Romanian Deadlift"]},
+  glutes:{dumbbells:["DB Hip Thrust","DB Reverse Lunge","DB Sumo Squat","DB Glute Bridge"],barbell:["Barbell Hip Thrust","Barbell Glute Bridge","Barbell Sumo Deadlift"],cables:["Cable Pull-Through","Cable Kickback (Glute)","Cable Hip Abduction"],machines:["Hip Thrust Machine","Glute Kickback Machine","Hip Abductor Machine"],bodyweight:["Glute Bridge","Single-Leg Glute Bridge","Donkey Kicks","Fire Hydrants","Frog Pumps"],bands:["Band Hip Thrust","Band Clamshell","Band Lateral Walk","Band Kickback"],kettlebell:["KB Swing","KB Sumo Deadlift"]},
+  core:{dumbbells:["DB Side Bend","DB Russian Twist","DB Woodchop"],barbell:["Barbell Rollout","Landmine Rotation"],cables:["Cable Crunch (Rope)","Cable Woodchop","Cable Pallof Press"],machines:["Ab Crunch Machine","Captain's Chair"],bodyweight:["Plank","Dead Bug","Sit-Ups","Hanging Leg Raise","Mountain Climbers","Bicycle Crunches","V-Ups","Side Plank","Ab Wheel"],bands:["Band Pallof Press","Band Woodchop","Band Dead Bug"]},
+  calves:{dumbbells:["DB Calf Raise","Single-Leg DB Calf Raise"],barbell:["Barbell Calf Raise"],machines:["Machine Calf Raise","Seated Calf Raise Machine","Leg Press Calf Raise"],bodyweight:["Bodyweight Calf Raise","Single-Leg Calf Raise","Jump Rope"],bands:["Band Calf Raise"]},
+  cardio:{airbike:["Air Bike"],rower:["Rower"],treadmill:["Treadmill"],bodyweight:["Jumping Jacks","Burpees","Mountain Climbers","High Knees","Stretches"]}
+};
+const getExForEquip=(group,equipKeys)=>{const pool=EX_BY_EQUIP[group]||{};const exs=new Set();equipKeys.forEach(k=>{(pool[k]||[]).forEach(e=>exs.add(e));});return[...exs];};
+const pickExs=(group,equipKeys,count=2)=>{const available=getExForEquip(group,equipKeys);const result=[];for(let i=0;i<Math.min(count,available.length);i++)result.push(available[i]);return result;};
+const autoCue=(name)=>{const m={"Barbell Bench Press":"Arch back slightly. Retract blades. Touch chest, press up.","Barbell Back Squat":"Bar on traps. Break parallel. Drive through heels.","Barbell Deadlift":"Hinge at hips. Bar close to shins. Lock out at top.","Barbell Overhead Press":"Brace core. Press straight up. Lock out overhead.","Barbell Romanian Deadlift":"Hinge at hips. Bar slides down legs. Feel hamstring stretch.","Barbell Bent-Over Row":"Hinge 45°. Pull to lower chest. Squeeze blades.","Barbell Front Squat":"Elbows high. Break parallel. Upright torso.","Barbell Hip Thrust":"Shoulders on bench. Drive hips up. Squeeze glutes.","Barbell Curl":"Pin elbows. Full ROM. No swinging.","EZ-Bar Curl":"Angled grip reduces wrist strain. Full ROM.","Close-Grip Bench Press":"Hands shoulder-width. Elbows close. Press up.","Leg Press":"Feet shoulder-width. Lower to 90°. Press through heels.","Leg Extension":"Control the movement. Pause at top. Slow eccentric.","Lying Leg Curl":"Control descent. Full curl. Squeeze hamstrings.","Hack Squat Machine":"Feet shoulder-width on platform. Full depth.","Machine Chest Press":"Set handles at chest. Press forward. Control return.","Pec Deck":"Slight elbow bend. Squeeze chest at center.","Treadmill":"Set incline and speed. Maintain steady pace.","KB Swing":"Hinge at hips. Snap hips forward. Arms float up.","KB Goblet Squat":"Hold at chest. Break parallel. Drive up."};return m[name]||"Focus on form. Controlled tempo. Full range of motion.";};
+
 const mkEx=(n,s,c,g)=>({name:n,sets:s,cues:c,group:g||EX_GRP[n]||"other"});
 
 // V1 PLAN
@@ -175,46 +196,65 @@ mkEx("Biking","1×duration","Easy to moderate pace. Great finish to the session.
 
 // PLAN TEMPLATES
 const TEMPLATES=[
-  {key:"ppl",name:"Push / Pull / Legs",sub:"Classic 3-day split",icon:"💪",gen:()=>({
-    id:"custom_"+Date.now(),name:"Push / Pull / Legs",subtitle:"Classic 3-day hypertrophy split",
-    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1–4",desc:"Build a base with compound movements.",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[
-      {title:"Day 1",sub:"Push (Chest/Shoulders/Triceps)",exercises:[{name:"DB Flat Bench Press",sets:"3×10–12",cues:"Retract shoulder blades. Control eccentric 2–3 sec.",group:"chest"},{name:"DB Overhead Press",sets:"3×10–12",cues:"Brace core. Press straight up. Control descent.",group:"shoulders"},{name:"DB Incline Bench Press",sets:"3×10–12",cues:"30° incline. Full range of motion.",group:"chest"},{name:"DB Lateral Raise",sets:"3×12–15",cues:"Lead with elbows. Stop at shoulder height.",group:"shoulders"},{name:"Cable Tricep Pushdown (Rope)",sets:"3×10–12",cues:"Elbows pinned. Spread rope at bottom.",group:"triceps"},{name:"DB Overhead Tricep Ext.",sets:"3×10–12",cues:"Keep elbows close. Full stretch at bottom.",group:"triceps"}]},
-      {title:"Day 2",sub:"Pull (Back/Biceps/Rear Delts)",exercises:[{name:"DB Bent-Over Row",sets:"3×10–12",cues:"Hinge 45°. Pull to ribcage. Squeeze 1 sec.",group:"back"},{name:"Lat Pulldown",sets:"3×10–12",cues:"Wide grip. Pull to upper chest.",group:"back"},{name:"Seated Cable Row",sets:"3×10–12",cues:"V-bar handle. Squeeze shoulder blades.",group:"back"},{name:"Cable Face Pull",sets:"3×15",cues:"Pull to face level. External rotate at top.",group:"shoulders"},{name:"DB Bicep Curl",sets:"3×10–12",cues:"Pin elbows. Full extension. No swinging.",group:"biceps"},{name:"DB Hammer Curl",sets:"3×10–12",cues:"Neutral grip. Controlled tempo.",group:"biceps"}]},
-      {title:"Day 3",sub:"Legs (Quads/Hams/Glutes/Calves)",exercises:[{name:"DB Goblet Squat",sets:"3×12",cues:"Hold DB at chest. Break parallel. Heels down.",group:"quads"},{name:"DB Romanian Deadlift",sets:"3×10–12",cues:"Hinge at hips. Feel hamstring stretch.",group:"hamstrings"},{name:"DB Bulgarian Split Squat",sets:"3×10 each",cues:"Rear foot on bench. Front knee tracks toes.",group:"quads"},{name:"DB Hip Thrust",sets:"3×12",cues:"Drive through heels. Squeeze glutes at top.",group:"glutes"},{name:"DB Calf Raise",sets:"3×15",cues:"Full stretch at bottom. Pause at top.",group:"calves"},{name:"Plank",sets:"3×30–45s",cues:"Squeeze glutes. Brace core. Neutral spine.",group:"core"}]}
-    ]}]
-  })},
-  {key:"ul",name:"Upper / Lower",sub:"4-day split",icon:"🏋️",gen:()=>({
-    id:"custom_"+Date.now(),name:"Upper / Lower Split",subtitle:"4-day upper/lower hypertrophy program",
-    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1–4",desc:"Balanced upper and lower development.",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[
-      {title:"Day 1",sub:"Upper A (Horizontal Focus)",exercises:[{name:"DB Flat Bench Press",sets:"3×10–12",cues:"Retract shoulder blades. Control eccentric.",group:"chest"},{name:"DB Bent-Over Row",sets:"3×10–12",cues:"Hinge 45°. Pull to ribcage.",group:"back"},{name:"DB Overhead Press",sets:"3×10–12",cues:"Brace core. Press straight up.",group:"shoulders"},{name:"Cable Chest Fly",sets:"3×12",cues:"Slight elbow bend. Squeeze at midline.",group:"chest"},{name:"DB Bicep Curl",sets:"3×10–12",cues:"Pin elbows. No swinging.",group:"biceps"},{name:"Cable Tricep Pushdown (Rope)",sets:"3×10–12",cues:"Elbows pinned. Spread rope at bottom.",group:"triceps"}]},
-      {title:"Day 2",sub:"Lower A (Quad Focus)",exercises:[{name:"DB Goblet Squat",sets:"3×12",cues:"Hold DB at chest. Break parallel.",group:"quads"},{name:"DB Romanian Deadlift",sets:"3×10–12",cues:"Hinge at hips. Soft knees.",group:"hamstrings"},{name:"DB Lunge (Walking)",sets:"3×10 each",cues:"Long stride. Control descent.",group:"quads"},{name:"DB Hip Thrust",sets:"3×12",cues:"Drive through heels. Squeeze glutes.",group:"glutes"},{name:"DB Calf Raise",sets:"3×15",cues:"Full range. Pause at top.",group:"calves"},{name:"Cable Crunch (Rope)",sets:"3×12",cues:"Curl down, not forward. Squeeze abs.",group:"core"}]},
-      {title:"Day 3",sub:"Upper B (Vertical Focus)",exercises:[{name:"Lat Pulldown",sets:"3×10–12",cues:"Pull to upper chest. Lean back slightly.",group:"back"},{name:"DB Incline Bench Press",sets:"3×10–12",cues:"30° incline. Full ROM.",group:"chest"},{name:"Seated Cable Row",sets:"3×10–12",cues:"Squeeze shoulder blades together.",group:"back"},{name:"DB Lateral Raise",sets:"3×12–15",cues:"Lead with elbows. Controlled.",group:"shoulders"},{name:"DB Hammer Curl",sets:"3×10–12",cues:"Neutral grip. Controlled.",group:"biceps"},{name:"DB Overhead Tricep Ext.",sets:"3×10–12",cues:"Keep elbows close. Full stretch.",group:"triceps"}]},
-      {title:"Day 4",sub:"Lower B (Ham/Glute Focus)",exercises:[{name:"DB Sumo Squat",sets:"3×12",cues:"Wide stance. Toes out 45°.",group:"quads"},{name:"DB Bulgarian Split Squat",sets:"3×10 each",cues:"Rear foot elevated. Stay upright.",group:"quads"},{name:"Cable Pull-Through",sets:"3×12",cues:"Hinge at hips. Squeeze glutes.",group:"glutes"},{name:"Stability Ball Hamstring Curl",sets:"3×12",cues:"Hips up. Curl heels to glutes.",group:"hamstrings"},{name:"Single-Leg DB Calf Raise",sets:"3×12 each",cues:"Hold for balance. Full ROM.",group:"calves"},{name:"Dead Bug",sets:"3×10 each",cues:"Press low back to floor. Slow.",group:"core"}]}
-    ]}]
-  })},
-  {key:"fb",name:"Full Body",sub:"3-day per week",icon:"🔥",gen:()=>({
-    id:"custom_"+Date.now(),name:"Full Body 3x/Week",subtitle:"Hit every muscle group each session",
-    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1–4",desc:"Full body stimulus 3 times per week.",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[
-      {title:"Day 1",sub:"Full Body A",exercises:[{name:"DB Flat Bench Press",sets:"3×10–12",cues:"Retract shoulder blades. Control descent.",group:"chest"},{name:"DB Bent-Over Row",sets:"3×10–12",cues:"Hinge 45°. Pull to ribcage.",group:"back"},{name:"DB Goblet Squat",sets:"3×12",cues:"Hold at chest. Break parallel.",group:"quads"},{name:"DB Romanian Deadlift",sets:"3×10–12",cues:"Hinge. Feel hamstring stretch.",group:"hamstrings"},{name:"DB Overhead Press",sets:"3×10–12",cues:"Brace core. Full lockout.",group:"shoulders"},{name:"DB Bicep Curl",sets:"2×12",cues:"Pin elbows. Full ROM.",group:"biceps"},{name:"Cable Tricep Pushdown (Rope)",sets:"2×12",cues:"Elbows pinned. Squeeze.",group:"triceps"},{name:"Plank",sets:"2×30–45s",cues:"Neutral spine. Brace core.",group:"core"}]},
-      {title:"Day 2",sub:"Full Body B",exercises:[{name:"DB Incline Bench Press",sets:"3×10–12",cues:"30° incline. Squeeze at top.",group:"chest"},{name:"Lat Pulldown",sets:"3×10–12",cues:"Pull to upper chest.",group:"back"},{name:"DB Bulgarian Split Squat",sets:"3×10 each",cues:"Control descent. Drive up.",group:"quads"},{name:"DB Hip Thrust",sets:"3×12",cues:"Squeeze glutes. Pause at top.",group:"glutes"},{name:"DB Lateral Raise",sets:"3×12–15",cues:"Lead with elbows.",group:"shoulders"},{name:"DB Hammer Curl",sets:"2×12",cues:"Neutral grip. Controlled.",group:"biceps"},{name:"DB Overhead Tricep Ext.",sets:"2×12",cues:"Full stretch at bottom.",group:"triceps"},{name:"Cable Crunch (Rope)",sets:"2×12",cues:"Curl down. Squeeze abs.",group:"core"}]},
-      {title:"Day 3",sub:"Full Body C",exercises:[{name:"Cable Chest Fly",sets:"3×12",cues:"Stretch wide. Squeeze midline.",group:"chest"},{name:"Seated Cable Row",sets:"3×10–12",cues:"V-bar. Squeeze blades.",group:"back"},{name:"DB Lunge (Walking)",sets:"3×10 each",cues:"Long stride. Controlled.",group:"quads"},{name:"Cable Hamstring Curl (Ankle Strap)",sets:"3×12 each",cues:"Slow eccentric. Full curl.",group:"hamstrings"},{name:"Cable Face Pull",sets:"3×15",cues:"External rotate at top.",group:"shoulders"},{name:"DB Concentration Curl",sets:"2×12",cues:"Brace on knee. Squeeze.",group:"biceps"},{name:"Cable Kickback",sets:"2×12",cues:"Lock upper arm. Extend fully.",group:"triceps"},{name:"Cable Woodchop",sets:"2×10 each",cues:"Rotate through core.",group:"core"}]}
-    ]}]
-  })},
-  {key:"bro",name:"Bro Split",sub:"5-day bodybuilding",icon:"💎",gen:()=>({
-    id:"custom_"+Date.now(),name:"5-Day Bro Split",subtitle:"Classic bodybuilding — one muscle group per day",
-    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1–4",desc:"High volume single-muscle focus.",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[
-      {title:"Day 1",sub:"Chest",exercises:[{name:"DB Flat Bench Press",sets:"4×10–12",cues:"Retract blades. Full ROM.",group:"chest"},{name:"DB Incline Bench Press",sets:"3×10–12",cues:"30° incline. Squeeze at top.",group:"chest"},{name:"Cable Chest Fly",sets:"3×12",cues:"Stretch wide. Squeeze midline.",group:"chest"},{name:"Cable Crossover",sets:"3×12",cues:"High to low. Squeeze.",group:"chest"},{name:"DB Pullover",sets:"3×12",cues:"Feel stretch through lats and chest.",group:"chest"}]},
-      {title:"Day 2",sub:"Back",exercises:[{name:"Lat Pulldown",sets:"4×10–12",cues:"Wide grip. Pull to chest.",group:"back"},{name:"DB Bent-Over Row",sets:"3×10–12",cues:"Pull to ribcage. Squeeze.",group:"back"},{name:"Seated Cable Row",sets:"3×10–12",cues:"V-bar. Retract blades.",group:"back"},{name:"Cable Straight-Arm Pulldown",sets:"3×12",cues:"Keep arms straight. Squeeze lats.",group:"back"},{name:"Cable Face Pull",sets:"3×15",cues:"Pull to face. External rotate.",group:"shoulders"}]},
-      {title:"Day 3",sub:"Shoulders & Abs",exercises:[{name:"DB Overhead Press",sets:"4×10–12",cues:"Brace core. Full lockout.",group:"shoulders"},{name:"DB Lateral Raise",sets:"3×12–15",cues:"Lead with elbows.",group:"shoulders"},{name:"DB Rear Delt Fly",sets:"3×12",cues:"Bent over. Squeeze rear delts.",group:"shoulders"},{name:"Cable Upright Row",sets:"3×12",cues:"Wide grip. Lead with elbows.",group:"shoulders"},{name:"Cable Crunch (Rope)",sets:"3×15",cues:"Curl down. Squeeze.",group:"core"},{name:"Cable Woodchop",sets:"3×10 each",cues:"Rotate through core.",group:"core"}]},
-      {title:"Day 4",sub:"Legs",exercises:[{name:"DB Goblet Squat",sets:"4×12",cues:"Break parallel. Heels down.",group:"quads"},{name:"DB Romanian Deadlift",sets:"3×10–12",cues:"Hinge at hips.",group:"hamstrings"},{name:"DB Bulgarian Split Squat",sets:"3×10 each",cues:"Control descent.",group:"quads"},{name:"DB Hip Thrust",sets:"3×12",cues:"Squeeze glutes at top.",group:"glutes"},{name:"DB Calf Raise",sets:"4×15",cues:"Pause at top and bottom.",group:"calves"}]},
-      {title:"Day 5",sub:"Arms",exercises:[{name:"DB Bicep Curl",sets:"3×10–12",cues:"Pin elbows. No swinging.",group:"biceps"},{name:"Cable Tricep Pushdown (Rope)",sets:"3×10–12",cues:"Spread rope at bottom.",group:"triceps"},{name:"DB Incline Curl",sets:"3×10–12",cues:"Let arms hang. Full stretch.",group:"biceps"},{name:"DB Overhead Tricep Ext.",sets:"3×10–12",cues:"Elbows close. Full stretch.",group:"triceps"},{name:"DB Hammer Curl",sets:"3×10–12",cues:"Neutral grip. Controlled.",group:"biceps"},{name:"Cable Kickback",sets:"3×12",cues:"Lock upper arm. Full extension.",group:"triceps"}]}
-    ]}]
-  })}
-];
-
+  {key:"ppl",name:"Push / Pull / Legs",sub:"Classic 3-day split",icon:"\ud83d\udcaa",gen:(eq)=>{
+    const mk=(n,s,g)=>({name:n,sets:s,cues:autoCue(n),group:g});
+    const ce=pickExs("chest",eq,3),be=pickExs("back",eq,3),se=pickExs("shoulders",eq,2),bi=pickExs("biceps",eq,2),tr=pickExs("triceps",eq,2),qe=pickExs("quads",eq,2),he=pickExs("hamstrings",eq,2),ge=pickExs("glutes",eq,1),ca=pickExs("calves",eq,1),co=pickExs("core",eq,1);
+    return{id:"custom_"+Date.now(),name:"Push / Pull / Legs",subtitle:"Classic 3-day hypertrophy split",
+    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1\u20134",desc:"Build a base with compound movements.",rest:"60\u201390s",sr:"3\u00d710\u201312",rir:"RIR 3\u20134",days:[
+      {title:"Day 1",sub:"Push (Chest/Shoulders/Triceps)",exercises:[...ce.map(e=>mk(e,"3\u00d710\u201312","chest")),...se.map(e=>mk(e,"3\u00d712\u201315","shoulders")),...tr.map(e=>mk(e,"3\u00d710\u201312","triceps"))]},
+      {title:"Day 2",sub:"Pull (Back/Biceps)",exercises:[...be.map(e=>mk(e,"3\u00d710\u201312","back")),...bi.map(e=>mk(e,"3\u00d710\u201312","biceps")),mk(co[0]||"Plank","3\u00d730\u201345s","core")]},
+      {title:"Day 3",sub:"Legs",exercises:[...qe.map(e=>mk(e,"3\u00d712","quads")),...he.map(e=>mk(e,"3\u00d710\u201312","hamstrings")),...ge.map(e=>mk(e,"3\u00d712","glutes")),...ca.map(e=>mk(e,"3\u00d715","calves")),mk(co[0]||"Plank","3\u00d730\u201345s","core")]}
+    ]},
+    {title:"Phase 2: Growth",weeks:"Weeks 5\u20138",desc:"Increase volume and intensity.",rest:"60\u201390s",sr:"4\u00d78\u201312",rir:"RIR 2\u20133",days:[
+      {title:"Day 1",sub:"Push",exercises:[...ce.map(e=>mk(e,"4\u00d78\u201312","chest")),...se.map(e=>mk(e,"3\u00d712\u201315","shoulders")),...tr.map(e=>mk(e,"3\u00d710\u201312","triceps"))]},
+      {title:"Day 2",sub:"Pull",exercises:[...be.map(e=>mk(e,"4\u00d78\u201312","back")),...bi.map(e=>mk(e,"3\u00d710\u201312","biceps")),mk(co[0]||"Plank","3\u00d745\u201360s","core")]},
+      {title:"Day 3",sub:"Legs",exercises:[...qe.map(e=>mk(e,"4\u00d78\u201312","quads")),...he.map(e=>mk(e,"3\u00d710\u201312","hamstrings")),...ge.map(e=>mk(e,"3\u00d712","glutes")),...ca.map(e=>mk(e,"4\u00d712\u201315","calves"))]}
+    ]},
+    {title:"Phase 3: Peak",weeks:"Weeks 9\u201312",desc:"Push intensity. Shorter rest. Higher effort.",rest:"45\u201375s",sr:"4\u00d76\u201310",rir:"RIR 1\u20132",days:[
+      {title:"Day 1",sub:"Push",exercises:[...ce.map(e=>mk(e,"4\u00d76\u201310","chest")),...se.map(e=>mk(e,"4\u00d710\u201312","shoulders")),...tr.map(e=>mk(e,"3\u00d710\u201312","triceps"))]},
+      {title:"Day 2",sub:"Pull",exercises:[...be.map(e=>mk(e,"4\u00d76\u201310","back")),...bi.map(e=>mk(e,"3\u00d78\u201312","biceps")),mk(co[0]||"Plank","3\u00d760s","core")]},
+      {title:"Day 3",sub:"Legs",exercises:[...qe.map(e=>mk(e,"4\u00d76\u201310","quads")),...he.map(e=>mk(e,"4\u00d78\u201310","hamstrings")),...ge.map(e=>mk(e,"4\u00d710","glutes")),...ca.map(e=>mk(e,"4\u00d712","calves"))]}
+    ]}
+  ]};
+  }},
+  {key:"ul",name:"Upper / Lower",sub:"4-day split",icon:"\ud83c\udfcb\ufe0f",gen:(eq)=>{
+    const mk=(n,s,g)=>({name:n,sets:s,cues:autoCue(n),group:g});
+    const ce=pickExs("chest",eq,2),be=pickExs("back",eq,2),se=pickExs("shoulders",eq,1),bi=pickExs("biceps",eq,1),tr=pickExs("triceps",eq,1),qe=pickExs("quads",eq,2),he=pickExs("hamstrings",eq,2),ge=pickExs("glutes",eq,1),ca=pickExs("calves",eq,1),co=pickExs("core",eq,1);
+    return{id:"custom_"+Date.now(),name:"Upper / Lower Split",subtitle:"4-day upper/lower hypertrophy program",
+    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1\u20134",desc:"Balanced upper and lower development.",rest:"60\u201390s",sr:"3\u00d710\u201312",rir:"RIR 3\u20134",days:[
+      {title:"Day 1",sub:"Upper A",exercises:[...ce.map(e=>mk(e,"3\u00d710\u201312","chest")),...be.map(e=>mk(e,"3\u00d710\u201312","back")),...se.map(e=>mk(e,"3\u00d712\u201315","shoulders")),...bi.map(e=>mk(e,"3\u00d710\u201312","biceps")),...tr.map(e=>mk(e,"3\u00d710\u201312","triceps"))]},
+      {title:"Day 2",sub:"Lower A",exercises:[...qe.map(e=>mk(e,"3\u00d712","quads")),...he.map(e=>mk(e,"3\u00d710\u201312","hamstrings")),...ge.map(e=>mk(e,"3\u00d712","glutes")),...ca.map(e=>mk(e,"3\u00d715","calves")),...co.map(e=>mk(e,"3\u00d730\u201345s","core"))]},
+      {title:"Day 3",sub:"Upper B",exercises:[...be.map(e=>mk(e,"3\u00d710\u201312","back")),...ce.slice(0,1).map(e=>mk(e,"3\u00d710\u201312","chest")),...se.map(e=>mk(e,"3\u00d712\u201315","shoulders")),...bi.map(e=>mk(e,"3\u00d710\u201312","biceps")),...tr.map(e=>mk(e,"3\u00d710\u201312","triceps"))]},
+      {title:"Day 4",sub:"Lower B",exercises:[...he.map(e=>mk(e,"3\u00d710\u201312","hamstrings")),...qe.slice(0,1).map(e=>mk(e,"3\u00d712","quads")),...ge.map(e=>mk(e,"3\u00d712","glutes")),...ca.map(e=>mk(e,"3\u00d712 each","calves")),...co.map(e=>mk(e,"3\u00d730\u201345s","core"))]}
+    ]}]};
+  }},
+  {key:"fb",name:"Full Body",sub:"3-day per week",icon:"\ud83d\udd25",gen:(eq)=>{
+    const mk=(n,s,g)=>({name:n,sets:s,cues:autoCue(n),group:g});
+    const ce=pickExs("chest",eq,3),be=pickExs("back",eq,3),se=pickExs("shoulders",eq,3),bi=pickExs("biceps",eq,2),tr=pickExs("triceps",eq,2),qe=pickExs("quads",eq,3),he=pickExs("hamstrings",eq,2),ge=pickExs("glutes",eq,1),co=pickExs("core",eq,3);
+    return{id:"custom_"+Date.now(),name:"Full Body 3x/Week",subtitle:"Hit every muscle group each session",
+    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1\u20134",desc:"Full body stimulus 3 times per week.",rest:"60\u201390s",sr:"3\u00d710\u201312",rir:"RIR 3\u20134",days:[
+      {title:"Day 1",sub:"Full Body A",exercises:[mk(ce[0]||"Push-Ups","3\u00d710\u201312","chest"),mk(be[0]||"Inverted Row","3\u00d710\u201312","back"),mk(qe[0]||"Lunges","3\u00d712","quads"),mk(he[0]||"Nordic Curl","3\u00d710\u201312","hamstrings"),mk(se[0]||"Pike Push-Ups","3\u00d710\u201312","shoulders"),mk(bi[0]||"Chin-Ups","2\u00d712","biceps"),mk(tr[0]||"Diamond Push-Ups","2\u00d712","triceps"),mk(co[0]||"Plank","2\u00d730\u201345s","core")]},
+      {title:"Day 2",sub:"Full Body B",exercises:[mk(ce[1]||ce[0]||"Push-Ups","3\u00d710\u201312","chest"),mk(be[1]||be[0]||"Inverted Row","3\u00d710\u201312","back"),mk(qe[1]||qe[0]||"Lunges","3\u00d710 each","quads"),mk(ge[0]||"Glute Bridge","3\u00d712","glutes"),mk(se[1]||se[0]||"Pike Push-Ups","3\u00d712\u201315","shoulders"),mk(bi[1]||bi[0]||"Chin-Ups","2\u00d712","biceps"),mk(tr[1]||tr[0]||"Diamond Push-Ups","2\u00d712","triceps"),mk(co[1]||co[0]||"Plank","2\u00d712","core")]},
+      {title:"Day 3",sub:"Full Body C",exercises:[mk(ce[2]||ce[0]||"Push-Ups","3\u00d712","chest"),mk(be[2]||be[0]||"Inverted Row","3\u00d710\u201312","back"),mk(qe[2]||qe[0]||"Lunges","3\u00d710 each","quads"),mk(he[1]||he[0]||"Nordic Curl","3\u00d712 each","hamstrings"),mk(se[2]||se[0]||"Pike Push-Ups","3\u00d715","shoulders"),mk(bi[0]||"Chin-Ups","2\u00d712","biceps"),mk(tr[0]||"Diamond Push-Ups","2\u00d712","triceps"),mk(co[2]||co[0]||"Plank","2\u00d710 each","core")]}
+    ]}]};
+  }},
+  {key:"bro",name:"Bro Split",sub:"5-day bodybuilding",icon:"\ud83d\udc8e",gen:(eq)=>{
+    const mk=(n,s,g)=>({name:n,sets:s,cues:autoCue(n),group:g});
+    const ce=pickExs("chest",eq,5),be=pickExs("back",eq,5),se=pickExs("shoulders",eq,4),bi=pickExs("biceps",eq,3),tr=pickExs("triceps",eq,3),qe=pickExs("quads",eq,3),he=pickExs("hamstrings",eq,2),ge=pickExs("glutes",eq,1),ca=pickExs("calves",eq,1),co=pickExs("core",eq,2);
+    return{id:"custom_"+Date.now(),name:"5-Day Bro Split",subtitle:"Classic bodybuilding \u2014 one muscle group per day",
+    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1\u20134",desc:"High volume single-muscle focus.",rest:"60\u201390s",sr:"3\u00d710\u201312",rir:"RIR 3\u20134",days:[
+      {title:"Day 1",sub:"Chest",exercises:ce.slice(0,5).map(e=>mk(e,"3\u00d710\u201312","chest"))},
+      {title:"Day 2",sub:"Back",exercises:be.slice(0,5).map(e=>mk(e,"3\u00d710\u201312","back"))},
+      {title:"Day 3",sub:"Shoulders & Abs",exercises:[...se.slice(0,4).map(e=>mk(e,"3\u00d712\u201315","shoulders")),...co.map(e=>mk(e,"3\u00d715","core"))]},
+      {title:"Day 4",sub:"Legs",exercises:[...qe.map(e=>mk(e,"3\u00d712","quads")),...he.map(e=>mk(e,"3\u00d710\u201312","hamstrings")),...ge.map(e=>mk(e,"3\u00d712","glutes")),...ca.map(e=>mk(e,"4\u00d715","calves"))]},
+      {title:"Day 5",sub:"Arms",exercises:[...bi.map(e=>mk(e,"3\u00d710\u201312","biceps")),...tr.map(e=>mk(e,"3\u00d710\u201312","triceps"))]}
+    ]}]};
+  }}
+]
 const ALL=[V1,V2,V3];
 
 const CHANGELOG=[
+  {ver:"v20",date:"2026-03-02",title:"Equipment Filters, PWA Install & BW Toggle",items:["Equipment selection for plan creation (12 equipment types)","Expanded exercise database: barbell, machine, kettlebell, band exercises","Templates auto-adapt to selected equipment","PWA install instructions on sign-in screen","Body weight tracker can be hidden/re-enabled","Equipment context sent to AI generation"]},
   {ver:"v18",date:"2026-03-02",title:"AI Workout Plan Generator",items:["4 quick-start templates (PPL, Upper/Lower, Full Body, Bro Split)","AI plan generation from text description","Paste existing plan for AI conversion","Full plan editor with revision workflow","Custom plans saved to Firebase","Admin + creator delete capability","Support for OpenAI, Claude, and Gemini API keys"]},
   {ver:"v17",date:"2026-03-02",title:"App Changelog",items:["App updates/changelog page"]},
   {ver:"v16",date:"2026-03-02",title:"Email & Password Auth",items:["Email/password sign-in with account creation","Password reset via email","Friendly error messages for all auth flows"]},
@@ -328,6 +368,7 @@ function App(){
   const [prToast,setPrToast]=useState(null);
   const [bodyWt,setBodyWt]=useState({});
   const [bwInput,setBwInput]=useState("");
+  const [bwEnabled,setBwEnabled]=useState(true);
   const [wkNotes,setWkNotes]=useState("");
   const [myPlans,setMyPlans]=useState({});
   const [cpDraft,setCpDraft]=useState(null);
@@ -366,7 +407,7 @@ function App(){
     setSyncing(true);const uid=user.uid;
     Promise.all([Cloud.load(uid,"state"),Cloud.load(uid,"history"),Cloud.load(uid,"swaps"),Cloud.load(uid,"customEx"),Cloud.load(uid,"ssLinks"),Cloud.load(uid,"exOrder"),Cloud.load(uid,"exEdits"),Cloud.load(uid,"bodyWeight"),Cloud.load(uid,"prefs"),Cloud.load(uid,"myPlans")]).then(([st,h,s,ce,sl,eo,ee,bw,pf,mp])=>{
       if(st){setPlanId(st.p||"v1");setPhaseIdx(st.ph||0);setDayIdx(st.d||0);}
-      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(mp)setMyPlans(mp);setSyncing(false);
+      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(mp)setMyPlans(mp);setSyncing(false);
     });
     unsubs.current.push(
       Cloud.listen(uid,"history",data=>setHist(data)),
@@ -377,7 +418,7 @@ function App(){
       Cloud.listen(uid,"exOrder",data=>{if(data)setExOrder(data);}),
       Cloud.listen(uid,"exEdits",data=>{if(data)setExEdits(data);}),
       Cloud.listen(uid,"bodyWeight",data=>{if(data)setBodyWt(data);}),
-      Cloud.listen(uid,"prefs",data=>{if(data&&data.theme)setTheme(data.theme);if(data&&data.aiKey)setAiKey(data.aiKey);if(data&&data.aiProvider)setAiProvider(data.aiProvider);}),
+      Cloud.listen(uid,"prefs",data=>{if(data&&data.theme)setTheme(data.theme);if(data&&data.aiKey)setAiKey(data.aiKey);if(data&&data.aiProvider)setAiProvider(data.aiProvider);if(data?.bwEnabled===false)setBwEnabled(false);else if(data?.bwEnabled===true)setBwEnabled(true);}),
       Cloud.listen(uid,"myPlans",data=>{if(data)setMyPlans(data);})
     );
     return()=>{unsubs.current.forEach(fn=>fn());unsubs.current=[];};
@@ -470,7 +511,8 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     finally{setAiLoading(false);}
   };
 
-  const saveAIKey=()=>{if(!user)return;const pf={theme,aiKey,aiProvider};Cloud.save(user.uid,"prefs",pf);};
+  const savePrefs=(extra={})=>{if(!user)return;Cloud.save(user.uid,"prefs",{theme,aiKey,aiProvider,bwEnabled,...extra});};
+  const saveAIKey=()=>savePrefs();
   const publishPlan=(p)=>{if(!user)return;const pub={...p,_published:true};const nm={...myPlans,[p.id]:pub};setMyPlans(nm);Cloud.save(user.uid,"myPlans",nm);setCpDraft(null);setCpScreen("main");setPlanId(p.id);setPhaseIdx(0);setDayIdx(0);setScreen("home");};
   const deletePlan=(pid)=>{if(!user)return;const nm={...myPlans};delete nm[pid];setMyPlans(nm);Cloud.save(user.uid,"myPlans",nm);if(planId===pid){setPlanId("v1");setPhaseIdx(0);setDayIdx(0);}};
   const isAdmin=user&&ADMIN_EMAILS.has(user.email);
@@ -534,7 +576,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
   const saveBW=async()=>{if(!user||!bwInput)return;const nb={...bodyWt,[weekKey]:parseFloat(bwInput)};setBodyWt(nb);Cloud.save(user.uid,"bodyWeight",nb);setBwInput("");};
 
   // THEME TOGGLE
-  const toggleTheme=()=>{const nt=theme==="dark"?"light":"dark";setTheme(nt);if(user)Cloud.save(user.uid,"prefs",{theme:nt});};
+  const toggleTheme=()=>{const nt=theme==="dark"?"light":"dark";setTheme(nt);if(user)savePrefs({theme:nt});};
 
   const prev=getPrev();const exs=getExs();
   const isSS=(ei)=>ssLinks[`${planId}-${phaseIdx}-${dayIdx}-${ei}`];
@@ -563,6 +605,12 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         </div>
         {authError&&<div style={{marginTop:12,padding:"10px 14px",background:authError.includes("sent")?"#22C55E18":"#EF444418",border:authError.includes("sent")?"1px solid #22C55E30":"1px solid #EF444430",borderRadius:8,color:authError.includes("sent")?"#22C55E":"#EF4444",fontSize:12,textAlign:"left"}}>{authError}</div>}
         <div style={{marginTop:20,color:C.fnt,fontSize:12,lineHeight:1.6}}>Your workout data syncs securely.<br/>Only you can access your data.</div>
+        <div style={{marginTop:16,background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:"12px 14px",textAlign:"left"}}>
+          <div style={{fontSize:12,fontWeight:700,color:C.txt,marginBottom:6}}>📲 Install as an App</div>
+          <div style={{fontSize:11,color:C.dim,lineHeight:1.7,marginBottom:6}}><b style={{color:C.txt}}>Android:</b> Tap the menu (⋮) in Chrome → "Add to Home screen" or "Install app"</div>
+          <div style={{fontSize:11,color:C.dim,lineHeight:1.7,marginBottom:6}}><b style={{color:C.txt}}>iPhone/iPad:</b> Tap the Share button (↑) in Safari → "Add to Home Screen"</div>
+          <div style={{fontSize:11,color:C.fnt,lineHeight:1.5}}>This gives you a full-screen app experience with an icon on your home screen.</div>
+        </div>
       </div>
     </div>);
 
@@ -605,16 +653,24 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,marginBottom:4}}>Create a Plan</div>
           <div style={{fontSize:13,color:C.dim,marginBottom:20}}>Start from a template or use AI to generate a custom plan</div>
 
+          <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:16,marginBottom:16}}>
+            <div style={{fontSize:11,color:"#22C55E",fontWeight:700,letterSpacing:"0.5px",marginBottom:10}}>AVAILABLE EQUIPMENT</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+              {EQUIPMENT.map(eq=>(<button key={eq.key} onClick={()=>{setCpEquip(prev=>prev.includes(eq.key)?prev.filter(k=>k!==eq.key):[...prev,eq.key]);}} style={{padding:"6px 10px",borderRadius:8,border:`1px solid ${cpEquip.includes(eq.key)?C.acc+"60":C.sbdr}`,background:cpEquip.includes(eq.key)?C.acc+"15":"transparent",color:cpEquip.includes(eq.key)?C.acc:C.dim,fontSize:11,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}><span>{eq.icon}</span>{eq.label}</button>))}
+            </div>
+            <div style={{marginTop:8,fontSize:10,color:C.fnt}}>Select your equipment — templates and exercises adapt automatically.</div>
+          </div>
+
           <div style={{fontSize:11,color:C.acc,fontWeight:700,letterSpacing:"0.5px",marginBottom:10}}>QUICK TEMPLATES</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:24}}>
-            {TEMPLATES.map(t=>(<button key={t.key} onClick={()=>{const p=t.gen();p._createdBy=user.uid;p._createdAt=Date.now();p._published=false;setCpDraft(p);setCpScreen("edit");}} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"16px 12px",textAlign:"center",cursor:"pointer"}}><div style={{fontSize:24,marginBottom:6}}>{t.icon}</div><div style={{fontWeight:700,fontSize:13,color:C.txt}}>{t.name}</div><div style={{fontSize:11,color:C.dim,marginTop:2}}>{t.sub}</div></button>))}
+            {TEMPLATES.map(t=>(<button key={t.key} onClick={()=>{const p=t.gen(cpEquip);p._createdBy=user.uid;p._createdAt=Date.now();p._published=false;setCpDraft(p);setCpScreen("edit");}} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"16px 12px",textAlign:"center",cursor:"pointer"}}><div style={{fontSize:24,marginBottom:6}}>{t.icon}</div><div style={{fontWeight:700,fontSize:13,color:C.txt}}>{t.name}</div><div style={{fontSize:11,color:C.dim,marginTop:2}}>{t.sub}</div></button>))}
           </div>
 
           <div style={{fontSize:11,color:"#A78BFA",fontWeight:700,letterSpacing:"0.5px",marginBottom:10}}>AI GENERATION</div>
           <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:16,marginBottom:12}}>
             <div style={{fontSize:13,fontWeight:700,color:C.txt,marginBottom:8}}>Describe your ideal plan</div>
             <textarea placeholder='Example: "4-day upper/lower split for intermediate lifters. Focus on strength with 5x5 compounds and hypertrophy accessories. Include 2 rest days."' value={aiPrompt} onChange={e=>setAiPrompt(e.target.value)} style={{width:"100%",minHeight:80,background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"10px 12px",color:C.txt,fontSize:13,outline:"none",resize:"vertical",boxSizing:"border-box",fontFamily:"inherit",lineHeight:1.5}}/>
-            <button onClick={()=>generateAIPlan(aiPrompt)} disabled={aiLoading||!aiPrompt.trim()} style={{width:"100%",marginTop:8,padding:"12px",borderRadius:10,border:"none",background:aiLoading?"#555":`linear-gradient(135deg,#A78BFA,#7C3AED)`,color:"#fff",fontSize:14,fontWeight:700,cursor:aiLoading?"wait":"pointer",opacity:(!aiPrompt.trim()&&!aiLoading)?0.5:1}}>{aiLoading?"Generating...":"✨ Generate with AI"}</button>
+            <button onClick={()=>generateAIPlan(aiPrompt+"\nAvailable equipment: "+cpEquip.map(k=>{const e=EQUIPMENT.find(eq=>eq.key===k);return e?e.label:k;}).join(", ")+". Only use exercises possible with this equipment.")} disabled={aiLoading||!aiPrompt.trim()} style={{width:"100%",marginTop:8,padding:"12px",borderRadius:10,border:"none",background:aiLoading?"#555":`linear-gradient(135deg,#A78BFA,#7C3AED)`,color:"#fff",fontSize:14,fontWeight:700,cursor:aiLoading?"wait":"pointer",opacity:(!aiPrompt.trim()&&!aiLoading)?0.5:1}}>{aiLoading?"Generating...":"✨ Generate with AI"}</button>
           </div>
 
           <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:16,marginBottom:12}}>
@@ -732,7 +788,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
             {weekNum>0&&(<div style={{background:C.acc+"18",border:`1px solid ${C.acc}30`,borderRadius:10,padding:"8px 12px",textAlign:"center",flexShrink:0}}><div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:C.acc,lineHeight:1}}>{weekNum}</div><div style={{fontSize:9,color:C.acc,fontWeight:600,letterSpacing:"0.5px",marginTop:2}}>WEEK</div></div>)}
           </div>
           <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-            {weekNum>0?(<><span style={{background:C.grn+"18",color:C.grn,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>Week {weekNum} of 12</span><span style={{background:"#5B8DEF18",color:"#5B8DEF",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{totalSessions} sessions logged</span>{bwThisWeek&&<span style={{background:"#F59E0B18",color:"#F59E0B",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{bwThisWeek} lbs</span>}</>):(["Mon/Wed/Fri","Full Body","12 Weeks","3 Phases"].map(t=>(<span key={t} style={{background:C.acc+"18",color:C.acc,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{t}</span>)))}
+            {weekNum>0?(<><span style={{background:C.grn+"18",color:C.grn,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>Week {weekNum} of 12</span><span style={{background:"#5B8DEF18",color:"#5B8DEF",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{totalSessions} sessions logged</span>{bwEnabled&&bwThisWeek&&<span style={{background:"#F59E0B18",color:"#F59E0B",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{bwThisWeek} lbs</span>}</>):(["Mon/Wed/Fri","Full Body","12 Weeks","3 Phases"].map(t=>(<span key={t} style={{background:C.acc+"18",color:C.acc,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{t}</span>)))}
           </div>
           {weekNum>0&&(<div style={{marginTop:12}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:10,color:C.fnt}}>Progress</span><span style={{fontSize:10,color:C.fnt}}>{Math.round((weekNum/12)*100)}%</span></div><div style={{height:6,background:C.srf,borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${(weekNum/12)*100}%`,background:`linear-gradient(90deg,${C.acc},#FF9F5C)`,borderRadius:3,transition:"width 0.5s"}}/></div></div>)}
         </div>
@@ -740,16 +796,21 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         {totalSessions>0&&(<button onClick={()=>{setScreen("progress");setProgEx(loggedExercises[0]||"");setProgDay("all");setProgOpen(null);history.pushState({screen:"progress"},"");}} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",padding:"14px",background:"linear-gradient(135deg,#1A1A2E,#16213E)",border:`1px solid #5B8DEF30`,borderRadius:12,color:"#5B8DEF",fontSize:14,fontWeight:700,cursor:"pointer",marginBottom:20}}><ChartIcon s={18}/> View Progress & History</button>)}
 
 {/* BODY WEIGHT LOG - weekly */}
-        {!bwThisWeek?(
+        {bwEnabled&&!bwThisWeek?(
         <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"14px 16px",marginBottom:16}}>
-          <div style={{fontSize:11,color:"#F59E0B",fontWeight:700,letterSpacing:"0.5px",marginBottom:8}}>WEEKLY WEIGH-IN</div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={{fontSize:11,color:"#F59E0B",fontWeight:700,letterSpacing:"0.5px"}}>WEEKLY WEIGH-IN</div>
+            <button onClick={()=>{setBwEnabled(false);savePrefs({bwEnabled:false});}} style={{fontSize:10,color:C.fnt,background:"none",border:"none",cursor:"pointer",padding:0}}>Hide ✕</button>
+          </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
             <input type="number" inputMode="decimal" step="0.1" placeholder="This week's weight" value={bwInput} onChange={e=>setBwInput(e.target.value)} style={{flex:1,background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"10px 12px",color:C.txt,fontSize:14,fontWeight:600,outline:"none",boxSizing:"border-box",fontFamily:"inherit"}}/>
             <span style={{fontSize:13,color:C.dim,fontWeight:600}}>lbs</span>
             <button onClick={saveBW} style={{background:C.acc,border:"none",borderRadius:8,padding:"10px 14px",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>Log</button>
           </div>
           {(()=>{const entries=Object.entries(bodyWt).filter(([k,v])=>v>0).sort(([a],[b])=>a.localeCompare(b));if(entries.length>0){const latest=entries[entries.length-1];return(<div style={{marginTop:8,fontSize:11,color:C.dim}}>Last: <b style={{color:C.txt}}>{latest[1]} lbs</b> <span style={{color:C.fnt}}>({Stats.fmtDate(latest[0])})</span></div>);}return null;})()}
-        </div>):null}
+        </div>):bwEnabled&&bwThisWeek?null:!bwEnabled?(
+        <button onClick={()=>{setBwEnabled(true);savePrefs({bwEnabled:true});}} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",padding:"10px",background:C.card,border:`1px dashed ${C.bdr}`,borderRadius:10,color:C.fnt,fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:16}}>⚖️ Enable Weekly Weigh-In</button>
+        ):null}
 
         {plan.phases.map((ph,pi)=>(
           <div key={pi} style={{marginBottom:20}}>
