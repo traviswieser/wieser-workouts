@@ -110,7 +110,8 @@ const pickExs=(group,equipKeys,count=2)=>{
   const pool=EX_BY_EQUIP[group]||{};
   const buckets=equipKeys.map(k=>[...(pool[k]||[])]).filter(b=>b.length>0);
   if(buckets.length===0)return[];
-  const result=[];const used=new Set();let bi=0;
+  const groupOffset={"chest":0,"back":1,"shoulders":2,"biceps":0,"triceps":1,"quads":2,"hamstrings":0,"glutes":1,"core":2,"calves":0,"cardio":1}[group]||0;
+  const result=[];const used=new Set();let bi=groupOffset%buckets.length;
   while(result.length<count){
     let found=false;
     for(let attempt=0;attempt<buckets.length;attempt++){
