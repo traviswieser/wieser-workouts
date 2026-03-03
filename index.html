@@ -196,58 +196,58 @@ mkEx("Biking","1×duration","Easy to moderate pace. Great finish to the session.
 
 // PLAN TEMPLATES
 const TEMPLATES=[
-  {key:"ppl",name:"Push / Pull / Legs",sub:"Classic 3-day split",icon:"\ud83d\udcaa",gen:(eq)=>{
+  {key:"ppl",name:"Push / Pull / Legs",sub:"Classic 3-day split",icon:"💪",gen:(eq)=>{
     const mk=(n,s,g)=>({name:n,sets:s,cues:autoCue(n),group:g});
     const ce=pickExs("chest",eq,3),be=pickExs("back",eq,3),se=pickExs("shoulders",eq,2),bi=pickExs("biceps",eq,2),tr=pickExs("triceps",eq,2),qe=pickExs("quads",eq,2),he=pickExs("hamstrings",eq,2),ge=pickExs("glutes",eq,1),ca=pickExs("calves",eq,1),co=pickExs("core",eq,1);
     return{id:"custom_"+Date.now(),name:"Push / Pull / Legs",subtitle:"Classic 3-day hypertrophy split",
-    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1\u20134",desc:"Build a base with compound movements.",rest:"60\u201390s",sr:"3\u00d710\u201312",rir:"RIR 3\u20134",days:[
-      {title:"Day 1",sub:"Push (Chest/Shoulders/Triceps)",exercises:[...ce.map(e=>mk(e,"3\u00d710\u201312","chest")),...se.map(e=>mk(e,"3\u00d712\u201315","shoulders")),...tr.map(e=>mk(e,"3\u00d710\u201312","triceps"))]},
-      {title:"Day 2",sub:"Pull (Back/Biceps)",exercises:[...be.map(e=>mk(e,"3\u00d710\u201312","back")),...bi.map(e=>mk(e,"3\u00d710\u201312","biceps")),mk(co[0]||"Plank","3\u00d730\u201345s","core")]},
-      {title:"Day 3",sub:"Legs",exercises:[...qe.map(e=>mk(e,"3\u00d712","quads")),...he.map(e=>mk(e,"3\u00d710\u201312","hamstrings")),...ge.map(e=>mk(e,"3\u00d712","glutes")),...ca.map(e=>mk(e,"3\u00d715","calves")),mk(co[0]||"Plank","3\u00d730\u201345s","core")]}
+    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1–4",desc:"Build a base with compound movements.",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[
+      {title:"Day 1",sub:"Push (Chest/Shoulders/Triceps)",exercises:[...ce.map(e=>mk(e,"3×10–12","chest")),...se.map(e=>mk(e,"3×12–15","shoulders")),...tr.map(e=>mk(e,"3×10–12","triceps"))]},
+      {title:"Day 2",sub:"Pull (Back/Biceps)",exercises:[...be.map(e=>mk(e,"3×10–12","back")),...bi.map(e=>mk(e,"3×10–12","biceps")),mk(co[0]||"Plank","3×30–45s","core")]},
+      {title:"Day 3",sub:"Legs",exercises:[...qe.map(e=>mk(e,"3×12","quads")),...he.map(e=>mk(e,"3×10–12","hamstrings")),...ge.map(e=>mk(e,"3×12","glutes")),...ca.map(e=>mk(e,"3×15","calves")),mk(co[0]||"Plank","3×30–45s","core")]}
     ]},
-    {title:"Phase 2: Growth",weeks:"Weeks 5\u20138",desc:"Increase volume and intensity.",rest:"60\u201390s",sr:"4\u00d78\u201312",rir:"RIR 2\u20133",days:[
-      {title:"Day 1",sub:"Push",exercises:[...ce.map(e=>mk(e,"4\u00d78\u201312","chest")),...se.map(e=>mk(e,"3\u00d712\u201315","shoulders")),...tr.map(e=>mk(e,"3\u00d710\u201312","triceps"))]},
-      {title:"Day 2",sub:"Pull",exercises:[...be.map(e=>mk(e,"4\u00d78\u201312","back")),...bi.map(e=>mk(e,"3\u00d710\u201312","biceps")),mk(co[0]||"Plank","3\u00d745\u201360s","core")]},
-      {title:"Day 3",sub:"Legs",exercises:[...qe.map(e=>mk(e,"4\u00d78\u201312","quads")),...he.map(e=>mk(e,"3\u00d710\u201312","hamstrings")),...ge.map(e=>mk(e,"3\u00d712","glutes")),...ca.map(e=>mk(e,"4\u00d712\u201315","calves"))]}
+    {title:"Phase 2: Growth",weeks:"Weeks 5–8",desc:"Increase volume and intensity.",rest:"60–90s",sr:"4×8–12",rir:"RIR 2–3",days:[
+      {title:"Day 1",sub:"Push",exercises:[...ce.map(e=>mk(e,"4×8–12","chest")),...se.map(e=>mk(e,"3×12–15","shoulders")),...tr.map(e=>mk(e,"3×10–12","triceps"))]},
+      {title:"Day 2",sub:"Pull",exercises:[...be.map(e=>mk(e,"4×8–12","back")),...bi.map(e=>mk(e,"3×10–12","biceps")),mk(co[0]||"Plank","3×45–60s","core")]},
+      {title:"Day 3",sub:"Legs",exercises:[...qe.map(e=>mk(e,"4×8–12","quads")),...he.map(e=>mk(e,"3×10–12","hamstrings")),...ge.map(e=>mk(e,"3×12","glutes")),...ca.map(e=>mk(e,"4×12–15","calves"))]}
     ]},
-    {title:"Phase 3: Peak",weeks:"Weeks 9\u201312",desc:"Push intensity. Shorter rest. Higher effort.",rest:"45\u201375s",sr:"4\u00d76\u201310",rir:"RIR 1\u20132",days:[
-      {title:"Day 1",sub:"Push",exercises:[...ce.map(e=>mk(e,"4\u00d76\u201310","chest")),...se.map(e=>mk(e,"4\u00d710\u201312","shoulders")),...tr.map(e=>mk(e,"3\u00d710\u201312","triceps"))]},
-      {title:"Day 2",sub:"Pull",exercises:[...be.map(e=>mk(e,"4\u00d76\u201310","back")),...bi.map(e=>mk(e,"3\u00d78\u201312","biceps")),mk(co[0]||"Plank","3\u00d760s","core")]},
-      {title:"Day 3",sub:"Legs",exercises:[...qe.map(e=>mk(e,"4\u00d76\u201310","quads")),...he.map(e=>mk(e,"4\u00d78\u201310","hamstrings")),...ge.map(e=>mk(e,"4\u00d710","glutes")),...ca.map(e=>mk(e,"4\u00d712","calves"))]}
+    {title:"Phase 3: Peak",weeks:"Weeks 9–12",desc:"Push intensity. Shorter rest. Higher effort.",rest:"45–75s",sr:"4×6–10",rir:"RIR 1–2",days:[
+      {title:"Day 1",sub:"Push",exercises:[...ce.map(e=>mk(e,"4×6–10","chest")),...se.map(e=>mk(e,"4×10–12","shoulders")),...tr.map(e=>mk(e,"3×10–12","triceps"))]},
+      {title:"Day 2",sub:"Pull",exercises:[...be.map(e=>mk(e,"4×6–10","back")),...bi.map(e=>mk(e,"3×8–12","biceps")),mk(co[0]||"Plank","3×60s","core")]},
+      {title:"Day 3",sub:"Legs",exercises:[...qe.map(e=>mk(e,"4×6–10","quads")),...he.map(e=>mk(e,"4×8–10","hamstrings")),...ge.map(e=>mk(e,"4×10","glutes")),...ca.map(e=>mk(e,"4×12","calves"))]}
     ]}
   ]};
   }},
-  {key:"ul",name:"Upper / Lower",sub:"4-day split",icon:"\ud83c\udfcb\ufe0f",gen:(eq)=>{
+  {key:"ul",name:"Upper / Lower",sub:"4-day split",icon:"🏋️",gen:(eq)=>{
     const mk=(n,s,g)=>({name:n,sets:s,cues:autoCue(n),group:g});
     const ce=pickExs("chest",eq,2),be=pickExs("back",eq,2),se=pickExs("shoulders",eq,1),bi=pickExs("biceps",eq,1),tr=pickExs("triceps",eq,1),qe=pickExs("quads",eq,2),he=pickExs("hamstrings",eq,2),ge=pickExs("glutes",eq,1),ca=pickExs("calves",eq,1),co=pickExs("core",eq,1);
     return{id:"custom_"+Date.now(),name:"Upper / Lower Split",subtitle:"4-day upper/lower hypertrophy program",
-    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1\u20134",desc:"Balanced upper and lower development.",rest:"60\u201390s",sr:"3\u00d710\u201312",rir:"RIR 3\u20134",days:[
-      {title:"Day 1",sub:"Upper A",exercises:[...ce.map(e=>mk(e,"3\u00d710\u201312","chest")),...be.map(e=>mk(e,"3\u00d710\u201312","back")),...se.map(e=>mk(e,"3\u00d712\u201315","shoulders")),...bi.map(e=>mk(e,"3\u00d710\u201312","biceps")),...tr.map(e=>mk(e,"3\u00d710\u201312","triceps"))]},
-      {title:"Day 2",sub:"Lower A",exercises:[...qe.map(e=>mk(e,"3\u00d712","quads")),...he.map(e=>mk(e,"3\u00d710\u201312","hamstrings")),...ge.map(e=>mk(e,"3\u00d712","glutes")),...ca.map(e=>mk(e,"3\u00d715","calves")),...co.map(e=>mk(e,"3\u00d730\u201345s","core"))]},
-      {title:"Day 3",sub:"Upper B",exercises:[...be.map(e=>mk(e,"3\u00d710\u201312","back")),...ce.slice(0,1).map(e=>mk(e,"3\u00d710\u201312","chest")),...se.map(e=>mk(e,"3\u00d712\u201315","shoulders")),...bi.map(e=>mk(e,"3\u00d710\u201312","biceps")),...tr.map(e=>mk(e,"3\u00d710\u201312","triceps"))]},
-      {title:"Day 4",sub:"Lower B",exercises:[...he.map(e=>mk(e,"3\u00d710\u201312","hamstrings")),...qe.slice(0,1).map(e=>mk(e,"3\u00d712","quads")),...ge.map(e=>mk(e,"3\u00d712","glutes")),...ca.map(e=>mk(e,"3\u00d712 each","calves")),...co.map(e=>mk(e,"3\u00d730\u201345s","core"))]}
+    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1–4",desc:"Balanced upper and lower development.",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[
+      {title:"Day 1",sub:"Upper A",exercises:[...ce.map(e=>mk(e,"3×10–12","chest")),...be.map(e=>mk(e,"3×10–12","back")),...se.map(e=>mk(e,"3×12–15","shoulders")),...bi.map(e=>mk(e,"3×10–12","biceps")),...tr.map(e=>mk(e,"3×10–12","triceps"))]},
+      {title:"Day 2",sub:"Lower A",exercises:[...qe.map(e=>mk(e,"3×12","quads")),...he.map(e=>mk(e,"3×10–12","hamstrings")),...ge.map(e=>mk(e,"3×12","glutes")),...ca.map(e=>mk(e,"3×15","calves")),...co.map(e=>mk(e,"3×30–45s","core"))]},
+      {title:"Day 3",sub:"Upper B",exercises:[...be.map(e=>mk(e,"3×10–12","back")),...ce.slice(0,1).map(e=>mk(e,"3×10–12","chest")),...se.map(e=>mk(e,"3×12–15","shoulders")),...bi.map(e=>mk(e,"3×10–12","biceps")),...tr.map(e=>mk(e,"3×10–12","triceps"))]},
+      {title:"Day 4",sub:"Lower B",exercises:[...he.map(e=>mk(e,"3×10–12","hamstrings")),...qe.slice(0,1).map(e=>mk(e,"3×12","quads")),...ge.map(e=>mk(e,"3×12","glutes")),...ca.map(e=>mk(e,"3×12 each","calves")),...co.map(e=>mk(e,"3×30–45s","core"))]}
     ]}]};
   }},
-  {key:"fb",name:"Full Body",sub:"3-day per week",icon:"\ud83d\udd25",gen:(eq)=>{
+  {key:"fb",name:"Full Body",sub:"3-day per week",icon:"🔥",gen:(eq)=>{
     const mk=(n,s,g)=>({name:n,sets:s,cues:autoCue(n),group:g});
     const ce=pickExs("chest",eq,3),be=pickExs("back",eq,3),se=pickExs("shoulders",eq,3),bi=pickExs("biceps",eq,2),tr=pickExs("triceps",eq,2),qe=pickExs("quads",eq,3),he=pickExs("hamstrings",eq,2),ge=pickExs("glutes",eq,1),co=pickExs("core",eq,3);
     return{id:"custom_"+Date.now(),name:"Full Body 3x/Week",subtitle:"Hit every muscle group each session",
-    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1\u20134",desc:"Full body stimulus 3 times per week.",rest:"60\u201390s",sr:"3\u00d710\u201312",rir:"RIR 3\u20134",days:[
-      {title:"Day 1",sub:"Full Body A",exercises:[mk(ce[0]||"Push-Ups","3\u00d710\u201312","chest"),mk(be[0]||"Inverted Row","3\u00d710\u201312","back"),mk(qe[0]||"Lunges","3\u00d712","quads"),mk(he[0]||"Nordic Curl","3\u00d710\u201312","hamstrings"),mk(se[0]||"Pike Push-Ups","3\u00d710\u201312","shoulders"),mk(bi[0]||"Chin-Ups","2\u00d712","biceps"),mk(tr[0]||"Diamond Push-Ups","2\u00d712","triceps"),mk(co[0]||"Plank","2\u00d730\u201345s","core")]},
-      {title:"Day 2",sub:"Full Body B",exercises:[mk(ce[1]||ce[0]||"Push-Ups","3\u00d710\u201312","chest"),mk(be[1]||be[0]||"Inverted Row","3\u00d710\u201312","back"),mk(qe[1]||qe[0]||"Lunges","3\u00d710 each","quads"),mk(ge[0]||"Glute Bridge","3\u00d712","glutes"),mk(se[1]||se[0]||"Pike Push-Ups","3\u00d712\u201315","shoulders"),mk(bi[1]||bi[0]||"Chin-Ups","2\u00d712","biceps"),mk(tr[1]||tr[0]||"Diamond Push-Ups","2\u00d712","triceps"),mk(co[1]||co[0]||"Plank","2\u00d712","core")]},
-      {title:"Day 3",sub:"Full Body C",exercises:[mk(ce[2]||ce[0]||"Push-Ups","3\u00d712","chest"),mk(be[2]||be[0]||"Inverted Row","3\u00d710\u201312","back"),mk(qe[2]||qe[0]||"Lunges","3\u00d710 each","quads"),mk(he[1]||he[0]||"Nordic Curl","3\u00d712 each","hamstrings"),mk(se[2]||se[0]||"Pike Push-Ups","3\u00d715","shoulders"),mk(bi[0]||"Chin-Ups","2\u00d712","biceps"),mk(tr[0]||"Diamond Push-Ups","2\u00d712","triceps"),mk(co[2]||co[0]||"Plank","2\u00d710 each","core")]}
+    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1–4",desc:"Full body stimulus 3 times per week.",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[
+      {title:"Day 1",sub:"Full Body A",exercises:[mk(ce[0]||"Push-Ups","3×10–12","chest"),mk(be[0]||"Inverted Row","3×10–12","back"),mk(qe[0]||"Lunges","3×12","quads"),mk(he[0]||"Nordic Curl","3×10–12","hamstrings"),mk(se[0]||"Pike Push-Ups","3×10–12","shoulders"),mk(bi[0]||"Chin-Ups","2×12","biceps"),mk(tr[0]||"Diamond Push-Ups","2×12","triceps"),mk(co[0]||"Plank","2×30–45s","core")]},
+      {title:"Day 2",sub:"Full Body B",exercises:[mk(ce[1]||ce[0]||"Push-Ups","3×10–12","chest"),mk(be[1]||be[0]||"Inverted Row","3×10–12","back"),mk(qe[1]||qe[0]||"Lunges","3×10 each","quads"),mk(ge[0]||"Glute Bridge","3×12","glutes"),mk(se[1]||se[0]||"Pike Push-Ups","3×12–15","shoulders"),mk(bi[1]||bi[0]||"Chin-Ups","2×12","biceps"),mk(tr[1]||tr[0]||"Diamond Push-Ups","2×12","triceps"),mk(co[1]||co[0]||"Plank","2×12","core")]},
+      {title:"Day 3",sub:"Full Body C",exercises:[mk(ce[2]||ce[0]||"Push-Ups","3×12","chest"),mk(be[2]||be[0]||"Inverted Row","3×10–12","back"),mk(qe[2]||qe[0]||"Lunges","3×10 each","quads"),mk(he[1]||he[0]||"Nordic Curl","3×12 each","hamstrings"),mk(se[2]||se[0]||"Pike Push-Ups","3×15","shoulders"),mk(bi[0]||"Chin-Ups","2×12","biceps"),mk(tr[0]||"Diamond Push-Ups","2×12","triceps"),mk(co[2]||co[0]||"Plank","2×10 each","core")]}
     ]}]};
   }},
-  {key:"bro",name:"Bro Split",sub:"5-day bodybuilding",icon:"\ud83d\udc8e",gen:(eq)=>{
+  {key:"bro",name:"Bro Split",sub:"5-day bodybuilding",icon:"💎",gen:(eq)=>{
     const mk=(n,s,g)=>({name:n,sets:s,cues:autoCue(n),group:g});
     const ce=pickExs("chest",eq,5),be=pickExs("back",eq,5),se=pickExs("shoulders",eq,4),bi=pickExs("biceps",eq,3),tr=pickExs("triceps",eq,3),qe=pickExs("quads",eq,3),he=pickExs("hamstrings",eq,2),ge=pickExs("glutes",eq,1),ca=pickExs("calves",eq,1),co=pickExs("core",eq,2);
-    return{id:"custom_"+Date.now(),name:"5-Day Bro Split",subtitle:"Classic bodybuilding \u2014 one muscle group per day",
-    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1\u20134",desc:"High volume single-muscle focus.",rest:"60\u201390s",sr:"3\u00d710\u201312",rir:"RIR 3\u20134",days:[
-      {title:"Day 1",sub:"Chest",exercises:ce.slice(0,5).map(e=>mk(e,"3\u00d710\u201312","chest"))},
-      {title:"Day 2",sub:"Back",exercises:be.slice(0,5).map(e=>mk(e,"3\u00d710\u201312","back"))},
-      {title:"Day 3",sub:"Shoulders & Abs",exercises:[...se.slice(0,4).map(e=>mk(e,"3\u00d712\u201315","shoulders")),...co.map(e=>mk(e,"3\u00d715","core"))]},
-      {title:"Day 4",sub:"Legs",exercises:[...qe.map(e=>mk(e,"3\u00d712","quads")),...he.map(e=>mk(e,"3\u00d710\u201312","hamstrings")),...ge.map(e=>mk(e,"3\u00d712","glutes")),...ca.map(e=>mk(e,"4\u00d715","calves"))]},
-      {title:"Day 5",sub:"Arms",exercises:[...bi.map(e=>mk(e,"3\u00d710\u201312","biceps")),...tr.map(e=>mk(e,"3\u00d710\u201312","triceps"))]}
+    return{id:"custom_"+Date.now(),name:"5-Day Bro Split",subtitle:"Classic bodybuilding — one muscle group per day",
+    phases:[{title:"Phase 1: Foundation",weeks:"Weeks 1–4",desc:"High volume single-muscle focus.",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[
+      {title:"Day 1",sub:"Chest",exercises:ce.slice(0,5).map(e=>mk(e,"3×10–12","chest"))},
+      {title:"Day 2",sub:"Back",exercises:be.slice(0,5).map(e=>mk(e,"3×10–12","back"))},
+      {title:"Day 3",sub:"Shoulders & Abs",exercises:[...se.slice(0,4).map(e=>mk(e,"3×12–15","shoulders")),...co.map(e=>mk(e,"3×15","core"))]},
+      {title:"Day 4",sub:"Legs",exercises:[...qe.map(e=>mk(e,"3×12","quads")),...he.map(e=>mk(e,"3×10–12","hamstrings")),...ge.map(e=>mk(e,"3×12","glutes")),...ca.map(e=>mk(e,"4×15","calves"))]},
+      {title:"Day 5",sub:"Arms",exercises:[...bi.map(e=>mk(e,"3×10–12","biceps")),...tr.map(e=>mk(e,"3×10–12","triceps"))]}
     ]}]};
   }}
 ]
