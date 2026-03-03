@@ -45,7 +45,7 @@ const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const
 const link=document.createElement('link');link.rel='manifest';link.href=mUrl;document.head.appendChild(link);
 const iconLink=document.createElement('link');iconLink.rel='icon';iconLink.href=iconUrl;iconLink.type='image/svg+xml';document.head.appendChild(iconLink);
 const appleIcon=document.createElement('link');appleIcon.rel='apple-touch-icon';appleIcon.href=iconUrl;document.head.appendChild(appleIcon);
-if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v21';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
+if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v22';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
 const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.auth();const db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
 </script>
 </head>
@@ -271,6 +271,7 @@ const TEMPLATES=[
 const ALL=[V1,V2,V3];
 
 const CHANGELOG=[
+  {ver:"v22",date:"2026-03-03",title:"Plan Management",items:["Manage Plans screen — organize all workout plans in one place","Toggle plans visible/hidden for the quick-switch dropdown","Plans organized by Official Plans and My Plans","Hidden plans preserve workout history"]},
   {ver:"v21",date:"2026-03-03",title:"Leaderboard, Start Over & Personalization",items:["Leaderboard — see who's logging the most sessions (monthly + lifetime)","Set your name — personalizes app header with your last name","Start Plan Over — reset to Day 1 without losing history","Plan dropdown shows plan name instead of ID","Send your plan to be added as a permanent option","Name prompt on first login"]},
   {ver:"v20",date:"2026-03-02",title:"Equipment Filters, PWA Install & BW Toggle",items:["Groq AI provider — completely free, no credit card needed","Equipment selection for plan creation (12 equipment types)","Expanded exercise database: barbell, machine, kettlebell, band exercises","Templates auto-adapt to selected equipment","PWA install instructions on sign-in screen","Body weight tracker can be hidden/re-enabled","Equipment context sent to AI generation"]},
   {ver:"v18",date:"2026-03-02",title:"AI Workout Plan Generator",items:["4 quick-start templates (PPL, Upper/Lower, Full Body, Bro Split)","AI plan generation from text description","Paste existing plan for AI conversion","Full plan editor with revision workflow","Custom plans saved to Firebase","Admin + creator delete capability","Support for OpenAI, Claude, and Gemini API keys"]},
@@ -393,6 +394,7 @@ function App(){
   const [lbData,setLbData]=useState([]);
   const [lbLifetime,setLbLifetime]=useState(false);
   const [namePrompt,setNamePrompt]=useState(false);
+  const [hiddenPlans,setHiddenPlans]=useState([]);
   const [cpDraft,setCpDraft]=useState(null);
   const [cpScreen,setCpScreen]=useState("main");
   const [aiKey,setAiKey]=useState("");
@@ -409,7 +411,8 @@ function App(){
   const C=theme==="dark"?DARK:LIGHT;
 
   const allPlans=useMemo(()=>[...ALL,...Object.values(myPlans).filter(p=>p._published!==false)],[myPlans]);
-  const plan=allPlans.find(p=>p.id===planId)||allPlans[0];
+  const visiblePlans=useMemo(()=>allPlans.filter(p=>!hiddenPlans.includes(p.id)),[allPlans,hiddenPlans]);
+  const plan=visiblePlans.find(p=>p.id===planId)||visiblePlans[0]||allPlans[0];
   const phase=plan.phases[phaseIdx];
   const day=phase?.days[dayIdx];
   const today=new Date().toISOString().slice(0,10);
@@ -428,9 +431,9 @@ function App(){
     unsubs.current.forEach(fn=>fn());unsubs.current=[];
     if(!user)return;
     setSyncing(true);const uid=user.uid;
-    Promise.all([Cloud.load(uid,"state"),Cloud.load(uid,"history"),Cloud.load(uid,"swaps"),Cloud.load(uid,"customEx"),Cloud.load(uid,"ssLinks"),Cloud.load(uid,"exOrder"),Cloud.load(uid,"exEdits"),Cloud.load(uid,"bodyWeight"),Cloud.load(uid,"prefs"),Cloud.load(uid,"myPlans")]).then(([st,h,s,ce,sl,eo,ee,bw,pf,mp])=>{
+    Promise.all([Cloud.load(uid,"state"),Cloud.load(uid,"history"),Cloud.load(uid,"swaps"),Cloud.load(uid,"customEx"),Cloud.load(uid,"ssLinks"),Cloud.load(uid,"exOrder"),Cloud.load(uid,"exEdits"),Cloud.load(uid,"bodyWeight"),Cloud.load(uid,"prefs"),Cloud.load(uid,"myPlans"),Cloud.load(uid,"hiddenPlans")]).then(([st,h,s,ce,sl,eo,ee,bw,pf,mp,hp])=>{
       if(st){setPlanId(st.p||"v1");setPhaseIdx(st.ph||0);setDayIdx(st.d||0);}
-      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(pf&&pf.userName)setUserName(pf.userName);if(mp)setMyPlans(mp);setSyncing(false);if(!pf?.userName)setNamePrompt(true);
+      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(pf&&pf.userName)setUserName(pf.userName);if(mp)setMyPlans(mp);if(hp&&hp.ids)setHiddenPlans(hp.ids);setSyncing(false);if(!pf?.userName)setNamePrompt(true);
     });
     unsubs.current.push(
       Cloud.listen(uid,"history",data=>setHist(data)),
@@ -442,7 +445,8 @@ function App(){
       Cloud.listen(uid,"exEdits",data=>{if(data)setExEdits(data);}),
       Cloud.listen(uid,"bodyWeight",data=>{if(data)setBodyWt(data);}),
       Cloud.listen(uid,"prefs",data=>{if(data&&data.theme)setTheme(data.theme);if(data&&data.aiKey)setAiKey(data.aiKey);if(data&&data.aiProvider)setAiProvider(data.aiProvider);if(data?.bwEnabled===false)setBwEnabled(false);else if(data?.bwEnabled===true)setBwEnabled(true);if(data&&data.userName)setUserName(data.userName);}),
-      Cloud.listen(uid,"myPlans",data=>{if(data)setMyPlans(data);})
+      Cloud.listen(uid,"myPlans",data=>{if(data)setMyPlans(data);}),
+      Cloud.listen(uid,"hiddenPlans",data=>{if(data&&data.ids)setHiddenPlans(data.ids);})
     );
     return()=>{unsubs.current.forEach(fn=>fn());unsubs.current=[];};
   },[user]);
@@ -556,6 +560,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
   useEffect(()=>{if(user&&userName&&Object.keys(hist).length>0)updateLeaderboard();},[hist,userName,user]);
   useEffect(()=>{if(user&&screen==="leaderboard")loadLeaderboard();},[screen,user]);
   const publishPlan=(p)=>{if(!user)return;const pub={...p,_published:true};const nm={...myPlans,[p.id]:pub};setMyPlans(nm);Cloud.save(user.uid,"myPlans",nm);setCpDraft(null);setCpScreen("main");setPlanId(p.id);setPhaseIdx(0);setDayIdx(0);setScreen("home");};
+  const togglePlanVisibility=(pid)=>{if(!user)return;const nh=hiddenPlans.includes(pid)?hiddenPlans.filter(id=>id!==pid):[...hiddenPlans,pid];setHiddenPlans(nh);Cloud.save(user.uid,"hiddenPlans",{ids:nh});};
   const deletePlan=(pid)=>{if(!user)return;const nm={...myPlans};delete nm[pid];setMyPlans(nm);Cloud.save(user.uid,"myPlans",nm);if(planId===pid){setPlanId("v1");setPhaseIdx(0);setDayIdx(0);}};
   const isAdmin=user&&ADMIN_EMAILS.has(user.email);
 
@@ -673,9 +678,10 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
             <button onClick={()=>setPlanMenu(!planMenu)} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"6px 12px",color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>{plan.name.length>18?plan.name.slice(0,18)+"...":plan.name} <Chev up={planMenu} s={14}/></button>
             {planMenu&&(
               <div style={{position:"absolute",right:0,top:"100%",marginTop:4,background:C.card,border:`1px solid ${C.sbdr}`,borderRadius:10,overflow:"hidden",minWidth:240,boxShadow:"0 12px 40px rgba(0,0,0,.6)",zIndex:60}}>
-                {allPlans.map(p=>(<button key={p.id} onClick={()=>{setPlanId(p.id);setPhaseIdx(0);setDayIdx(0);setPlanMenu(false);setScreen("home");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:p.id===planId?C.srf:"transparent",border:"none",borderBottom:`1px solid ${C.bdr}`,color:C.txt,cursor:"pointer"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontWeight:700,fontSize:13,color:p.id===planId?C.acc:C.txt}}>{p.name}</div>{p._createdBy&&(p._createdBy===user?.uid||isAdmin)&&<span onClick={e=>{e.stopPropagation();if(confirm("Delete this custom plan?"))deletePlan(p.id);}} style={{fontSize:10,color:"#EF4444",cursor:"pointer",padding:"2px 6px",borderRadius:4,border:"1px solid #EF444430"}}>✕</span>}</div><div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}{p._createdBy?" ✨":""}</div></button>))}
+                {visiblePlans.map(p=>(<button key={p.id} onClick={()=>{setPlanId(p.id);setPhaseIdx(0);setDayIdx(0);setPlanMenu(false);setScreen("home");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:p.id===planId?C.srf:"transparent",border:"none",borderBottom:`1px solid ${C.bdr}`,color:C.txt,cursor:"pointer"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontWeight:700,fontSize:13,color:p.id===planId?C.acc:C.txt}}>{p.name}</div>{p._createdBy&&(p._createdBy===user?.uid||isAdmin)&&<span onClick={e=>{e.stopPropagation();if(confirm("Delete this custom plan?"))deletePlan(p.id);}} style={{fontSize:10,color:"#EF4444",cursor:"pointer",padding:"2px 6px",borderRadius:4,border:"1px solid #EF444430"}}>✕</span>}</div><div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}{p._createdBy?" ✨":""}</div></button>))}
                 <button onClick={()=>{if(confirm("Start this plan over from Day 1? Your session history will be kept.")){setPhaseIdx(0);setDayIdx(0);setPlanMenu(false);}}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:"#5B8DEF",cursor:"pointer",fontWeight:600,fontSize:13}}>🔄 Start Plan Over</button>
                 <button onClick={()=>{setPlanMenu(false);setCpScreen("main");setCpDraft(null);setAiError("");setScreen("create");history.pushState({screen:"create"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.acc}30`,color:C.acc,cursor:"pointer",fontWeight:700,fontSize:13}}>✨ Create New Plan</button>
+                <button onClick={()=>{setPlanMenu(false);setScreen("plans");history.pushState({screen:"plans"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontWeight:600,fontSize:13}}>⚙️ Manage Plans</button>
                 <button onClick={()=>{setScreen("changelog");setPlanMenu(false);history.pushState({screen:"changelog"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontSize:12,fontWeight:600}}>📋 Latest App Updates</button>
                 <div style={{borderTop:`1px solid ${C.bdr}`,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>{user.photoURL&&<img src={user.photoURL} style={{width:24,height:24,borderRadius:12}} referrerPolicy="no-referrer"/>}<span onClick={()=>setNamePrompt(true)} style={{fontSize:11,color:userName?C.dim:C.acc,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",cursor:"pointer"}}>{userName||"Set your name ✎"}</span></div>
@@ -809,7 +815,59 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     {/* ══════ NAME PROMPT ══════ */}
     {namePrompt&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.7)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setNamePrompt(false)}><div onClick={e=>e.stopPropagation()} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:16,padding:24,maxWidth:340,width:"100%"}}><div style={{fontFamily:"Outfit",fontSize:18,fontWeight:800,marginBottom:4}}>Set Your Name</div><div style={{fontSize:12,color:C.dim,marginBottom:16}}>This appears on the leaderboard and personalizes your app header.</div><input autoFocus placeholder="Your full name" value={userName} onChange={e=>setUserName(e.target.value)} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"12px",color:C.txt,fontSize:15,outline:"none",boxSizing:"border-box",fontFamily:"inherit",marginBottom:12}}/><div style={{display:"flex",gap:8}}><button onClick={()=>setNamePrompt(false)} style={{flex:1,padding:"12px",borderRadius:10,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button><button onClick={()=>{savePrefs();setNamePrompt(false);}} style={{flex:2,padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>Save Name</button></div></div></div>)}
 
-    {/* ══════ LEADERBOARD ══════ */}
+    {/* ══════ MANAGE PLANS ══════ */}
+    {screen==="plans"&&(
+      <div className="fade-in" style={{padding:"16px 16px 80px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+          <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800}}>Workout Plans</div>
+          <button onClick={()=>{setScreen("home");history.back();}} style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer"}}>← Back</button>
+        </div>
+        <div style={{fontSize:13,color:C.dim,marginBottom:20}}>Toggle plans on or off for your quick-switch menu.</div>
+
+        {/* ADMIN PLANS */}
+        <div style={{marginBottom:24}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Official Plans</div>
+          {ALL.map(p=>{const hidden=hiddenPlans.includes(p.id);const active=p.id===planId;return(
+            <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6}}>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:700,fontSize:14,color:active?C.acc:C.txt}}>{p.name}{active?" (active)":""}</div>
+                <div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}</div>
+                <div style={{fontSize:10,color:C.fnt,marginTop:2}}>{p.phases.length} phases · {p.phases.reduce((a,ph)=>a+ph.days.length,0)} days/rotation</div>
+              </div>
+              <button onClick={()=>{if(active){alert("Can't hide the active plan. Switch to another plan first.");return;}togglePlanVisibility(p.id);}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${hidden?"#EF444430":C.acc+"40"}`,background:hidden?"#EF444410":C.acc+"10",color:hidden?"#EF4444":C.acc,fontSize:12,fontWeight:700,cursor:"pointer",minWidth:70,textAlign:"center"}}>{hidden?"Hidden":"Visible"}</button>
+            </div>);
+          })}
+        </div>
+
+        {/* MY PLANS */}
+        {Object.values(myPlans).filter(p=>p._published!==false).length>0&&(
+          <div style={{marginBottom:24}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>My Plans</div>
+            {Object.values(myPlans).filter(p=>p._published!==false).map(p=>{const hidden=hiddenPlans.includes(p.id);const active=p.id===planId;return(
+              <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6}}>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:700,fontSize:14,color:active?C.acc:C.txt}}>{p.name}{active?" (active)":""} ✨</div>
+                  <div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}</div>
+                </div>
+                <button onClick={()=>{if(active){alert("Can't hide the active plan. Switch to another plan first.");return;}togglePlanVisibility(p.id);}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${hidden?"#EF444430":C.acc+"40"}`,background:hidden?"#EF444410":C.acc+"10",color:hidden?"#EF4444":C.acc,fontSize:12,fontWeight:700,cursor:"pointer",minWidth:70,textAlign:"center"}}>{hidden?"Hidden":"Visible"}</button>
+                <span onClick={()=>{if(confirm("Delete this custom plan?"))deletePlan(p.id);}} style={{fontSize:12,color:"#EF4444",cursor:"pointer",padding:"6px 8px",borderRadius:6,border:"1px solid #EF444425"}}>✕</span>
+              </div>);
+            })}
+          </div>
+        )}
+
+        {/* HIDDEN PLANS SUMMARY */}
+        {hiddenPlans.length>0&&(
+          <div style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:12,padding:"14px 16px"}}>
+            <div style={{fontSize:12,fontWeight:700,color:C.fnt,marginBottom:6}}>{hiddenPlans.length} hidden plan{hiddenPlans.length>1?"s":""}</div>
+            <div style={{fontSize:12,color:C.dim,lineHeight:1.6}}>Hidden plans won't appear in your quick-switch dropdown but your workout history is preserved. Tap "Hidden" above to make them visible again.</div>
+          </div>
+        )}
+
+        <button onClick={()=>{setCpScreen("main");setCpDraft(null);setAiError("");setScreen("create");history.pushState({screen:"create"},"");}} style={{width:"100%",marginTop:20,padding:"14px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>+ Create New Plan</button>
+      </div>)}
+
+        {/* ══════ LEADERBOARD ══════ */}
     {screen==="leaderboard"&&(
       <div className="fade-in" style={{padding:"16px 16px 80px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
