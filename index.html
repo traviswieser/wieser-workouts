@@ -751,7 +751,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           {syncing&&<span className="syncing" style={{fontSize:10,color:C.acc}}>syncing...</span>}
           <button onClick={()=>{setScreen("chatlist");loadChatList();history.pushState({screen:"chatlist"},"");}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"6px 8px",cursor:"pointer",fontSize:16,lineHeight:1,position:"relative"}} title="Messages">💬{chatUnread>0&&<span style={{position:"absolute",top:-4,right:-4,background:"#EF4444",color:"#fff",fontSize:9,fontWeight:800,borderRadius:10,padding:"1px 5px",minWidth:14,textAlign:"center"}}>{chatUnread>9?"9+":chatUnread}</span>}</button>
           <div style={{position:"relative"}}>
-            <button onClick={()=>setPlanMenu(!planMenu)} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"6px 12px",color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>{hasNoPlan?"Menu":plan.name.length>18?plan.name.slice(0,18)+"...":plan.name} <Chev up={planMenu} s={14}/></button>
+            <button onClick={()=>setPlanMenu(!planMenu)} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"6px 12px",color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>{"Menu"} <Chev up={planMenu} s={14}/></button>
             {planMenu&&(<>
               <div onClick={()=>setPlanMenu(false)} style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:55}}/>
               <div style={{position:"absolute",right:0,top:"100%",marginTop:4,background:C.card,border:`1px solid ${C.sbdr}`,borderRadius:10,overflow:"hidden",minWidth:240,boxShadow:"0 12px 40px rgba(0,0,0,.6)",zIndex:60}}>
