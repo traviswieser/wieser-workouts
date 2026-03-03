@@ -649,7 +649,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     <div style={{maxWidth:600,margin:"0 auto"}}>
 
     {/* ══════ CREATE PLAN ══════ */}
-    {screen==="create"&&(<ErrBound>
+    {screen==="create"&&(()=>{try{return(<ErrBound>
       <div className="fade-in" style={{padding:"16px 16px 80px"}}>
 
         {cpScreen==="main"&&(<>
@@ -761,7 +761,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           </div>
         </>)}
 
-      </div></ErrBound>)}
+      </div></ErrBound>);}catch(err){return(<div style={{padding:20,margin:16,background:"#300",color:"#f88",borderRadius:8,fontSize:13,whiteSpace:"pre-wrap"}}>{"CREATE SCREEN ERROR:\n"+err.message+"\n\n"+err.stack}</div>);}})()} 
 
     {/* ══════ CHANGELOG ══════ */}
     {screen==="changelog"&&(
