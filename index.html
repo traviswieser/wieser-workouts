@@ -478,7 +478,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       }else if(aiProvider==="gemini"){
         const parts=[{text:sysPrompt+"\n\n"+userText}];
         if(aiFileData.mediaType.startsWith("image/")||aiFileData.mediaType==="application/pdf"){parts.push({inline_data:{mime_type:aiFileData.mediaType,data:aiFileData.base64}});}
-        const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key="+aiKey,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts}]})});
+        const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+aiKey,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts}]})});
         const d=await r.json();if(d.error)throw new Error(d.error.message);text=d.candidates[0].content.parts[0].text;
       }
       const clean=text.replace(/```json\n?/g,"").replace(/```\n?/g,"").trim();
@@ -498,7 +498,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         const r=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+aiKey,"Content-Type":"application/json"},body:JSON.stringify({model:"gpt-4o",messages:[{role:"system",content:AI_PROMPT},{role:"user",content:prompt}],temperature:0.7})});
         const d=await r.json();if(d.error)throw new Error(d.error.message);text=d.choices[0].message.content;
       }else if(aiProvider==="gemini"){
-        const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key="+aiKey,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:AI_PROMPT+"\n\nUser request: "+prompt}]}]})});
+        const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+aiKey,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:AI_PROMPT+"\n\nUser request: "+prompt}]}]})});
         const d=await r.json();if(d.error)throw new Error(d.error.message);text=d.candidates[0].content.parts[0].text;
       }else if(aiProvider==="claude"){
         const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"x-api-key":aiKey,"anthropic-version":"2023-06-01","content-type":"application/json","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-5-20250514",max_tokens:8000,system:AI_PROMPT,messages:[{role:"user",content:prompt}]})});
@@ -701,7 +701,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
             <div style={{marginTop:10,padding:"10px 12px",background:C.srf,borderRadius:8,fontSize:11,color:C.dim,lineHeight:1.7}}>
               {aiProvider==="openai"&&<><b style={{color:C.txt}}>How to get an OpenAI key:</b><br/>1. Go to <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" style={{color:C.acc}}>platform.openai.com/api-keys</a><br/>2. Sign in or create an account<br/>3. Click "Create new secret key"<br/>4. Copy the key (starts with <b>sk-</b>) and paste it above<br/>Note: Requires adding a payment method. Generating a plan costs ~$0.02–0.05.</>}
               {aiProvider==="claude"&&<><b style={{color:C.txt}}>How to get a Claude key:</b><br/>1. Go to <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style={{color:C.acc}}>console.anthropic.com/settings/keys</a><br/>2. Sign in or create an account<br/>3. Click "Create Key"<br/>4. Copy the key (starts with <b>sk-ant-</b>) and paste it above<br/>Note: Requires adding billing credits. Generating a plan costs ~$0.02–0.05.</>}
-              {aiProvider==="gemini"&&<><b style={{color:C.txt}}>How to get a Gemini key:</b><br/>1. Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style={{color:C.acc}}>aistudio.google.com/apikey</a><br/>2. Sign in with your Google account<br/>3. Click "Create API key"<br/>4. Copy the key (starts with <b>AIza</b>) and paste it above<br/>Note: Free tier available with generous limits.</>}
+              {aiProvider==="gemini"&&<><b style={{color:C.txt}}>How to get a Gemini key:</b><br/>1. Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style={{color:C.acc}}>aistudio.google.com/apikey</a><br/>2. Sign in with your Google account<br/>3. Click "Create API key"<br/>4. Copy the key (starts with <b>AIza</b>) and paste it above<br/>Note: Google now requires billing for most API usage. If you get a quota error, you may need to enable billing at <a href="https://console.cloud.google.com/billing" target="_blank" rel="noopener" style={{color:C.acc}}>console.cloud.google.com/billing</a>. OpenAI is recommended as the most reliable option.</>}
             </div>
           </div>
         </>)}
