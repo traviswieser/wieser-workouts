@@ -45,7 +45,7 @@ const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const
 const link=document.createElement('link');link.rel='manifest';link.href=mUrl;document.head.appendChild(link);
 const iconLink=document.createElement('link');iconLink.rel='icon';iconLink.href=iconUrl;iconLink.type='image/svg+xml';document.head.appendChild(iconLink);
 const appleIcon=document.createElement('link');appleIcon.rel='apple-touch-icon';appleIcon.href=iconUrl;document.head.appendChild(appleIcon);
-if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v24b';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
+if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v25';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
 const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.auth();const db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
 </script>
 </head>
@@ -271,6 +271,7 @@ const TEMPLATES=[
 const ALL=[V1,V2,V3];
 
 const CHANGELOG=[
+  {ver:"v25",date:"2026-03-03",title:"Coaching System",items:["Coach registration with unique 6-character invite codes","Athletes join coaches by entering the invite code","Coach dashboard with full athlete roster","View athlete session history and stats","Remove athletes or disconnect from coach","Role selection: Coach or Athlete"]},
   {ver:"v24b",date:"2026-03-03",title:"Leaderboard Fix",items:["Leaderboard now counts total sessions instead of unique dates","Multiple workouts on the same day each count separately"]},
   {ver:"v24",date:"2026-03-03",title:"iOS Fix & Cleanup",items:["Fixed iOS status bar overlap in standalone mode","Removed phone auth (requires paid Firebase plan)","Account linking for Google and email still available"]},
   {ver:"v23",date:"2026-03-03",title:"Phone Auth & Account Linking",items:["Phone number sign-in via SMS verification","Account screen to manage sign-in methods","Link Google, email, and phone to one account","Unlink any method (keeps at least one)"]},
@@ -401,6 +402,15 @@ function App(){
   const [lbLifetime,setLbLifetime]=useState(false);
   const [namePrompt,setNamePrompt]=useState(false);
   const [hiddenPlans,setHiddenPlans]=useState([]);
+  const [userRole,setUserRole]=useState(null);
+  const [coachCode,setCoachCode]=useState("");
+  const [coachRoster,setCoachRoster]=useState([]);
+  const [myCoach,setMyCoach]=useState(null);
+  const [joinCode,setJoinCode]=useState("");
+  const [coachMsg,setCoachMsg]=useState("");
+  const [rosterLoading,setRosterLoading]=useState(false);
+  const [viewAthlete,setViewAthlete]=useState(null);
+  const [athleteData,setAthleteData]=useState(null);
   const [cpDraft,setCpDraft]=useState(null);
   const [cpScreen,setCpScreen]=useState("main");
   const [aiKey,setAiKey]=useState("");
@@ -439,7 +449,7 @@ function App(){
     setSyncing(true);const uid=user.uid;
     Promise.all([Cloud.load(uid,"state"),Cloud.load(uid,"history"),Cloud.load(uid,"swaps"),Cloud.load(uid,"customEx"),Cloud.load(uid,"ssLinks"),Cloud.load(uid,"exOrder"),Cloud.load(uid,"exEdits"),Cloud.load(uid,"bodyWeight"),Cloud.load(uid,"prefs"),Cloud.load(uid,"myPlans"),Cloud.load(uid,"hiddenPlans")]).then(([st,h,s,ce,sl,eo,ee,bw,pf,mp,hp])=>{
       if(st){setPlanId(st.p||"v1");setPhaseIdx(st.ph||0);setDayIdx(st.d||0);}
-      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(pf&&pf.userName)setUserName(pf.userName);if(mp)setMyPlans(mp);if(hp&&hp.ids)setHiddenPlans(hp.ids);setSyncing(false);if(!pf?.userName)setNamePrompt(true);
+      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(pf&&pf.userName)setUserName(pf.userName);if(pf&&pf.role)setUserRole(pf.role);if(pf&&pf.coachCode)setCoachCode(pf.coachCode);if(mp)setMyPlans(mp);if(hp&&hp.ids)setHiddenPlans(hp.ids);setSyncing(false);if(!pf?.userName)setNamePrompt(true);
     });
     unsubs.current.push(
       Cloud.listen(uid,"history",data=>setHist(data)),
@@ -450,13 +460,14 @@ function App(){
       Cloud.listen(uid,"exOrder",data=>{if(data)setExOrder(data);}),
       Cloud.listen(uid,"exEdits",data=>{if(data)setExEdits(data);}),
       Cloud.listen(uid,"bodyWeight",data=>{if(data)setBodyWt(data);}),
-      Cloud.listen(uid,"prefs",data=>{if(data&&data.theme)setTheme(data.theme);if(data&&data.aiKey)setAiKey(data.aiKey);if(data&&data.aiProvider)setAiProvider(data.aiProvider);if(data?.bwEnabled===false)setBwEnabled(false);else if(data?.bwEnabled===true)setBwEnabled(true);if(data&&data.userName)setUserName(data.userName);}),
+      Cloud.listen(uid,"prefs",data=>{if(data&&data.theme)setTheme(data.theme);if(data&&data.aiKey)setAiKey(data.aiKey);if(data&&data.aiProvider)setAiProvider(data.aiProvider);if(data?.bwEnabled===false)setBwEnabled(false);else if(data?.bwEnabled===true)setBwEnabled(true);if(data&&data.userName)setUserName(data.userName);if(data&&data.role)setUserRole(data.role);if(data&&data.coachCode)setCoachCode(data.coachCode);}),
       Cloud.listen(uid,"myPlans",data=>{if(data)setMyPlans(data);}),
       Cloud.listen(uid,"hiddenPlans",data=>{if(data&&data.ids)setHiddenPlans(data.ids);})
     );
     return()=>{unsubs.current.forEach(fn=>fn());unsubs.current=[];};
   },[user]);
 
+  useEffect(()=>{if(user)loadMyCoach();},[user]);
   useEffect(()=>{if(!user)return;const t=setTimeout(()=>{Cloud.save(user.uid,"state",{p:planId,ph:phaseIdx,d:dayIdx});},500);return()=>clearTimeout(t);},[planId,phaseIdx,dayIdx,user]);
 
   // AUTH
@@ -468,7 +479,15 @@ function App(){
         const getProviders=()=>user?user.providerData.map(p=>p.providerId):[];
   const linkGoogle=async()=>{setLinkMsg("");try{await user.linkWithPopup(new firebase.auth.GoogleAuthProvider());setLinkMsg("Google account linked!");}catch(e){setLinkMsg(e.code==="auth/credential-already-in-use"?"That Google account is linked to another user.":e.code==="auth/provider-already-linked"?"Google already linked.":e.message);}};
   const linkEmail=async()=>{setLinkMsg("");if(!linkEmailIn||!linkPassIn)return setLinkMsg("Enter email and password.");if(linkPassIn.length<6)return setLinkMsg("Password must be at least 6 characters.");try{const cr=firebase.auth.EmailAuthProvider.credential(linkEmailIn,linkPassIn);await user.linkWithCredential(cr);setLinkMsg("Email linked!");setLinkEmailIn("");setLinkPassIn("");}catch(e){setLinkMsg(e.code==="auth/email-already-in-use"?"That email is linked to another account.":e.message);}};
-      const unlinkProvider=async(pid)=>{setLinkMsg("");if(user.providerData.length<=1){setLinkMsg("Can't remove your only sign-in method.");return;}try{await user.unlink(pid);setLinkMsg("Unlinked successfully.");}catch(e){setLinkMsg(e.message);}};
+      const generateCoachCode=()=>{const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let code="";for(let i=0;i<6;i++)code+=chars[Math.floor(Math.random()*chars.length)];return code;};
+  const becomeCoach=async()=>{if(!user||!userName)return setCoachMsg("Set your name first.");const code=generateCoachCode();await db.collection("coaches").doc(user.uid).set({name:userName,code,email:user.email||"",createdAt:Date.now()});setCoachCode(code);setUserRole("coach");savePrefs({role:"coach",coachCode:code});setCoachMsg("You are now a coach! Share your code: "+code);};
+  const loadRoster=async()=>{if(!user)return;setRosterLoading(true);try{const snap=await db.collection("connections").where("coachUid","==",user.uid).where("status","==","active").get();const athletes=[];for(const doc of snap.docs){const d=doc.data();const nameSnap=await Cloud.load(d.athleteUid,"prefs");athletes.push({uid:d.athleteUid,name:nameSnap?.userName||"Unknown",connId:doc.id,joinedAt:d.joinedAt});}setCoachRoster(athletes);}catch(e){console.error("Roster:",e);}setRosterLoading(false);};
+  const joinCoach=async()=>{if(!user||!joinCode.trim())return setCoachMsg("Enter a coach code.");setCoachMsg("");try{const snap=await db.collection("coaches").where("code","==",joinCode.trim().toUpperCase()).get();if(snap.empty)return setCoachMsg("Invalid code. Check with your coach.");const coachDoc=snap.docs[0];const coachUid=coachDoc.id;const coachData=coachDoc.data();if(coachUid===user.uid)return setCoachMsg("That is your own coach code.");const existing=await db.collection("connections").where("coachUid","==",coachUid).where("athleteUid","==",user.uid).get();if(!existing.empty)return setCoachMsg("Already connected to "+coachData.name+".");await db.collection("connections").add({coachUid,athleteUid:user.uid,status:"active",joinedAt:Date.now()});setMyCoach({uid:coachUid,name:coachData.name});setUserRole("athlete");savePrefs({role:"athlete"});setJoinCode("");setCoachMsg("Connected to coach: "+coachData.name+"!");}catch(e){setCoachMsg(e.message);}};
+  const loadMyCoach=async()=>{if(!user)return;try{const snap=await db.collection("connections").where("athleteUid","==",user.uid).where("status","==","active").get();if(!snap.empty){const d=snap.docs[0].data();const cSnap=await db.collection("coaches").doc(d.coachUid).get();if(cSnap.exists)setMyCoach({uid:d.coachUid,name:cSnap.data().name,connId:snap.docs[0].id});}}catch(e){console.error("LoadCoach:",e);}};
+  const leaveCoach=async()=>{if(!myCoach?.connId)return;try{await db.collection("connections").doc(myCoach.connId).update({status:"inactive"});setMyCoach(null);setCoachMsg("Disconnected from coach.");}catch(e){setCoachMsg(e.message);}};
+  const removeAthlete=async(connId,name)=>{if(!confirm("Remove "+name+" from your roster?"))return;try{await db.collection("connections").doc(connId).update({status:"inactive"});setCoachRoster(r=>r.filter(a=>a.connId!==connId));setCoachMsg(name+" removed.");}catch(e){setCoachMsg(e.message);}};
+  const loadAthleteData=async(uid)=>{try{const[h,pf,mp]=await Promise.all([Cloud.load(uid,"history"),Cloud.load(uid,"prefs"),Cloud.load(uid,"myPlans")]);setAthleteData({hist:h||{},prefs:pf||{},myPlans:mp||{}});}catch(e){console.error("Load athlete:",e);}};
+  const unlinkProvider=async(pid)=>{setLinkMsg("");if(user.providerData.length<=1){setLinkMsg("Can't remove your only sign-in method.");return;}try{await user.unlink(pid);setLinkMsg("Unlinked successfully.");}catch(e){setLinkMsg(e.message);}};
 
 
   // AI PLAN GENERATION
@@ -558,7 +577,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     finally{setAiLoading(false);}
   };
 
-  const savePrefs=(extra={})=>{if(!user)return;Cloud.save(user.uid,"prefs",{theme,aiKey,aiProvider,bwEnabled,userName,...extra});};
+  const savePrefs=(extra={})=>{if(!user)return;Cloud.save(user.uid,"prefs",{theme,aiKey,aiProvider,bwEnabled,userName,role:userRole,coachCode,...extra});};
   const saveAIKey=()=>savePrefs();
 
   // LEADERBOARD
@@ -569,6 +588,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
   const loadLeaderboard=async()=>{try{const snap=await db.collection("leaderboard").get();const arr=[];snap.forEach(d=>{const data=d.data();arr.push({uid:d.id,...data});});setLbData(arr);}catch(e){console.error("LB load:",e);}};
   useEffect(()=>{if(user&&userName&&Object.keys(hist).length>0)updateLeaderboard();},[hist,userName,user]);
   useEffect(()=>{if(user&&screen==="leaderboard")loadLeaderboard();},[screen,user]);
+  useEffect(()=>{if(user&&screen==="coaching"&&userRole==="coach")loadRoster();},[screen,user,userRole]);
   const publishPlan=(p)=>{if(!user)return;const pub={...p,_published:true};const nm={...myPlans,[p.id]:pub};setMyPlans(nm);Cloud.save(user.uid,"myPlans",nm);setCpDraft(null);setCpScreen("main");setPlanId(p.id);setPhaseIdx(0);setDayIdx(0);setScreen("home");};
   const togglePlanVisibility=(pid)=>{if(!user)return;const nh=hiddenPlans.includes(pid)?hiddenPlans.filter(id=>id!==pid):[...hiddenPlans,pid];setHiddenPlans(nh);Cloud.save(user.uid,"hiddenPlans",{ids:nh});};
   const deletePlan=(pid)=>{if(!user)return;const nm={...myPlans};delete nm[pid];setMyPlans(nm);Cloud.save(user.uid,"myPlans",nm);if(planId===pid){setPlanId("v1");setPhaseIdx(0);setDayIdx(0);}};
@@ -826,7 +846,91 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     {namePrompt&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.7)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setNamePrompt(false)}><div onClick={e=>e.stopPropagation()} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:16,padding:24,maxWidth:340,width:"100%"}}><div style={{fontFamily:"Outfit",fontSize:18,fontWeight:800,marginBottom:4}}>Set Your Name</div><div style={{fontSize:12,color:C.dim,marginBottom:16}}>This appears on the leaderboard and personalizes your app header.</div><input autoFocus placeholder="Your full name" value={userName} onChange={e=>setUserName(e.target.value)} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"12px",color:C.txt,fontSize:15,outline:"none",boxSizing:"border-box",fontFamily:"inherit",marginBottom:12}}/><div style={{display:"flex",gap:8}}><button onClick={()=>setNamePrompt(false)} style={{flex:1,padding:"12px",borderRadius:10,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button><button onClick={()=>{savePrefs();setNamePrompt(false);}} style={{flex:2,padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>Save Name</button></div></div></div>)}
 
     {/* ══════ MANAGE PLANS ══════ */}
-        {screen==="account"&&user&&(
+        {screen==="coaching"&&user&&(
+      <div className="fade-in" style={{padding:"16px 16px 80px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+          <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800}}>Coaching</div>
+          <button onClick={()=>{setScreen("home");history.back();setViewAthlete(null);setAthleteData(null);}} style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer"}}>Back</button>
+        </div>
+
+        {coachMsg&&<div style={{padding:"10px 14px",marginBottom:16,borderRadius:10,fontSize:13,background:coachMsg.includes("!")?coachMsg.includes("Invalid")||coachMsg.includes("removed")||coachMsg.includes("Disconnected")?"#F59E0B18":"#22C55E18":"#F59E0B18",border:`1px solid ${coachMsg.includes("!")?coachMsg.includes("Invalid")||coachMsg.includes("removed")||coachMsg.includes("Disconnected")?"#F59E0B30":"#22C55E30":"#F59E0B30"}`,color:coachMsg.includes("!")?coachMsg.includes("Invalid")||coachMsg.includes("removed")||coachMsg.includes("Disconnected")?"#F59E0B":"#22C55E":"#F59E0B"}}>{coachMsg}</div>}
+
+        {/* ROLE SELECTION - only if no role set */}
+        {!userRole&&!myCoach&&(
+          <div style={{marginBottom:24}}>
+            <div style={{fontSize:13,color:C.dim,marginBottom:16}}>Choose how you want to use coaching features.</div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={becomeCoach} style={{flex:1,padding:"20px 12px",borderRadius:14,border:`1px solid ${C.acc}30`,background:C.acc+"08",color:C.txt,cursor:"pointer",textAlign:"center"}}><div style={{fontSize:24,marginBottom:6}}>&#x1f3af;</div><div style={{fontWeight:700,fontSize:14}}>I'm a Coach</div><div style={{fontSize:11,color:C.dim,marginTop:4}}>Manage athletes & assign plans</div></button>
+              <button onClick={()=>{setUserRole("athlete");savePrefs({role:"athlete"});}} style={{flex:1,padding:"20px 12px",borderRadius:14,border:`1px solid ${C.sbdr}`,background:C.card,color:C.txt,cursor:"pointer",textAlign:"center"}}><div style={{fontSize:24,marginBottom:6}}>&#x1f3cb;</div><div style={{fontWeight:700,fontSize:14}}>I'm an Athlete</div><div style={{fontSize:11,color:C.dim,marginTop:4}}>Connect with a coach</div></button>
+            </div>
+          </div>
+        )}
+
+        {/* ─── COACH VIEW ─── */}
+        {userRole==="coach"&&!viewAthlete&&(<>
+          <div style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:12,padding:"14px 16px",marginBottom:20}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div><div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1}}>Your Coach Code</div>
+              <div style={{fontSize:28,fontWeight:800,fontFamily:"Outfit",letterSpacing:4,marginTop:4,color:C.acc}}>{coachCode}</div></div>
+              <button onClick={()=>{navigator.clipboard?.writeText(coachCode);setCoachMsg("Code copied!");}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${C.acc}40`,background:C.acc+"10",color:C.acc,fontSize:12,fontWeight:700,cursor:"pointer"}}>Copy</button>
+            </div>
+            <div style={{fontSize:11,color:C.dim,marginTop:8}}>Share this code with athletes so they can connect with you.</div>
+          </div>
+
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1}}>My Athletes ({coachRoster.length})</div>
+            <button onClick={loadRoster} style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:11,fontWeight:600,cursor:"pointer"}}>{rosterLoading?"Loading...":"Refresh"}</button>
+          </div>
+          {coachRoster.length===0&&!rosterLoading&&<div style={{padding:"24px",textAlign:"center",color:C.fnt,fontSize:13}}>No athletes yet. Share your coach code to get started.</div>}
+          {coachRoster.map(a=>(<div key={a.uid} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,marginBottom:6}}>
+            <div style={{width:36,height:36,borderRadius:18,background:C.acc+"20",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:14,color:C.acc}}>{(a.name||"?")[0].toUpperCase()}</div>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:700,fontSize:14,color:C.txt}}>{a.name}</div>
+              <div style={{fontSize:10,color:C.fnt}}>Joined {a.joinedAt?new Date(a.joinedAt).toLocaleDateString():""}</div>
+            </div>
+            <button onClick={()=>{setViewAthlete(a);loadAthleteData(a.uid);}} style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${C.acc}40`,background:C.acc+"10",color:C.acc,fontSize:11,fontWeight:700,cursor:"pointer"}}>View</button>
+            <button onClick={()=>removeAthlete(a.connId,a.name)} style={{padding:"6px 10px",borderRadius:8,border:"1px solid #EF444425",background:"transparent",color:"#EF4444",fontSize:11,fontWeight:600,cursor:"pointer"}}>Remove</button>
+          </div>))}
+        </>)}
+
+        {/* ─── COACH VIEW: ATHLETE DETAIL ─── */}
+        {userRole==="coach"&&viewAthlete&&(<>
+          <button onClick={()=>{setViewAthlete(null);setAthleteData(null);}} style={{padding:"6px 14px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:12}}>&#x2190; Back to Roster</button>
+          <div style={{fontFamily:"Outfit",fontSize:18,fontWeight:800,marginBottom:12}}>{viewAthlete.name}</div>
+          {!athleteData?<div style={{color:C.dim,fontSize:13}}>Loading athlete data...</div>:(<>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+              <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"14px 16px",textAlign:"center"}}><div style={{fontSize:24,fontWeight:800,color:C.acc}}>{Object.keys(athleteData.hist).length}</div><div style={{fontSize:11,color:C.fnt,marginTop:2}}>Total Sessions</div></div>
+              <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"14px 16px",textAlign:"center"}}><div style={{fontSize:24,fontWeight:800,color:C.acc}}>{Object.keys(athleteData.myPlans||{}).length+3}</div><div style={{fontSize:11,color:C.fnt,marginTop:2}}>Plans Available</div></div>
+            </div>
+            <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Recent Sessions</div>
+            {(()=>{const keys=Object.keys(athleteData.hist).sort().reverse().slice(0,10);if(keys.length===0)return<div style={{color:C.dim,fontSize:13,padding:12}}>No sessions logged yet.</div>;return keys.map(k=>{const parts=k.split("-");const date=parts.slice(-3).join("-");const exCount=Object.keys(athleteData.hist[k]).filter(x=>!x.startsWith("_")).length;return(<div key={k} style={{padding:"10px 14px",background:C.card,border:`1px solid ${C.bdr}`,borderRadius:10,marginBottom:4,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:13,fontWeight:600,color:C.txt}}>{date}</div><div style={{fontSize:11,color:C.fnt}}>{exCount} exercises</div></div>);});})()}
+          </>)}
+        </>)}
+
+        {/* ─── ATHLETE VIEW ─── */}
+        {(userRole==="athlete"||(!userRole&&myCoach))&&(<>
+          {myCoach?(<div style={{marginBottom:20}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>My Coach</div>
+            <div style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",background:C.card,border:`1px solid ${C.acc}30`,borderRadius:12}}>
+              <div style={{width:40,height:40,borderRadius:20,background:C.acc+"20",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,color:C.acc}}>{(myCoach.name||"?")[0].toUpperCase()}</div>
+              <div style={{flex:1}}><div style={{fontWeight:700,fontSize:15,color:C.txt}}>{myCoach.name}</div><div style={{fontSize:11,color:C.fnt,marginTop:2}}>Connected</div></div>
+              <button onClick={()=>{if(confirm("Disconnect from "+myCoach.name+"?"))leaveCoach();}} style={{padding:"6px 12px",borderRadius:8,border:"1px solid #EF444425",background:"transparent",color:"#EF4444",fontSize:11,fontWeight:600,cursor:"pointer"}}>Leave</button>
+            </div>
+          </div>):(<div style={{marginBottom:20}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Join a Coach</div>
+            <div style={{fontSize:13,color:C.dim,marginBottom:12}}>Enter the 6-character code from your coach to connect.</div>
+            <div style={{display:"flex",gap:8}}>
+              <input placeholder="COACH CODE" value={joinCode} onChange={e=>setJoinCode(e.target.value.toUpperCase())} maxLength={6} style={{flex:1,background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:"14px",color:C.txt,fontSize:18,outline:"none",boxSizing:"border-box",fontFamily:"Outfit",fontWeight:700,textAlign:"center",letterSpacing:6}}/>
+              <button onClick={joinCoach} style={{padding:"14px 20px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>Join</button>
+            </div>
+          </div>)}
+        </>)}
+
+        {/* RESET ROLE */}
+        {userRole&&(<div style={{marginTop:24,textAlign:"center"}}><button onClick={()=>{if(confirm("Reset your coaching role? This won't delete connections.")){setUserRole(null);savePrefs({role:null});}}} style={{background:"none",border:"none",color:C.fnt,fontSize:11,cursor:"pointer",textDecoration:"underline"}}>Reset coaching role</button></div>)}
+      </div>)}
+
+    {screen==="account"&&user&&(
       <div className="fade-in" style={{padding:"16px 16px 80px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
           <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800}}>Account</div>
