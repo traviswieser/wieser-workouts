@@ -54,6 +54,7 @@ const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.a
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js"></script>
+<script>window.onerror=function(m,s,l,c,e){var d=document.createElement('div');d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#300;color:#f88;padding:16px;font-size:13px;white-space:pre-wrap;max-height:50vh;overflow:auto;';d.textContent='JS ERROR: '+m+'\nLine: '+l+', Col: '+c+'\nSource: '+s+(e&&e.stack?'\n\nStack: '+e.stack:'');document.body.appendChild(d);};window.addEventListener('unhandledrejection',function(e){var d=document.createElement('div');d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#300;color:#f88;padding:16px;font-size:13px;white-space:pre-wrap;';d.textContent='UNHANDLED: '+e.reason;document.body.appendChild(d);});</script>
 <script type="text/babel">
 const {useState, useEffect, useCallback, useRef, useMemo} = React;
 
