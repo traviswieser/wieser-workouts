@@ -1315,7 +1315,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         </div>)}
 
         {/* PLAN VIEW - shown when user has an active plan */}
-        {!hasNoPlan&&<div style={{background:"linear-gradient(135deg,#1A1420,#141A22)",borderRadius:16,padding:"20px 18px",marginBottom:12,border:`1px solid ${C.bdr}`}}>
+        {!hasNoPlan&&(<><div style={{background:"linear-gradient(135deg,#1A1420,#141A22)",borderRadius:16,padding:"20px 18px",marginBottom:12,border:`1px solid ${C.bdr}`}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
             <div><div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:C.acc,lineHeight:1.2}}>{plan.name}</div><div style={{color:C.dim,fontSize:13,marginTop:4}}>{plan.subtitle}</div></div>
             {weekNum>0&&(<div style={{background:C.acc+"18",border:`1px solid ${C.acc}30`,borderRadius:10,padding:"8px 12px",textAlign:"center",flexShrink:0}}><div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:C.acc,lineHeight:1}}>{weekNum}</div><div style={{fontSize:9,color:C.acc,fontWeight:600,letterSpacing:"0.5px",marginTop:2}}>WEEK</div></div>)}
@@ -1355,7 +1355,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
                 <div style={{display:"flex",alignItems:"center",gap:8}}>{sc>0&&<span style={{width:8,height:8,borderRadius:4,background:C.grn}}/>}<span style={{color:C.acc,fontSize:20}}>→</span></div>
               </button>);})}
           </div>))}
-      </div>}
+      </>)}
       </div>)}
 
     {/* ══════ PROGRESS SCREEN ══════ */}
