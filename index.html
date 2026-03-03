@@ -45,7 +45,7 @@ const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const
 const link=document.createElement('link');link.rel='manifest';link.href=mUrl;document.head.appendChild(link);
 const iconLink=document.createElement('link');iconLink.rel='icon';iconLink.href=iconUrl;iconLink.type='image/svg+xml';document.head.appendChild(iconLink);
 const appleIcon=document.createElement('link');appleIcon.rel='apple-touch-icon';appleIcon.href=iconUrl;document.head.appendChild(appleIcon);
-if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v24';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
+if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v24b';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
 const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.auth();const db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
 </script>
 </head>
@@ -271,6 +271,7 @@ const TEMPLATES=[
 const ALL=[V1,V2,V3];
 
 const CHANGELOG=[
+  {ver:"v24b",date:"2026-03-03",title:"Leaderboard Fix",items:["Leaderboard now counts total sessions instead of unique dates","Multiple workouts on the same day each count separately"]},
   {ver:"v24",date:"2026-03-03",title:"iOS Fix & Cleanup",items:["Fixed iOS status bar overlap in standalone mode","Removed phone auth (requires paid Firebase plan)","Account linking for Google and email still available"]},
   {ver:"v23",date:"2026-03-03",title:"Phone Auth & Account Linking",items:["Phone number sign-in via SMS verification","Account screen to manage sign-in methods","Link Google, email, and phone to one account","Unlink any method (keeps at least one)"]},
   {ver:"v22",date:"2026-03-03",title:"Plan Management",items:["Manage Plans screen — organize all workout plans in one place","Toggle plans visible/hidden for the quick-switch dropdown","Plans organized by Official Plans and My Plans","Hidden plans preserve workout history"]},
@@ -562,8 +563,8 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
 
   // LEADERBOARD
   const getLbMonth=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
-  const countSessions=(h)=>{const dates=new Set();Object.keys(h).forEach(k=>{const p=k.split("-");const dt=p.length>=4?p.slice(-3).join("-"):null;if(dt&&dt.match(/^\d{4}-\d{2}-\d{2}$/))dates.add(dt);});return dates.size;};
-  const countMonthSessions=(h)=>{const mo=getLbMonth();const dates=new Set();Object.keys(h).forEach(k=>{const p=k.split("-");const dt=p.length>=4?p.slice(-3).join("-"):null;if(dt&&dt.startsWith(mo))dates.add(dt);});return dates.size;};
+  const countSessions=(h)=>Object.keys(h).filter(k=>{const p=k.split("-");const dt=p.length>=4?p.slice(-3).join("-");return dt&&dt.match(/^\d{4}-\d{2}-\d{2}$/);}).length;
+  const countMonthSessions=(h)=>{const mo=getLbMonth();return Object.keys(h).filter(k=>{const p=k.split("-");const dt=p.length>=4?p.slice(-3).join("-");return dt&&dt.startsWith(mo);}).length;};
   const updateLeaderboard=async()=>{if(!user||!userName)return;const mo=countMonthSessions(hist);const lt=countSessions(hist);try{await db.collection("leaderboard").doc(user.uid).set({name:userName,month:mo,lifetime:lt,monthKey:getLbMonth(),updatedAt:Date.now()});}catch(e){console.error("LB update:",e);}};
   const loadLeaderboard=async()=>{try{const snap=await db.collection("leaderboard").get();const arr=[];snap.forEach(d=>{const data=d.data();arr.push({uid:d.id,...data});});setLbData(arr);}catch(e){console.error("LB load:",e);}};
   useEffect(()=>{if(user&&userName&&Object.keys(hist).length>0)updateLeaderboard();},[hist,userName,user]);
