@@ -250,7 +250,7 @@ const TEMPLATES=[
       {title:"Day 5",sub:"Arms",exercises:[...bi.map(e=>mk(e,"3×10–12","biceps")),...tr.map(e=>mk(e,"3×10–12","triceps"))]}
     ]}]};
   }}
-]
+];
 const ALL=[V1,V2,V3];
 
 const CHANGELOG=[
@@ -324,6 +324,8 @@ function MiniChart({points,width=340,height=180,unit="lbs",c}){const C=c||DARK;
 }
 
 // MAIN APP
+class ErrBound extends React.Component{constructor(p){super(p);this.state={err:null};}static getDerivedStateFromError(e){return{err:e};}render(){if(this.state.err)return React.createElement('div',{style:{padding:20,color:'red',background:'#1a1a1a',margin:16,borderRadius:8,fontSize:13,whiteSpace:'pre-wrap'}},'Error: '+this.state.err.message+'\n\n'+this.state.err.stack);return this.props.children;}}
+
 function App(){
   const [user,setUser]=useState(undefined);
   const [planId,setPlanId]=useState("v1");
@@ -646,7 +648,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     <div style={{maxWidth:600,margin:"0 auto"}}>
 
     {/* ══════ CREATE PLAN ══════ */}
-    {screen==="create"&&(
+    {screen==="create"&&(<ErrBound>
       <div className="fade-in" style={{padding:"16px 16px 80px"}}>
 
         {cpScreen==="main"&&(<>
@@ -758,7 +760,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           </div>
         </>)}
 
-      </div>)}
+      </div></ErrBound>)}
 
     {/* ══════ CHANGELOG ══════ */}
     {screen==="changelog"&&(
