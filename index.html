@@ -453,6 +453,7 @@ function App(){
   const [planSort,setPlanSort]=useState("manual");
   const [longPressMenu,setLongPressMenu]=useState(null);
   const [longPressTimer,setLongPressTimer]=useState(null);
+  const [plansHelpOpen,setPlansHelpOpen]=useState(false);
   const unsubs=useRef([]);
   const C=theme==="dark"?DARK:LIGHT;
 
@@ -1182,12 +1183,17 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         </div>
 
         {/* INSTRUCTIONS */}
-        <div style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:12,padding:"14px 16px",marginBottom:16,fontSize:12,color:C.dim,lineHeight:1.8}}>
-          <div style={{fontWeight:700,color:C.txt,fontSize:13,marginBottom:6}}>How to use this page</div>
-          <div>📋 <b style={{color:C.txt}}>Toggle visibility</b> — show or hide plans from your home screen and quick-switch menu.</div>
-          <div>⋯ <b style={{color:C.txt}}>Plan options</b> — tap the ⋯ button on any plan to share, print, or delete it.</div>
-          <div>🔽 <b style={{color:C.txt}}>Sort</b> — use the sort dropdown to organize plans by date or recent use.</div>
-          <div>🌐 <b style={{color:C.txt}}>Community Plans</b> — browse and import plans shared by other users.</div>
+        <div style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:12,marginBottom:16,overflow:"hidden"}}>
+          <div onClick={()=>setPlansHelpOpen(!plansHelpOpen)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",cursor:"pointer"}}>
+            <div style={{fontWeight:700,color:C.txt,fontSize:13}}>How to use this page</div>
+            <Chev up={plansHelpOpen} s={14}/>
+          </div>
+          {plansHelpOpen&&<div style={{padding:"0 16px 14px",fontSize:12,color:C.dim,lineHeight:1.8}}>
+            <div>📋 <b style={{color:C.txt}}>Toggle visibility</b> — show or hide plans from your home screen and quick-switch menu.</div>
+            <div>⋯ <b style={{color:C.txt}}>Plan options</b> — tap the ⋯ button on any plan to edit, share, print, or delete it.</div>
+            <div>🔽 <b style={{color:C.txt}}>Sort</b> — use the sort dropdown to organize plans by date or recent use.</div>
+            <div>🌐 <b style={{color:C.txt}}>Community Plans</b> — browse and import plans shared by other users.</div>
+          </div>}
         </div>
 
         {/* SORT */}
@@ -1263,6 +1269,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         <div style={{fontSize:12,color:C.dim,marginBottom:16}}>{longPressMenu.plan.subtitle}</div>
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           <button onClick={()=>{const p=longPressMenu.plan;const isOwned=!longPressMenu.isOfficial&&p._createdBy&&(p._createdBy===user?.uid||isAdmin);if(isOwned){setCpDraft(JSON.parse(JSON.stringify(p)));setCpScreen("edit");setScreen("create");history.pushState({screen:"create"},"");}else{const copy={...JSON.parse(JSON.stringify(p)),id:"custom_"+Date.now(),_createdBy:user.uid,_createdAt:Date.now(),_published:false,name:p.name+" (Copy)"};setCpDraft(copy);setCpScreen("edit");setScreen("create");history.pushState({screen:"create"},"");}setLongPressMenu(null);}} style={{padding:"12px",borderRadius:10,border:`1px solid ${C.acc}30`,background:C.acc+"10",color:C.acc,fontSize:13,fontWeight:700,cursor:"pointer",textAlign:"left"}}>✏️ Edit Plan</button>
+          {longPressMenu.plan.id!==planId&&<button onClick={()=>{const p=longPressMenu.plan;if(hiddenPlans.includes(p.id)){const nh=hiddenPlans.filter(id=>id!==p.id);setHiddenPlans(nh);Cloud.save(user.uid,"hiddenPlans",{ids:nh});}setPlanId(p.id);setPhaseIdx(0);setDayIdx(0);setLongPressMenu(null);}} style={{padding:"12px",borderRadius:10,border:`1px solid #A78BFA30`,background:"#A78BFA10",color:"#A78BFA",fontSize:13,fontWeight:700,cursor:"pointer",textAlign:"left"}}>▶️ Set as Active Plan</button>}
           <button onClick={()=>{sharePlanToCommunity(longPressMenu.plan);setLongPressMenu(null);}} style={{padding:"12px",borderRadius:10,border:`1px solid #22C55E30`,background:"#22C55E10",color:"#22C55E",fontSize:13,fontWeight:700,cursor:"pointer",textAlign:"left"}}>🌐 Share to Community Catalog</button>
           <button onClick={()=>{printPlan(longPressMenu.plan);setLongPressMenu(null);}} style={{padding:"12px",borderRadius:10,border:`1px solid #5B8DEF30`,background:"#5B8DEF10",color:"#5B8DEF",fontSize:13,fontWeight:700,cursor:"pointer",textAlign:"left"}}>🖨️ Print Plan</button>
           {!longPressMenu.isOfficial&&longPressMenu.plan._createdBy&&(longPressMenu.plan._createdBy===user?.uid||isAdmin)&&(
