@@ -45,7 +45,7 @@ const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const
 const link=document.createElement('link');link.rel='manifest';link.href=mUrl;document.head.appendChild(link);
 const iconLink=document.createElement('link');iconLink.rel='icon';iconLink.href=iconUrl;iconLink.type='image/svg+xml';document.head.appendChild(iconLink);
 const appleIcon=document.createElement('link');appleIcon.rel='apple-touch-icon';appleIcon.href=iconUrl;document.head.appendChild(appleIcon);
-if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v28';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
+if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v29';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
 const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.auth();const db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
 </script>
 </head>
@@ -271,6 +271,7 @@ const TEMPLATES=[
 const ALL=[V1,V2,V3];
 
 const CHANGELOG=[
+  {ver:"v29",date:"2026-03-03",title:"Community Plans & Manage Plans Overhaul",items:["Community Plans Catalog — browse and import workout plans shared by other users","Share your plans to the community via long press in Manage Plans","Filter community plans by creator name, plan type, or sort by date","Long press any plan in Manage Plans to share, print, or delete","Sort plans by date created, recently used, or default order","Print any workout plan for offline use","Removed accidental delete buttons from dropdown menu and plan cards","Coach-assigned plans now shown as a separate section in Manage Plans","Updated instructions on the Manage Plans page"]},
   {ver:"v28",date:"2026-03-03",title:"Clean Onboarding & UI Polish",items:["New users start with a clean home screen and onboarding tips","Built-in plans (V1, V2, V3) available in Manage Plans instead of shown by default","App title is now clickable to return to the home screen","Moved Leaderboard to dropdown menu for a cleaner header","Progress button moved inside plan card next to the progress bar"]},
   {ver:"v27",date:"2026-03-03",title:"Coach-Athlete Chat",items:["Real-time messaging between coaches and athletes","Auto-notifications: session completed alerts sent to coaches","Auto-notifications: plan assigned alerts sent to athletes","Unread message badge on chat icon in header","Chat list with conversation previews and timestamps","Notification toggle: turn session/plan auto-messages on or off","Quick chat buttons on coach roster"]},
   {ver:"v26",date:"2026-03-03",title:"Coach Plan Management",items:["Coaches can assign plans to individual athletes","Bulk plan assignment to multiple athletes at once","Enhanced athlete detail: expandable sessions with weights/reps","Plans tab showing assigned and athlete-owned plans","Coach Instructions: notes visible on athlete home screen","Remove assigned plans from athletes"]},
@@ -443,6 +444,14 @@ function App(){
   const fileRef=useRef(null);
   const [aiLoading,setAiLoading]=useState(false);
   const [aiError,setAiError]=useState("");
+  const [communityPlans,setCommunityPlans]=useState([]);
+  const [communityLoading,setCommunityLoading]=useState(false);
+  const [communityFilter,setCommunityFilter]=useState("");
+  const [communitySort,setCommunitySort]=useState("newest");
+  const [communityTypeFilter,setCommunityTypeFilter]=useState("all");
+  const [planSort,setPlanSort]=useState("manual");
+  const [longPressMenu,setLongPressMenu]=useState(null);
+  const [longPressTimer,setLongPressTimer]=useState(null);
   const unsubs=useRef([]);
   const C=theme==="dark"?DARK:LIGHT;
 
@@ -637,6 +646,21 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
   const publishPlan=(p)=>{if(!user)return;const pub={...p,_published:true};const nm={...myPlans,[p.id]:pub};setMyPlans(nm);Cloud.save(user.uid,"myPlans",nm);setCpDraft(null);setCpScreen("main");setPlanId(p.id);setPhaseIdx(0);setDayIdx(0);setScreen("home");};
   const togglePlanVisibility=(pid)=>{if(!user)return;const nh=hiddenPlans.includes(pid)?hiddenPlans.filter(id=>id!==pid):[...hiddenPlans,pid];setHiddenPlans(nh);Cloud.save(user.uid,"hiddenPlans",{ids:nh});};
   const deletePlan=(pid)=>{if(!user)return;const nm={...myPlans};delete nm[pid];setMyPlans(nm);Cloud.save(user.uid,"myPlans",nm);if(planId===pid){setPlanId("v1");setPhaseIdx(0);setDayIdx(0);}};
+
+  const sharePlanToCommunity=async(p)=>{if(!user||!userName){alert("Please set your name first.");setNamePrompt(true);return;}try{const docId=p.id+"_"+user.uid;const shareData={plan:{...p},sharedBy:user.uid,sharedByName:userName,sharedAt:Date.now(),planName:p.name,planSubtitle:p.subtitle||"",daysCount:p.phases?p.phases.reduce((a,ph)=>a+ph.days.length,0):0,phasesCount:p.phases?p.phases.length:0,exerciseCount:p.phases?p.phases.reduce((a,ph)=>a+ph.days.reduce((b,d)=>b+d.exercises.length,0),0):0,category:detectCategory(p)};await db.collection("communityPlans").doc(docId).set(shareData);alert("Plan shared to Community Catalog!");}catch(e){console.error("Share plan:",e);alert("Failed to share: "+e.message);}};
+
+  const detectCategory=(p)=>{const n=(p.name+" "+p.subtitle).toLowerCase();if(n.includes("full body"))return"Full Body";if(n.includes("upper")&&n.includes("lower"))return"Upper/Lower";if(n.includes("push")&&n.includes("pull"))return"Push/Pull/Legs";if(n.includes("bro"))return"Bro Split";if(n.includes("fire")||n.includes("sprinkler"))return"Specialty";if(n.includes("strength"))return"Strength";if(n.includes("cardio")||n.includes("hiit"))return"Cardio";return"General";};
+
+  const loadCommunityPlans=async()=>{setCommunityLoading(true);try{const snap=await db.collection("communityPlans").get();const arr=[];snap.forEach(d=>{arr.push({docId:d.id,...d.data()});});setCommunityPlans(arr);}catch(e){console.error("Load community:",e);}setCommunityLoading(false);};
+
+  const importCommunityPlan=async(cp)=>{if(!user)return;const p={...cp.plan,id:"community_"+Date.now(),_createdBy:user.uid,_createdAt:Date.now(),_published:true,_importedFrom:cp.sharedByName};const nm={...myPlans,[p.id]:p};setMyPlans(nm);Cloud.save(user.uid,"myPlans",nm);setPlanId(p.id);setPhaseIdx(0);setDayIdx(0);setScreen("home");alert("Plan imported! You can customize it freely.");};
+
+  const removeCommunityPlan=async(docId)=>{if(!user)return;try{await db.collection("communityPlans").doc(docId).delete();setCommunityPlans(prev=>prev.filter(p=>p.docId!==docId));alert("Plan removed from community.");}catch(e){alert("Failed: "+e.message);}};
+
+  const printPlan=(p)=>{const w=window.open("","_blank");if(!w)return;const html=["<html><head><title>"+p.name+"</title><style>body{font-family:system-ui;max-width:700px;margin:0 auto;padding:20px}h1{font-size:20px}h2{font-size:16px;margin-top:24px;border-bottom:1px solid #ddd;padding-bottom:4px}h3{font-size:14px;margin:12px 0 4px}.ex{display:flex;justify-content:space-between;padding:4px 0;font-size:13px;border-bottom:1px solid #f0f0f0}.meta{color:#888;font-size:12px;margin-bottom:8px}@media print{button{display:none}}</style></head><body>"];html.push("<h1>"+p.name+"</h1><p class='meta'>"+p.subtitle+"</p>");if(p.phases)p.phases.forEach(ph=>{html.push("<h2>"+ph.title+" <span class='meta'>"+ph.weeks+"</span></h2><p class='meta'>"+ph.desc+" | "+ph.sr+" | "+ph.rir+" | Rest: "+ph.rest+"</p>");ph.days.forEach(d=>{html.push("<h3>"+d.title+" — "+d.sub+"</h3>");d.exercises.forEach(ex=>{html.push("<div class='ex'><span>"+ex.name+"</span><span class='meta'>"+ex.sets+"</span></div>");});});});html.push("<br><button onclick='window.print()' style='padding:10px 20px;font-size:14px;cursor:pointer'>Print</button></body></html>");w.document.write(html.join(""));w.document.close();};
+
+  const startLongPress=(e,planObj,isOfficial)=>{e.preventDefault();const t=setTimeout(()=>{setLongPressMenu({plan:planObj,isOfficial});},500);setLongPressTimer(t);};
+  const cancelLongPress=()=>{if(longPressTimer)clearTimeout(longPressTimer);setLongPressTimer(null);};
   const isAdmin=user&&ADMIN_EMAILS.has(user.email);
 
   const dayKey=`${planId}-${phaseIdx}-${dayIdx}`;
@@ -755,11 +779,12 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
             {planMenu&&(<>
               <div onClick={()=>setPlanMenu(false)} style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:55}}/>
               <div style={{position:"absolute",right:0,top:"100%",marginTop:4,background:C.card,border:`1px solid ${C.sbdr}`,borderRadius:10,overflow:"hidden",minWidth:240,boxShadow:"0 12px 40px rgba(0,0,0,.6)",zIndex:60}}>
-                {visiblePlans.map(p=>(<button key={p.id} onClick={()=>{setPlanId(p.id);setPhaseIdx(0);setDayIdx(0);setPlanMenu(false);setScreen("home");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:p.id===planId?C.srf:"transparent",border:"none",borderBottom:`1px solid ${C.bdr}`,color:C.txt,cursor:"pointer"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontWeight:700,fontSize:13,color:p.id===planId?C.acc:C.txt}}>{p.name}</div>{p._createdBy&&(p._createdBy===user?.uid||isAdmin)&&<span onClick={e=>{e.stopPropagation();if(confirm("Delete this custom plan?"))deletePlan(p.id);}} style={{fontSize:10,color:"#EF4444",cursor:"pointer",padding:"2px 6px",borderRadius:4,border:"1px solid #EF444430"}}>✕</span>}</div><div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}{p._createdBy?" ✨":""}</div></button>))}
+                {visiblePlans.map(p=>(<button key={p.id} onClick={()=>{setPlanId(p.id);setPhaseIdx(0);setDayIdx(0);setPlanMenu(false);setScreen("home");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:p.id===planId?C.srf:"transparent",border:"none",borderBottom:`1px solid ${C.bdr}`,color:C.txt,cursor:"pointer"}}><div style={{fontWeight:700,fontSize:13,color:p.id===planId?C.acc:C.txt}}>{p.name}</div><div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}{p._createdBy?" ✨":""}</div></button>))}
                 <button onClick={()=>{if(confirm("Start this plan over from Day 1? Your session history will be kept.")){setPhaseIdx(0);setDayIdx(0);setPlanMenu(false);}}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:"#5B8DEF",cursor:"pointer",fontWeight:600,fontSize:13}}>🔄 Start Plan Over</button>
                 <button onClick={()=>{setPlanMenu(false);setCpScreen("main");setCpDraft(null);setAiError("");setScreen("create");history.pushState({screen:"create"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.acc}30`,color:C.acc,cursor:"pointer",fontWeight:700,fontSize:13}}>✨ Create New Plan</button>
                 <button onClick={()=>{setPlanMenu(false);setCoachMsg("");setScreen("coaching");loadRoster();history.pushState({screen:"coaching"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontWeight:600,fontSize:13}}>🎯 Coaching</button>
                 <button onClick={()=>{setPlanMenu(false);setScreen("plans");history.pushState({screen:"plans"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontWeight:600,fontSize:13}}>⚙️ Manage Plans</button>
+                <button onClick={()=>{setPlanMenu(false);setScreen("community");loadCommunityPlans();history.pushState({screen:"community"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontWeight:600,fontSize:13}}>🌐 Community Plans</button>
                 <button onClick={()=>{setPlanMenu(false);setScreen("leaderboard");loadLeaderboard();history.pushState({screen:"leaderboard"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontWeight:600,fontSize:13}}>🏆 Leaderboard</button>
                 <button onClick={()=>{setScreen("changelog");setPlanMenu(false);history.pushState({screen:"changelog"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontSize:12,fontWeight:600}}>📋 Latest App Updates</button>
                 <button onClick={()=>{setPlanMenu(false);if(navigator.share){navigator.share({title:"Wieser Workouts",text:"Check out Wieser Workouts — a free workout tracker with custom plans, progress tracking, and coaching!",url:window.location.origin}).catch(()=>{});}else{navigator.clipboard.writeText(window.location.origin);alert("Link copied to clipboard!");}}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:"#22C55E",cursor:"pointer",fontSize:12,fontWeight:600}}>📤 Share This App</button>
@@ -1152,16 +1177,37 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     {screen==="plans"&&(
       <div className="fade-in" style={{padding:"16px 16px 80px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-          <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800}}>Workout Plans</div>
-          <button onClick={()=>{setScreen("home");history.back();}} style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer"}}>← Back</button>
+          <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800}}>Manage Plans</div>
         </div>
-        <div style={{fontSize:13,color:C.dim,marginBottom:20}}>Toggle plans on or off for your quick-switch menu.</div>
 
-        {/* ADMIN PLANS */}
+        {/* INSTRUCTIONS */}
+        <div style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:12,padding:"14px 16px",marginBottom:16,fontSize:12,color:C.dim,lineHeight:1.8}}>
+          <div style={{fontWeight:700,color:C.txt,fontSize:13,marginBottom:6}}>How to use this page</div>
+          <div>📋 <b style={{color:C.txt}}>Toggle visibility</b> — show or hide plans from your home screen and quick-switch menu.</div>
+          <div>👆 <b style={{color:C.txt}}>Long press any plan</b> — opens options to share to the community, print, or delete.</div>
+          <div>🔽 <b style={{color:C.txt}}>Sort</b> — use the sort dropdown below to organize your plans.</div>
+          <div>🌐 <b style={{color:C.txt}}>Community Plans</b> — browse and import plans shared by other users.</div>
+        </div>
+
+        {/* SORT */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:11,color:C.fnt,fontWeight:600}}>Sort by:</span>
+            <select value={planSort} onChange={e=>setPlanSort(e.target.value)} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"6px 10px",color:C.txt,fontSize:12,fontWeight:600,cursor:"pointer",outline:"none"}}>
+              <option value="manual">Default</option>
+              <option value="newest">Date Created (Newest)</option>
+              <option value="oldest">Date Created (Oldest)</option>
+              <option value="recent">Recently Used</option>
+            </select>
+          </div>
+          <button onClick={()=>{setScreen("community");loadCommunityPlans();history.pushState({screen:"community"},"");}} style={{padding:"6px 12px",borderRadius:8,border:`1px solid #22C55E30`,background:"#22C55E10",color:"#22C55E",fontSize:12,fontWeight:700,cursor:"pointer"}}>🌐 Browse Community</button>
+        </div>
+
+        {/* OFFICIAL PLANS */}
         <div style={{marginBottom:24}}>
           <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Official Plans</div>
           {ALL.map(p=>{const hidden=hiddenPlans.includes(p.id);const active=p.id===planId;return(
-            <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6}}>
+            <div key={p.id} onTouchStart={e=>startLongPress(e,p,true)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={e=>{e.preventDefault();setLongPressMenu({plan:p,isOfficial:true});}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6,userSelect:"none"}}>
               <div style={{flex:1}}>
                 <div style={{fontWeight:700,fontSize:14,color:active?C.acc:C.txt}}>{p.name}{active?" (active)":""}</div>
                 <div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}</div>
@@ -1173,17 +1219,34 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         </div>
 
         {/* MY PLANS */}
-        {Object.values(myPlans).filter(p=>p._published!==false).length>0&&(
+        {(()=>{const mp=Object.values(myPlans).filter(p=>p._published!==false);let sorted=[...mp];if(planSort==="newest")sorted.sort((a,b)=>(b._createdAt||0)-(a._createdAt||0));else if(planSort==="oldest")sorted.sort((a,b)=>(a._createdAt||0)-(b._createdAt||0));else if(planSort==="recent")sorted.sort((a,b)=>{const aLast=Object.keys(hist).filter(k=>k.startsWith(a.id+"_")).reduce((m,k)=>{const ts=hist[k]?.ts;return ts&&ts>m?ts:m;},0);const bLast=Object.keys(hist).filter(k=>k.startsWith(b.id+"_")).reduce((m,k)=>{const ts=hist[k]?.ts;return ts&&ts>m?ts:m;},0);return bLast-aLast;});return sorted.length>0?(
           <div style={{marginBottom:24}}>
             <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>My Plans</div>
-            {Object.values(myPlans).filter(p=>p._published!==false).map(p=>{const hidden=hiddenPlans.includes(p.id);const active=p.id===planId;return(
-              <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6}}>
+            {sorted.map(p=>{const hidden=hiddenPlans.includes(p.id);const active=p.id===planId;return(
+              <div key={p.id} onTouchStart={e=>startLongPress(e,p,false)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={e=>{e.preventDefault();setLongPressMenu({plan:p,isOfficial:false});}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6,userSelect:"none"}}>
                 <div style={{flex:1}}>
-                  <div style={{fontWeight:700,fontSize:14,color:active?C.acc:C.txt}}>{p.name}{active?" (active)":""} ✨</div>
+                  <div style={{fontWeight:700,fontSize:14,color:active?C.acc:C.txt}}>{p.name}{active?" (active)":""} {p._importedFrom?"🌐":"✨"}</div>
                   <div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}</div>
+                  {p._createdAt&&<div style={{fontSize:10,color:C.fnt,marginTop:2}}>Created {new Date(p._createdAt).toLocaleDateString()}{p._importedFrom?" · from "+p._importedFrom:""}</div>}
                 </div>
                 <button onClick={()=>{if(active){alert("Can't hide the active plan. Switch to another plan first.");return;}togglePlanVisibility(p.id);}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${hidden?"#EF444430":C.acc+"40"}`,background:hidden?"#EF444410":C.acc+"10",color:hidden?"#EF4444":C.acc,fontSize:12,fontWeight:700,cursor:"pointer",minWidth:70,textAlign:"center"}}>{hidden?"Hidden":"Visible"}</button>
-                <span onClick={()=>{if(confirm("Delete this custom plan?"))deletePlan(p.id);}} style={{fontSize:12,color:"#EF4444",cursor:"pointer",padding:"6px 8px",borderRadius:6,border:"1px solid #EF444425"}}>✕</span>
+              </div>);
+            })}
+          </div>
+        ):null;})()}
+
+        {/* COACH ASSIGNED PLANS */}
+        {Object.values(coachPlans).filter(p=>p._published!==false).length>0&&(
+          <div style={{marginBottom:24}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Coach Assigned Plans</div>
+            {Object.values(coachPlans).filter(p=>p._published!==false).map(p=>{const hidden=hiddenPlans.includes(p.id);const active=p.id===planId;return(
+              <div key={p.id} onTouchStart={e=>startLongPress(e,p,false)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={e=>{e.preventDefault();setLongPressMenu({plan:p,isOfficial:false});}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6,userSelect:"none"}}>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:700,fontSize:14,color:active?C.acc:C.txt}}>{p.name}{active?" (active)":""} 🎯</div>
+                  <div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}</div>
+                  {p._assignedByName&&<div style={{fontSize:10,color:C.fnt,marginTop:2}}>Assigned by {p._assignedByName}</div>}
+                </div>
+                <button onClick={()=>{if(active){alert("Can't hide the active plan. Switch to another plan first.");return;}togglePlanVisibility(p.id);}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${hidden?"#EF444430":C.acc+"40"}`,background:hidden?"#EF444410":C.acc+"10",color:hidden?"#EF4444":C.acc,fontSize:12,fontWeight:700,cursor:"pointer",minWidth:70,textAlign:"center"}}>{hidden?"Hidden":"Visible"}</button>
               </div>);
             })}
           </div>
@@ -1191,13 +1254,92 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
 
         {/* HIDDEN PLANS SUMMARY */}
         {hiddenPlans.length>0&&(
-          <div style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:12,padding:"14px 16px"}}>
+          <div style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:12,padding:"14px 16px",marginBottom:16}}>
             <div style={{fontSize:12,fontWeight:700,color:C.fnt,marginBottom:6}}>{hiddenPlans.length} hidden plan{hiddenPlans.length>1?"s":""}</div>
-            <div style={{fontSize:12,color:C.dim,lineHeight:1.6}}>Hidden plans won't appear in your quick-switch dropdown but your workout history is preserved. Tap "Hidden" above to make them visible again.</div>
+            <div style={{fontSize:12,color:C.dim,lineHeight:1.6}}>Hidden plans won't appear in your quick-switch dropdown but your workout history is preserved. Tap the "Hidden" button above to make them visible again.</div>
           </div>
         )}
 
-        <button onClick={()=>{setCpScreen("main");setCpDraft(null);setAiError("");setScreen("create");history.pushState({screen:"create"},"");}} style={{width:"100%",marginTop:20,padding:"14px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>+ Create New Plan</button>
+        <button onClick={()=>{setCpScreen("main");setCpDraft(null);setAiError("");setScreen("create");history.pushState({screen:"create"},"");}} style={{width:"100%",marginTop:8,padding:"14px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>+ Create New Plan</button>
+      </div>)}
+
+    {/* ══════ LONG PRESS MENU MODAL ══════ */}
+    {longPressMenu&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.7)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setLongPressMenu(null)}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:16,padding:"20px",maxWidth:320,width:"100%"}}>
+        <div style={{fontFamily:"Outfit",fontSize:16,fontWeight:800,marginBottom:4}}>{longPressMenu.plan.name}</div>
+        <div style={{fontSize:12,color:C.dim,marginBottom:16}}>{longPressMenu.plan.subtitle}</div>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <button onClick={()=>{sharePlanToCommunity(longPressMenu.plan);setLongPressMenu(null);}} style={{padding:"12px",borderRadius:10,border:`1px solid #22C55E30`,background:"#22C55E10",color:"#22C55E",fontSize:13,fontWeight:700,cursor:"pointer",textAlign:"left"}}>🌐 Share to Community Catalog</button>
+          <button onClick={()=>{printPlan(longPressMenu.plan);setLongPressMenu(null);}} style={{padding:"12px",borderRadius:10,border:`1px solid #5B8DEF30`,background:"#5B8DEF10",color:"#5B8DEF",fontSize:13,fontWeight:700,cursor:"pointer",textAlign:"left"}}>🖨️ Print Plan</button>
+          {!longPressMenu.isOfficial&&longPressMenu.plan._createdBy&&(longPressMenu.plan._createdBy===user?.uid||isAdmin)&&(
+            <button onClick={()=>{if(confirm("Delete this plan? Your session history will be preserved.")){deletePlan(longPressMenu.plan.id);setLongPressMenu(null);}}} style={{padding:"12px",borderRadius:10,border:"1px solid #EF444430",background:"#EF444410",color:"#EF4444",fontSize:13,fontWeight:700,cursor:"pointer",textAlign:"left"}}>🗑️ Delete Plan</button>
+          )}
+          <button onClick={()=>setLongPressMenu(null)} style={{padding:"10px",borderRadius:10,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:13,fontWeight:600,cursor:"pointer",marginTop:4}}>Cancel</button>
+        </div>
+      </div>
+    </div>)}
+
+    {/* ══════ COMMUNITY PLANS CATALOG ══════ */}
+    {screen==="community"&&(
+      <div className="fade-in" style={{padding:"16px 16px 80px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+          <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800}}>🌐 Community Plans</div>
+        </div>
+        <div style={{fontSize:13,color:C.dim,marginBottom:16}}>Browse workout plans shared by other users. Import any plan to customize it for yourself.</div>
+
+        {/* SEARCH AND FILTERS */}
+        <input placeholder="Search by plan name or creator..." value={communityFilter} onChange={e=>setCommunityFilter(e.target.value)} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:"12px 14px",color:C.txt,fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"inherit",marginBottom:10}}/>
+        <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+          <select value={communityTypeFilter} onChange={e=>setCommunityTypeFilter(e.target.value)} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"6px 10px",color:C.txt,fontSize:12,fontWeight:600,cursor:"pointer",outline:"none"}}>
+            <option value="all">All Types</option>
+            <option value="Full Body">Full Body</option>
+            <option value="Upper/Lower">Upper/Lower</option>
+            <option value="Push/Pull/Legs">Push/Pull/Legs</option>
+            <option value="Bro Split">Bro Split</option>
+            <option value="Strength">Strength</option>
+            <option value="Cardio">Cardio</option>
+            <option value="Specialty">Specialty</option>
+            <option value="General">General</option>
+          </select>
+          <select value={communitySort} onChange={e=>setCommunitySort(e.target.value)} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"6px 10px",color:C.txt,fontSize:12,fontWeight:600,cursor:"pointer",outline:"none"}}>
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="name">Name A–Z</option>
+          </select>
+        </div>
+
+        {communityLoading?(<div style={{textAlign:"center",padding:40,color:C.dim}}>Loading community plans...</div>):(()=>{
+          let filtered=communityPlans.filter(cp=>{const q=communityFilter.toLowerCase();const nameMatch=(cp.planName||"").toLowerCase().includes(q);const authorMatch=(cp.sharedByName||"").toLowerCase().includes(q);return!q||nameMatch||authorMatch;});
+          if(communityTypeFilter!=="all")filtered=filtered.filter(cp=>(cp.category||"General")===communityTypeFilter);
+          if(communitySort==="newest")filtered.sort((a,b)=>(b.sharedAt||0)-(a.sharedAt||0));
+          else if(communitySort==="oldest")filtered.sort((a,b)=>(a.sharedAt||0)-(b.sharedAt||0));
+          else if(communitySort==="name")filtered.sort((a,b)=>(a.planName||"").localeCompare(b.planName||""));
+          return filtered.length===0?(<div style={{textAlign:"center",padding:40}}><div style={{fontSize:32,marginBottom:8}}>📭</div><div style={{color:C.dim,fontSize:14}}>No community plans found{communityFilter?" matching your search":""}.</div><div style={{color:C.fnt,fontSize:12,marginTop:4}}>Be the first to share! Long press a plan in Manage Plans to share it.</div></div>):(
+            <div>{filtered.map(cp=>(
+              <div key={cp.docId} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"16px",marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700,fontSize:15,color:C.txt}}>{cp.planName}</div>
+                    <div style={{fontSize:12,color:C.dim,marginTop:3}}>{cp.planSubtitle}</div>
+                  </div>
+                  <span style={{background:C.acc+"18",color:C.acc,padding:"2px 8px",borderRadius:6,fontSize:10,fontWeight:700,flexShrink:0}}>{cp.category||"General"}</span>
+                </div>
+                <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
+                  <span style={{fontSize:11,color:"#5B8DEF",background:"#5B8DEF18",padding:"2px 8px",borderRadius:6}}>{cp.phasesCount||"?"} phase{cp.phasesCount!==1?"s":""}</span>
+                  <span style={{fontSize:11,color:"#A78BFA",background:"#A78BFA18",padding:"2px 8px",borderRadius:6}}>{cp.daysCount||"?"} days</span>
+                  <span style={{fontSize:11,color:"#22C55E",background:"#22C55E18",padding:"2px 8px",borderRadius:6}}>{cp.exerciseCount||"?"} exercises</span>
+                </div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div style={{fontSize:11,color:C.fnt}}>Shared by <b style={{color:C.dim}}>{cp.sharedByName}</b> · {cp.sharedAt?new Date(cp.sharedAt).toLocaleDateString():""}</div>
+                  <div style={{display:"flex",gap:6}}>
+                    {user&&cp.sharedBy===user.uid&&<button onClick={()=>{if(confirm("Remove this plan from the community catalog?"))removeCommunityPlan(cp.docId);}} style={{padding:"6px 10px",borderRadius:8,border:"1px solid #EF444430",background:"#EF444410",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>Remove</button>}
+                    <button onClick={()=>importCommunityPlan(cp)} style={{padding:"6px 14px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Import</button>
+                  </div>
+                </div>
+              </div>
+            ))}</div>
+          );
+        })()}
       </div>)}
 
         {/* ══════ LEADERBOARD ══════ */}
@@ -1313,6 +1455,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
             <div>↔ <b style={{color:C.txt}}>Swap exercises</b> — tap any exercise during a workout to swap it for an alternative.</div>
             <div>⏱ <b style={{color:C.txt}}>Rest timer</b> — auto-starts when you log a set. Tap to dismiss.</div>
             <div>🏆 <b style={{color:C.txt}}>Leaderboard</b> — compete with others on total sessions logged.</div>
+            <div>🌐 <b style={{color:C.txt}}>Community Plans</b> — browse and import plans shared by other users.</div>
           </div>
         </div>)}
 
