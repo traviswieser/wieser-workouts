@@ -1185,8 +1185,8 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         <div style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:12,padding:"14px 16px",marginBottom:16,fontSize:12,color:C.dim,lineHeight:1.8}}>
           <div style={{fontWeight:700,color:C.txt,fontSize:13,marginBottom:6}}>How to use this page</div>
           <div>📋 <b style={{color:C.txt}}>Toggle visibility</b> — show or hide plans from your home screen and quick-switch menu.</div>
-          <div>👆 <b style={{color:C.txt}}>Long press any plan</b> — opens options to share to the community, print, or delete.</div>
-          <div>🔽 <b style={{color:C.txt}}>Sort</b> — use the sort dropdown below to organize your plans.</div>
+          <div>⋯ <b style={{color:C.txt}}>Plan options</b> — tap the ⋯ button on any plan to share, print, or delete it.</div>
+          <div>🔽 <b style={{color:C.txt}}>Sort</b> — use the sort dropdown to organize plans by date or recent use.</div>
           <div>🌐 <b style={{color:C.txt}}>Community Plans</b> — browse and import plans shared by other users.</div>
         </div>
 
@@ -1204,54 +1204,46 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           <button onClick={()=>{setScreen("community");loadCommunityPlans();history.pushState({screen:"community"},"");}} style={{padding:"6px 12px",borderRadius:8,border:`1px solid #22C55E30`,background:"#22C55E10",color:"#22C55E",fontSize:12,fontWeight:700,cursor:"pointer"}}>🌐 Browse Community</button>
         </div>
 
-        {/* OFFICIAL PLANS */}
-        <div style={{marginBottom:24}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Official Plans</div>
-          {ALL.map(p=>{const hidden=hiddenPlans.includes(p.id);const active=p.id===planId;return(
-            <div key={p.id} className="lp-target" onTouchStart={e=>startLongPress(e,p,true)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={e=>{e.preventDefault();setLongPressMenu({plan:p,isOfficial:true});}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6,userSelect:"none"}}>
+        {/* ALL PLANS - rendered by the IIFE below */}
+        {(()=>{
+          const PlanCard=({p,badge,meta,isOfficial})=>{const hidden=hiddenPlans.includes(p.id);const active=p.id===planId;return(
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6}}>
               <div style={{flex:1}}>
-                <div style={{fontWeight:700,fontSize:14,color:active?C.acc:C.txt}}>{p.name}{active?" (active)":""}</div>
+                <div style={{fontWeight:700,fontSize:14,color:active?C.acc:C.txt}}>{p.name}{active?" (active)":""} {badge}</div>
                 <div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}</div>
-                <div style={{fontSize:10,color:C.fnt,marginTop:2}}>{p.phases.length} phases · {p.phases.reduce((a,ph)=>a+ph.days.length,0)} days/rotation</div>
+                {meta&&<div style={{fontSize:10,color:C.fnt,marginTop:2}}>{meta}</div>}
               </div>
-              <button onClick={()=>{if(active){alert("Can't hide the active plan. Switch to another plan first.");return;}togglePlanVisibility(p.id);}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${hidden?"#EF444430":C.acc+"40"}`,background:hidden?"#EF444410":C.acc+"10",color:hidden?"#EF4444":C.acc,fontSize:12,fontWeight:700,cursor:"pointer",minWidth:70,textAlign:"center"}}>{hidden?"Hidden":"Visible"}</button>
-            </div>);
-          })}
-        </div>
+              <button onClick={e=>{e.stopPropagation();setLongPressMenu({plan:p,isOfficial});}} style={{padding:"6px 8px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:16,cursor:"pointer",lineHeight:1,flexShrink:0}} title="Plan options">⋯</button>
+              <button onClick={()=>{if(active){alert("Can't hide the active plan. Switch to another plan first.");return;}togglePlanVisibility(p.id);}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${hidden?"#EF444430":C.acc+"40"}`,background:hidden?"#EF444410":C.acc+"10",color:hidden?"#EF4444":C.acc,fontSize:12,fontWeight:700,cursor:"pointer",minWidth:70,textAlign:"center",flexShrink:0}}>{hidden?"Hidden":"Visible"}</button>
+            </div>);};
 
-        {/* MY PLANS */}
-        {(()=>{const mp=Object.values(myPlans).filter(p=>p._published!==false);let sorted=[...mp];if(planSort==="newest")sorted.sort((a,b)=>(b._createdAt||0)-(a._createdAt||0));else if(planSort==="oldest")sorted.sort((a,b)=>(a._createdAt||0)-(b._createdAt||0));else if(planSort==="recent")sorted.sort((a,b)=>{const aLast=Object.keys(hist).filter(k=>k.startsWith(a.id+"_")).reduce((m,k)=>{const ts=hist[k]?.ts;return ts&&ts>m?ts:m;},0);const bLast=Object.keys(hist).filter(k=>k.startsWith(b.id+"_")).reduce((m,k)=>{const ts=hist[k]?.ts;return ts&&ts>m?ts:m;},0);return bLast-aLast;});return sorted.length>0?(
-          <div style={{marginBottom:24}}>
-            <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>My Plans</div>
-            {sorted.map(p=>{const hidden=hiddenPlans.includes(p.id);const active=p.id===planId;return(
-              <div key={p.id} className="lp-target" onTouchStart={e=>startLongPress(e,p,false)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={e=>{e.preventDefault();setLongPressMenu({plan:p,isOfficial:false});}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6,userSelect:"none"}}>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:700,fontSize:14,color:active?C.acc:C.txt}}>{p.name}{active?" (active)":""} {p._importedFrom?"🌐":"✨"}</div>
-                  <div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}</div>
-                  {p._createdAt&&<div style={{fontSize:10,color:C.fnt,marginTop:2}}>Created {new Date(p._createdAt).toLocaleDateString()}{p._importedFrom?" · from "+p._importedFrom:""}</div>}
-                </div>
-                <button onClick={()=>{if(active){alert("Can't hide the active plan. Switch to another plan first.");return;}togglePlanVisibility(p.id);}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${hidden?"#EF444430":C.acc+"40"}`,background:hidden?"#EF444410":C.acc+"10",color:hidden?"#EF4444":C.acc,fontSize:12,fontWeight:700,cursor:"pointer",minWidth:70,textAlign:"center"}}>{hidden?"Hidden":"Visible"}</button>
-              </div>);
-            })}
-          </div>
-        ):null;})()}
+          const officialItems=ALL.map(p=>({p,badge:"",meta:p.phases.length+" phases · "+p.phases.reduce((a,ph)=>a+ph.days.length,0)+" days/rotation",isOfficial:true,src:"official",_createdAt:0}));
+          const myItems=Object.values(myPlans).filter(p=>p._published!==false).map(p=>({p,badge:p._importedFrom?"🌐":"✨",meta:(p._createdAt?"Created "+new Date(p._createdAt).toLocaleDateString():"")+(p._importedFrom?" · from "+p._importedFrom:""),isOfficial:false,src:"my",_createdAt:p._createdAt||0}));
+          const coachItems=Object.values(coachPlans).filter(p=>p._published!==false).map(p=>({p,badge:"🎯",meta:p._assignedByName?"Assigned by "+p._assignedByName:"",isOfficial:false,src:"coach",_createdAt:p._assignedAt||0}));
 
-        {/* COACH ASSIGNED PLANS */}
-        {Object.values(coachPlans).filter(p=>p._published!==false).length>0&&(
-          <div style={{marginBottom:24}}>
-            <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Coach Assigned Plans</div>
-            {Object.values(coachPlans).filter(p=>p._published!==false).map(p=>{const hidden=hiddenPlans.includes(p.id);const active=p.id===planId;return(
-              <div key={p.id} className="lp-target" onTouchStart={e=>startLongPress(e,p,false)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={e=>{e.preventDefault();setLongPressMenu({plan:p,isOfficial:false});}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6,userSelect:"none"}}>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:700,fontSize:14,color:active?C.acc:C.txt}}>{p.name}{active?" (active)":""} 🎯</div>
-                  <div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}</div>
-                  {p._assignedByName&&<div style={{fontSize:10,color:C.fnt,marginTop:2}}>Assigned by {p._assignedByName}</div>}
-                </div>
-                <button onClick={()=>{if(active){alert("Can't hide the active plan. Switch to another plan first.");return;}togglePlanVisibility(p.id);}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${hidden?"#EF444430":C.acc+"40"}`,background:hidden?"#EF444410":C.acc+"10",color:hidden?"#EF4444":C.acc,fontSize:12,fontWeight:700,cursor:"pointer",minWidth:70,textAlign:"center"}}>{hidden?"Hidden":"Visible"}</button>
-              </div>);
-            })}
-          </div>
-        )}
+          if(planSort!=="manual"){
+            const combined=[...officialItems,...myItems,...coachItems];
+            if(planSort==="newest")combined.sort((a,b)=>(b._createdAt||0)-(a._createdAt||0));
+            else if(planSort==="oldest")combined.sort((a,b)=>(a._createdAt||0)-(b._createdAt||0));
+            else if(planSort==="recent")combined.sort((a,b)=>{const getLastUsed=(item)=>Object.keys(hist).filter(k=>k.startsWith(item.p.id+"_")).reduce((m,k)=>{const ts=hist[k]?.ts;return ts&&ts>m?ts:m;},0);return getLastUsed(b)-getLastUsed(a);});
+            return(<div style={{marginBottom:16}}>{combined.map(item=>(<PlanCard key={item.p.id} p={item.p} badge={item.badge} meta={item.meta} isOfficial={item.isOfficial}/>))}</div>);
+          }
+
+          return(<>
+            <div style={{marginBottom:24}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Official Plans</div>
+              {officialItems.map(item=>(<PlanCard key={item.p.id} p={item.p} badge={item.badge} meta={item.meta} isOfficial={item.isOfficial}/>))}
+            </div>
+            {myItems.length>0&&(<div style={{marginBottom:24}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>My Plans</div>
+              {myItems.map(item=>(<PlanCard key={item.p.id} p={item.p} badge={item.badge} meta={item.meta} isOfficial={item.isOfficial}/>))}
+            </div>)}
+            {coachItems.length>0&&(<div style={{marginBottom:24}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Coach Assigned Plans</div>
+              {coachItems.map(item=>(<PlanCard key={item.p.id} p={item.p} badge={item.badge} meta={item.meta} isOfficial={item.isOfficial}/>))}
+            </div>)}
+          </>);
+        })()}
 
         {/* HIDDEN PLANS SUMMARY */}
         {hiddenPlans.length>0&&(
