@@ -36,6 +36,7 @@
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
   .fade-in{animation:fadeIn .3s ease-out both}
   .syncing{animation:pulse 1.5s ease-in-out infinite}
+  .lp-target{-webkit-touch-callout:none;-webkit-user-select:none;-ms-user-select:none;user-select:none;touch-action:pan-y}
 </style>
 <script>
 const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="#08080A"/><rect x="32" y="32" width="448" height="448" rx="80" fill="#111116" stroke="#1C1C24" stroke-width="4"/><g transform="translate(256,220)" stroke="#FF6B2C" stroke-width="18" stroke-linecap="round" fill="none"><rect x="-140" y="-30" width="40" height="60" rx="8"/><rect x="100" y="-30" width="40" height="60" rx="8"/><rect x="-100" y="-42" width="30" height="84" rx="8"/><rect x="70" y="-42" width="30" height="84" rx="8"/><line x1="-70" y1="0" x2="70" y2="0"/></g><text x="256" y="370" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="60" fill="#FF6B2C">WIESER</text><text x="256" y="430" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="42" fill="#E8E8EC">WORKOUTS</text></svg>`;
@@ -1207,7 +1208,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         <div style={{marginBottom:24}}>
           <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Official Plans</div>
           {ALL.map(p=>{const hidden=hiddenPlans.includes(p.id);const active=p.id===planId;return(
-            <div key={p.id} onTouchStart={e=>startLongPress(e,p,true)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={e=>{e.preventDefault();setLongPressMenu({plan:p,isOfficial:true});}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6,userSelect:"none"}}>
+            <div key={p.id} className="lp-target" onTouchStart={e=>startLongPress(e,p,true)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={e=>{e.preventDefault();setLongPressMenu({plan:p,isOfficial:true});}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6,userSelect:"none"}}>
               <div style={{flex:1}}>
                 <div style={{fontWeight:700,fontSize:14,color:active?C.acc:C.txt}}>{p.name}{active?" (active)":""}</div>
                 <div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}</div>
@@ -1223,7 +1224,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           <div style={{marginBottom:24}}>
             <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>My Plans</div>
             {sorted.map(p=>{const hidden=hiddenPlans.includes(p.id);const active=p.id===planId;return(
-              <div key={p.id} onTouchStart={e=>startLongPress(e,p,false)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={e=>{e.preventDefault();setLongPressMenu({plan:p,isOfficial:false});}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6,userSelect:"none"}}>
+              <div key={p.id} className="lp-target" onTouchStart={e=>startLongPress(e,p,false)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={e=>{e.preventDefault();setLongPressMenu({plan:p,isOfficial:false});}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6,userSelect:"none"}}>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:14,color:active?C.acc:C.txt}}>{p.name}{active?" (active)":""} {p._importedFrom?"🌐":"✨"}</div>
                   <div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}</div>
@@ -1240,7 +1241,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           <div style={{marginBottom:24}}>
             <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Coach Assigned Plans</div>
             {Object.values(coachPlans).filter(p=>p._published!==false).map(p=>{const hidden=hiddenPlans.includes(p.id);const active=p.id===planId;return(
-              <div key={p.id} onTouchStart={e=>startLongPress(e,p,false)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={e=>{e.preventDefault();setLongPressMenu({plan:p,isOfficial:false});}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6,userSelect:"none"}}>
+              <div key={p.id} className="lp-target" onTouchStart={e=>startLongPress(e,p,false)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={e=>{e.preventDefault();setLongPressMenu({plan:p,isOfficial:false});}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:active?C.acc+"08":C.card,border:`1px solid ${active?C.acc+"30":C.bdr}`,borderRadius:12,marginBottom:6,userSelect:"none"}}>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:14,color:active?C.acc:C.txt}}>{p.name}{active?" (active)":""} 🎯</div>
                   <div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}</div>
