@@ -46,7 +46,7 @@ const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const
 const link=document.createElement('link');link.rel='manifest';link.href=mUrl;document.head.appendChild(link);
 const iconLink=document.createElement('link');iconLink.rel='icon';iconLink.href=iconUrl;iconLink.type='image/svg+xml';document.head.appendChild(iconLink);
 const appleIcon=document.createElement('link');appleIcon.rel='apple-touch-icon';appleIcon.href=iconUrl;document.head.appendChild(appleIcon);
-if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v29';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
+if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v30';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
 const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.auth();const db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
 </script>
 </head>
@@ -272,6 +272,7 @@ const TEMPLATES=[
 const ALL=[V1,V2,V3];
 
 const CHANGELOG=[
+  {ver:"v30",date:"2026-03-03",title:"Navigation Dock & Custom Exercises",items:["Bottom navigation bar for quick access to key screens","Customize your nav bar — choose up to 5 items and reorder them","Custom exercise option in the plan editor — type any exercise name","Edit Navigation Bar option in the dropdown menu"]},
   {ver:"v29",date:"2026-03-03",title:"Community Plans & Manage Plans Overhaul",items:["Community Plans Catalog — browse and import workout plans shared by other users","Share your plans to the community via long press in Manage Plans","Filter community plans by creator name, plan type, or sort by date","Long press any plan in Manage Plans to share, print, or delete","Sort plans by date created, recently used, or default order","Print any workout plan for offline use","Removed accidental delete buttons from dropdown menu and plan cards","Coach-assigned plans now shown as a separate section in Manage Plans","Updated instructions on the Manage Plans page"]},
   {ver:"v28",date:"2026-03-03",title:"Clean Onboarding & UI Polish",items:["New users start with a clean home screen and onboarding tips","Built-in plans (V1, V2, V3) available in Manage Plans instead of shown by default","App title is now clickable to return to the home screen","Moved Leaderboard to dropdown menu for a cleaner header","Progress button moved inside plan card next to the progress bar"]},
   {ver:"v27",date:"2026-03-03",title:"Coach-Athlete Chat",items:["Real-time messaging between coaches and athletes","Auto-notifications: session completed alerts sent to coaches","Auto-notifications: plan assigned alerts sent to athletes","Unread message badge on chat icon in header","Chat list with conversation previews and timestamps","Notification toggle: turn session/plan auto-messages on or off","Quick chat buttons on coach roster"]},
@@ -454,6 +455,10 @@ function App(){
   const [longPressMenu,setLongPressMenu]=useState(null);
   const [longPressTimer,setLongPressTimer]=useState(null);
   const [plansHelpOpen,setPlansHelpOpen]=useState(false);
+  const NAV_OPTIONS=[{id:"plans",label:"My Plans",icon:"📋",action:()=>{setScreen("plans");history.pushState({screen:"plans"},"");}},{id:"community",label:"Community",icon:"🌐",action:()=>{setScreen("community");loadCommunityPlans();history.pushState({screen:"community"},"");}},{id:"create",label:"Create Plan",icon:"✨",action:()=>{setCpScreen("main");setCpDraft(null);setAiError("");setScreen("create");history.pushState({screen:"create"},"");}},{id:"coaching",label:"Coaching",icon:"🎯",action:()=>{setCoachMsg("");setScreen("coaching");loadRoster();history.pushState({screen:"coaching"},"");}},{id:"leaderboard",label:"Leaderboard",icon:"🏆",action:()=>{setScreen("leaderboard");loadLeaderboard();history.pushState({screen:"leaderboard"},"");}},{id:"progress",label:"Progress",icon:"📊",action:()=>{setScreen("progress");setProgEx(loggedExercises[0]||"");setProgDay("all");setProgOpen(null);history.pushState({screen:"progress"},"");}},{id:"chat",label:"Messages",icon:"💬",action:()=>{setScreen("chatlist");loadChatList();history.pushState({screen:"chatlist"},"");}},{id:"home",label:"Home",icon:"🏠",action:()=>{setScreen("home");history.pushState({screen:"home"},"");}}];
+  const DEFAULT_NAV=["plans","community","create","coaching","leaderboard"];
+  const [navItems,setNavItems]=useState(DEFAULT_NAV);
+  const [navEditOpen,setNavEditOpen]=useState(false);
   const unsubs=useRef([]);
   const C=theme==="dark"?DARK:LIGHT;
 
@@ -481,7 +486,7 @@ function App(){
     setSyncing(true);const uid=user.uid;
     Promise.all([Cloud.load(uid,"state"),Cloud.load(uid,"history"),Cloud.load(uid,"swaps"),Cloud.load(uid,"customEx"),Cloud.load(uid,"ssLinks"),Cloud.load(uid,"exOrder"),Cloud.load(uid,"exEdits"),Cloud.load(uid,"bodyWeight"),Cloud.load(uid,"prefs"),Cloud.load(uid,"myPlans"),Cloud.load(uid,"hiddenPlans"),Cloud.load(uid,"coachPlans"),Cloud.load(uid,"coachNotes")]).then(([st,h,s,ce,sl,eo,ee,bw,pf,mp,hp,cp,cn])=>{
       if(st){setPlanId(st.p||"v1");setPhaseIdx(st.ph||0);setDayIdx(st.d||0);}
-      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(pf&&pf.userName)setUserName(pf.userName);if(pf&&pf.role)setUserRole(pf.role);if(pf&&pf.coachCode)setCoachCode(pf.coachCode);if(pf?.notifySession===false)setNotifySession(false);if(pf?.notifyPlan===false)setNotifyPlan(false);if(mp)setMyPlans(mp);if(hp&&hp.ids)setHiddenPlans(hp.ids);if(cp)setCoachPlans(cp);if(cn)setCoachNotes(cn);setSyncing(false);if(!pf?.userName){setNamePrompt(true);if(!hp||!hp.ids){const defaultHidden=["v1","v2","v3"];setHiddenPlans(defaultHidden);Cloud.save(uid,"hiddenPlans",{ids:defaultHidden});}}
+      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(pf&&pf.navItems)setNavItems(pf.navItems);if(pf&&pf.userName)setUserName(pf.userName);if(pf&&pf.role)setUserRole(pf.role);if(pf&&pf.coachCode)setCoachCode(pf.coachCode);if(pf?.notifySession===false)setNotifySession(false);if(pf?.notifyPlan===false)setNotifyPlan(false);if(mp)setMyPlans(mp);if(hp&&hp.ids)setHiddenPlans(hp.ids);if(cp)setCoachPlans(cp);if(cn)setCoachNotes(cn);setSyncing(false);if(!pf?.userName){setNamePrompt(true);if(!hp||!hp.ids){const defaultHidden=["v1","v2","v3"];setHiddenPlans(defaultHidden);Cloud.save(uid,"hiddenPlans",{ids:defaultHidden});}}
     });
     unsubs.current.push(
       Cloud.listen(uid,"history",data=>setHist(data)),
@@ -765,7 +770,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
 
   // MAIN RETURN
   return(
-  <div style={{background:C.bg,minHeight:"100vh",color:C.txt,paddingBottom:screen==="workout"?"130px":"0"}}>
+  <div style={{background:C.bg,minHeight:"100vh",color:C.txt,paddingBottom:screen==="workout"?"130px":"70px"}}>
     {/* HEADER */}
     <div style={{background:`linear-gradient(180deg,${C.card},${C.bg})`,borderBottom:`1px solid ${C.bdr}`,padding:`calc(12px + env(safe-area-inset-top, 0px)) 16px 12px 16px`,position:"sticky",top:0,zIndex:50}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",maxWidth:600,margin:"0 auto"}}>
@@ -789,6 +794,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
                 <button onClick={()=>{setPlanMenu(false);setScreen("community");loadCommunityPlans();history.pushState({screen:"community"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontWeight:600,fontSize:13}}>🌐 Community Plans</button>
                 <button onClick={()=>{setPlanMenu(false);setScreen("leaderboard");loadLeaderboard();history.pushState({screen:"leaderboard"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontWeight:600,fontSize:13}}>🏆 Leaderboard</button>
                 <button onClick={()=>{setScreen("changelog");setPlanMenu(false);history.pushState({screen:"changelog"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontSize:12,fontWeight:600}}>📋 Latest App Updates</button>
+                <button onClick={()=>{setPlanMenu(false);setNavEditOpen(true);}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontSize:12,fontWeight:600}}>🔧 Edit Navigation Bar</button>
                 <button onClick={()=>{setPlanMenu(false);if(navigator.share){navigator.share({title:"Wieser Workouts",text:"Check out Wieser Workouts — a free workout tracker with custom plans, progress tracking, and coaching!",url:window.location.origin}).catch(()=>{});}else{navigator.clipboard.writeText(window.location.origin);alert("Link copied to clipboard!");}}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:"#22C55E",cursor:"pointer",fontSize:12,fontWeight:600}}>📤 Share This App</button>
                 <div style={{borderTop:`1px solid ${C.bdr}`,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>{user.photoURL&&<img src={user.photoURL} style={{width:24,height:24,borderRadius:12}} referrerPolicy="no-referrer"/>}<span onClick={()=>setNamePrompt(true)} style={{fontSize:11,color:userName?C.dim:C.acc,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",cursor:"pointer"}}>{userName||"Set your name ✎"}</span></div>
@@ -898,7 +904,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
                   </div>
                   {dy.exercises?.map((ex,xi)=>(
                     <div key={xi} style={{display:"grid",gridTemplateColumns:"1fr 80px 32px",gap:4,marginBottom:3}}>
-                      <select value={ALL_EXERCISES.includes(ex.name)?ex.name:"_custom"} onChange={e=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));const val=e.target.value;if(val!=="_custom"){np[pi].days[di].exercises[xi].name=val;np[pi].days[di].exercises[xi].cues=autoCue(val);const grp=EX_GRP[val]||Object.entries(EX_BY_EQUIP).find(([g,pools])=>Object.values(pools).some(arr=>arr.includes(val)))?.[0]||ex.group;np[pi].days[di].exercises[xi].group=grp;}setCpDraft({...cpDraft,phases:np});}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:4,padding:"5px 8px",color:C.txt,fontSize:11,outline:"none",fontFamily:"inherit",maxWidth:180,appearance:"auto"}}>{!ALL_EXERCISES.includes(ex.name)&&<option value="_custom">{ex.name}</option>}{ALL_EXERCISES.map(n=><option key={n} value={n}>{n}</option>)}</select>
+                      <select value={ALL_EXERCISES.includes(ex.name)?ex.name:"_custom"} onChange={e=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));const val=e.target.value;if(val==="_newcustom"){const cn=prompt("Enter custom exercise name:");if(cn&&cn.trim()){np[pi].days[di].exercises[xi].name=cn.trim();np[pi].days[di].exercises[xi].cues="Focus on form. Controlled tempo. Full range of motion.";np[pi].days[di].exercises[xi].group=ex.group||"other";}setCpDraft({...cpDraft,phases:np});}else if(val!=="_custom"){np[pi].days[di].exercises[xi].name=val;np[pi].days[di].exercises[xi].cues=autoCue(val);const grp=EX_GRP[val]||Object.entries(EX_BY_EQUIP).find(([g,pools])=>Object.values(pools).some(arr=>arr.includes(val)))?.[0]||ex.group;np[pi].days[di].exercises[xi].group=grp;setCpDraft({...cpDraft,phases:np});}}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:4,padding:"5px 8px",color:C.txt,fontSize:11,outline:"none",fontFamily:"inherit",maxWidth:180,appearance:"auto"}}><option value="_newcustom">✏️ Custom...</option>{!ALL_EXERCISES.includes(ex.name)&&<option value="_custom">{ex.name}</option>}{ALL_EXERCISES.map(n=><option key={n} value={n}>{n}</option>)}</select>
                       <input value={ex.sets} onChange={e=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days[di].exercises[xi].sets=e.target.value;setCpDraft({...cpDraft,phases:np});}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:4,padding:"5px 6px",color:C.dim,fontSize:10,outline:"none",textAlign:"center",fontFamily:"inherit"}}/>
                       <button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days[di].exercises.splice(xi,1);setCpDraft({...cpDraft,phases:np});}} style={{background:"transparent",border:"none",color:"#EF4444",cursor:"pointer",fontSize:14,padding:0}}>✕</button>
                     </div>
@@ -1826,6 +1832,55 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           )}
         </div>
       </div>)}
+    {/* ══════ BOTTOM NAV DOCK ══════ */}
+    {user&&screen!=="login"&&(
+      <div style={{position:"fixed",bottom:0,left:0,right:0,background:C.card,borderTop:`1px solid ${C.bdr}`,zIndex:45,paddingBottom:"env(safe-area-inset-bottom,0px)"}}>
+        <div style={{display:"flex",justifyContent:"space-around",alignItems:"center",maxWidth:600,margin:"0 auto",padding:"6px 0"}}>
+          {navItems.map(id=>{const opt=NAV_OPTIONS.find(o=>o.id===id);if(!opt)return null;const isActive=(id==="home"&&screen==="home")||(id==="plans"&&screen==="plans")||(id==="community"&&screen==="community")||(id==="create"&&screen==="create")||(id==="coaching"&&screen==="coaching")||(id==="leaderboard"&&screen==="leaderboard")||(id==="progress"&&screen==="progress")||(id==="chat"&&screen==="chatlist");return(
+            <button key={id} onClick={()=>{setPlanMenu(false);opt.action();}} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,background:"transparent",border:"none",color:isActive?C.acc:C.fnt,cursor:"pointer",padding:"4px 8px",minWidth:0,flex:1,position:"relative"}}>
+              <span style={{fontSize:18,lineHeight:1}}>{opt.icon}{id==="chat"&&chatUnread>0&&<span style={{position:"absolute",top:0,right:"calc(50% - 16px)",background:"#EF4444",color:"#fff",fontSize:8,fontWeight:800,borderRadius:8,padding:"0 4px",minWidth:12,textAlign:"center"}}>{chatUnread>9?"9+":chatUnread}</span>}</span>
+              <span style={{fontSize:9,fontWeight:isActive?700:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:60}}>{opt.label}</span>
+            </button>);})}
+        </div>
+      </div>
+    )}
+
+    {/* ══════ NAV EDIT MODAL ══════ */}
+    {navEditOpen&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.7)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setNavEditOpen(false)}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:16,padding:"20px",maxWidth:360,width:"100%",maxHeight:"80vh",overflowY:"auto"}}>
+        <div style={{fontFamily:"Outfit",fontSize:18,fontWeight:800,marginBottom:4}}>Edit Navigation Bar</div>
+        <div style={{fontSize:12,color:C.dim,marginBottom:16}}>Tap to add or remove items. Drag to reorder. Max 5 items.</div>
+
+        <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Current Navigation</div>
+        {navItems.map((id,idx)=>{const opt=NAV_OPTIONS.find(o=>o.id===id);if(!opt)return null;return(
+          <div key={id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,marginBottom:4}}>
+            <div style={{display:"flex",flexDirection:"column",gap:2}}>
+              {idx>0&&<button onClick={()=>{const n=[...navItems];[n[idx-1],n[idx]]=[n[idx],n[idx-1]];setNavItems(n);}} style={{background:"transparent",border:"none",color:C.dim,cursor:"pointer",fontSize:10,padding:0,lineHeight:1}}>▲</button>}
+              {idx<navItems.length-1&&<button onClick={()=>{const n=[...navItems];[n[idx],n[idx+1]]=[n[idx+1],n[idx]];setNavItems(n);}} style={{background:"transparent",border:"none",color:C.dim,cursor:"pointer",fontSize:10,padding:0,lineHeight:1}}>▼</button>}
+            </div>
+            <span style={{fontSize:18}}>{opt.icon}</span>
+            <span style={{flex:1,fontSize:13,fontWeight:600,color:C.txt}}>{opt.label}</span>
+            <button onClick={()=>{setNavItems(navItems.filter(i=>i!==id));}} style={{padding:"4px 10px",borderRadius:6,border:"1px solid #EF444430",background:"#EF444410",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>Remove</button>
+          </div>);})}
+
+        {navItems.length<5&&(<>
+          <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginTop:16,marginBottom:8}}>Available Items</div>
+          {NAV_OPTIONS.filter(o=>!navItems.includes(o.id)).map(opt=>(
+            <button key={opt.id} onClick={()=>{if(navItems.length<5)setNavItems([...navItems,opt.id]);}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"10px 12px",background:"transparent",border:`1px dashed ${C.sbdr}`,borderRadius:10,marginBottom:4,cursor:"pointer",textAlign:"left"}}>
+              <span style={{fontSize:18}}>{opt.icon}</span>
+              <span style={{fontSize:13,fontWeight:600,color:C.dim}}>{opt.label}</span>
+              <span style={{marginLeft:"auto",fontSize:11,color:C.acc,fontWeight:700}}>+ Add</span>
+            </button>
+          ))}
+        </>)}
+
+        <div style={{display:"flex",gap:8,marginTop:16}}>
+          <button onClick={()=>{setNavItems(DEFAULT_NAV);}} style={{flex:1,padding:"12px",borderRadius:10,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:13,fontWeight:600,cursor:"pointer"}}>Reset Default</button>
+          <button onClick={()=>{savePrefs({navItems});setNavEditOpen(false);}} style={{flex:2,padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>Save</button>
+        </div>
+      </div>
+    </div>)}
+
   </div>);
 }
 
