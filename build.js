@@ -72,7 +72,7 @@ const setupStart = html.indexOf("<script>\nconst iconSvg");
 const setupEnd = html.indexOf("</script>\n</head>") + "</script>".length;
 let setupScript = html.substring(setupStart, setupEnd);
 setupScript = setupScript.replace(
-  "const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.auth();const db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{});",
+  "const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.auth();const db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(function(){});",
   "// Firebase init deferred to boot()"
 );
 

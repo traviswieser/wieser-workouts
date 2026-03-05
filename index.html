@@ -3968,6 +3968,26 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     if (ss.length > 1) return ss[1][1];
     return null;
   }, [hist, planId, phaseIdx, dayIdx, today]);
+  const draftKey = `_draft_${planId}-${phaseIdx}-${dayIdx}-${today}`;
+  const saveDraft = useCallback(async (logData, notes) => {
+    if (!user) return;
+    try {
+      await Cloud.save(user.uid, "workoutDraft", {
+        key: draftKey,
+        log: logData,
+        notes: notes || "",
+        ts: Date.now()
+      });
+    } catch (e) {
+      console.error("Draft save:", e);
+    }
+  }, [user, draftKey]);
+  const clearDraft = useCallback(async () => {
+    if (!user) return;
+    try {
+      await Cloud.save(user.uid, "workoutDraft", {});
+    } catch (e) {}
+  }, [user]);
   const initLog = useCallback(() => {
     const k = `${planId}-${phaseIdx}-${dayIdx}-${today}`;
     if (hist[k]) {
