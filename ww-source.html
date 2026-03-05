@@ -485,7 +485,7 @@ function App(){
   const allPlans=useMemo(()=>[...ALL,...Object.values(myPlans).filter(p=>p._published!==false),...Object.values(coachPlans).filter(p=>p._published!==false)],[myPlans,coachPlans]);
   const visiblePlans=useMemo(()=>allPlans.filter(p=>!hiddenPlans.includes(p.id)),[allPlans,hiddenPlans]);
   const hasNoPlan=visiblePlans.length===0||hasNoPlanTip;
-  const plan=visiblePlans.find(p=>p.id===planId)||visiblePlans[0]||allPlans[0];
+  const plan=visiblePlans.find(p=>p.id===planId)||visiblePlans[0]||allPlans[0]||{id:"none",name:"No Plan Selected",subtitle:"Create or import a plan to get started",phases:[]};
   const phase=plan.phases[phaseIdx];
   const day=phase?.days[dayIdx];
   const today=new Date().toISOString().slice(0,10);
