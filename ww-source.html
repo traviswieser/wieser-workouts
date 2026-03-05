@@ -800,7 +800,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
 
   // MAIN RETURN
   return(
-  <div style={{background:C.bg,minHeight:"100vh",color:C.txt,paddingBottom:screen==="workout"?"160px":"70px"}}>
+  <div style={{background:C.bg,minHeight:"100vh",color:C.txt,paddingBottom:screen==="workout"?"200px":"70px"}}>
     {/* HEADER */}
     <div style={{background:`linear-gradient(180deg,${C.card},${C.bg})`,borderBottom:`1px solid ${C.bdr}`,padding:`calc(12px + env(safe-area-inset-top, 0px)) 16px 12px 16px`,position:"sticky",top:0,zIndex:50}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",maxWidth:600,margin:"0 auto"}}>
@@ -2059,7 +2059,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
 
     {/* REST TIMER */}
     {restRunning&&restSec>0&&screen==="workout"&&(
-      <div onClick={()=>{setRestRunning(false);setRestSec(0);}} style={{position:"fixed",bottom:screen==="workout"?140:80,left:"50%",transform:"translateX(-50%)",zIndex:55,background:restSec<=10?"linear-gradient(135deg,#EF4444,#DC2626)":"linear-gradient(135deg,#1E293B,#0F172A)",border:`2px solid ${restSec<=10?"#EF444460":"#5B8DEF40"}`,borderRadius:50,padding:"10px 24px",boxShadow:"0 8px 32px rgba(0,0,0,.5)",cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
+      <div onClick={()=>{setRestRunning(false);setRestSec(0);}} style={{position:"fixed",bottom:screen==="workout"?180:80,left:"50%",transform:"translateX(-50%)",zIndex:55,background:restSec<=10?"linear-gradient(135deg,#EF4444,#DC2626)":"linear-gradient(135deg,#1E293B,#0F172A)",border:`2px solid ${restSec<=10?"#EF444460":"#5B8DEF40"}`,borderRadius:50,padding:"10px 24px",boxShadow:"0 8px 32px rgba(0,0,0,.5)",cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
         <span style={{fontSize:13,color:restSec<=10?"#fff":"#5B8DEF",fontWeight:700}}>⏳ Rest</span>
         <span style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:"#fff"}}>{Math.floor(restSec/60)}:{(restSec%60)<10?"0":""}{restSec%60}</span>
         <span style={{fontSize:10,color:"#ffffff80"}}>tap to dismiss</span>
@@ -2067,7 +2067,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
 
     {/* FINISH WORKOUT BUTTON */}
     {screen==="workout"&&(
-      <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"12px 16px",paddingBottom:"max(16px, env(safe-area-inset-bottom, 16px))",background:`linear-gradient(180deg,transparent,${C.bg} 30%)`,zIndex:50}}>
+      <div style={{position:"fixed",bottom:56,left:0,right:0,padding:"8px 16px 4px",background:`linear-gradient(180deg,transparent,${C.bg} 30%)`,zIndex:46}}>
         <div style={{maxWidth:600,margin:"0 auto"}}>
           <button onClick={save} style={{width:"100%",padding:"14px",borderRadius:12,border:"none",fontWeight:700,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all .3s",background:saved?"linear-gradient(135deg,#16A34A,#15803D)":`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",boxShadow:saved?"0 4px 24px rgba(34,197,94,.3)":"0 4px 24px rgba(255,107,44,.3)"}}>
             {saved?<><Check/> Workout Saved ✓{elapsed>0?" · "+fmtElapsed(elapsed):""}</>:syncing?<><span className="syncing">Saving...</span></>:<><Check/> Finish Workout</>}
@@ -2114,7 +2114,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     {isOffline&&(<div style={{position:"fixed",top:0,left:0,right:0,zIndex:99,background:"#EF4444",color:"#fff",padding:"6px 16px",fontSize:12,fontWeight:700,textAlign:"center"}}>📡 You're offline — changes will sync when you reconnect</div>)}
 
     {/* ══════ BOTTOM NAV DOCK ══════ */}
-    {user&&screen!=="login"&&screen!=="workout"&&(
+    {user&&screen!=="login"&&(
       <div style={{position:"fixed",bottom:0,left:0,right:0,background:C.card,borderTop:`1px solid ${C.bdr}`,zIndex:45,paddingBottom:"env(safe-area-inset-bottom,0px)"}}>
         <div style={{display:"flex",justifyContent:"space-around",alignItems:"center",maxWidth:600,margin:"0 auto",padding:"6px 0"}}>
           {navItems.map(id=>{const opt=NAV_OPTIONS.find(o=>o.id===id);if(!opt)return null;const isActive=(id==="home"&&screen==="home")||(id==="plans"&&screen==="plans")||(id==="community"&&screen==="community")||(id==="create"&&screen==="create")||(id==="coaching"&&screen==="coaching")||(id==="leaderboard"&&screen==="leaderboard")||(id==="progress"&&screen==="progress")||(id==="chat"&&screen==="chatlist");return(
