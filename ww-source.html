@@ -368,7 +368,7 @@ function App(){
   const [log,setLog]=useState({});
   const [hist,setHist]=useState({});
   const [swaps,setSwaps]=useState({});
-  const [openEx,setOpenEx]=useState(null);
+  const [openEx,setOpenEx]=useState(new Set());
   const [planMenu,setPlanMenu]=useState(false);
   const [saved,setSaved]=useState(false);
   const [swapPanel,setSwapPanel]=useState(null);
@@ -478,12 +478,13 @@ function App(){
   const [coachDirLoading,setCoachDirLoading]=useState(false);
   const [coachAccepting,setCoachAccepting]=useState(true);
   const [coachSpecialty,setCoachSpecialty]=useState("");
+  const [hasNoPlanTip,setHasNoPlanTip]=useState(false);
   const unsubs=useRef([]);
   const C=theme==="dark"?DARK:LIGHT;
 
   const allPlans=useMemo(()=>[...ALL,...Object.values(myPlans).filter(p=>p._published!==false),...Object.values(coachPlans).filter(p=>p._published!==false)],[myPlans,coachPlans]);
   const visiblePlans=useMemo(()=>allPlans.filter(p=>!hiddenPlans.includes(p.id)),[allPlans,hiddenPlans]);
-  const hasNoPlan=visiblePlans.length===0;
+  const hasNoPlan=visiblePlans.length===0||hasNoPlanTip;
   const plan=visiblePlans.find(p=>p.id===planId)||visiblePlans[0]||allPlans[0];
   const phase=plan.phases[phaseIdx];
   const day=phase?.days[dayIdx];
@@ -696,9 +697,9 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
   const getPrev=useCallback(()=>{const pf=`${planId}-${phaseIdx}-${dayIdx}`;const ss=Object.entries(hist).filter(([k])=>k.startsWith(pf)).sort(([a],[b])=>b.localeCompare(a));if(ss.length>0&&ss[0][0]!==`${pf}-${today}`)return ss[0][1];if(ss.length>1)return ss[1][1];return null;},[hist,planId,phaseIdx,dayIdx,today]);
   const initLog=useCallback(()=>{const k=`${planId}-${phaseIdx}-${dayIdx}-${today}`;if(hist[k]){setLog(hist[k]);setWkNotes(hist[k]._notes||"");return;}const l={};getExs().forEach((e,i)=>{if(DURATION_EX.has(e.name)){l[i]={name:e.name,sets:[{weight:"",reps:""}]};}else{const n=parseInt(e.sets)||3;l[i]={name:e.name,sets:Array(Math.min(n,6)).fill(0).map(()=>({weight:"",reps:""}))};}});setLog(l);setWkNotes("");},[planId,phaseIdx,dayIdx,today,hist,getExs]);
 
-  const go=(p,d)=>{setPhaseIdx(p);setDayIdx(d);setScreen("workout");setOpenEx(null);setSaved(false);setSwapPanel(null);setAddExForm(null);setAddExName("");setDelConfirm(false);setEditPanel(null);history.pushState({screen:"workout"},"");};
+  const go=(p,d)=>{setPhaseIdx(p);setDayIdx(d);setScreen("workout");setOpenEx(new Set());setSaved(false);setSwapPanel(null);setAddExForm(null);setAddExName("");setDelConfirm(false);setEditPanel(null);history.pushState({screen:"workout"},"");};
   useEffect(()=>{if(screen==="workout"&&user)initLog();},[screen,phaseIdx,dayIdx,planId,user]);
-  useEffect(()=>{history.replaceState({screen:"home"},"");const onPop=(e)=>{const s=e.state&&e.state.screen||"home";setScreen(s);setOpenEx(null);setSwapPanel(null);setProgOpen(null);};window.addEventListener("popstate",onPop);return()=>window.removeEventListener("popstate",onPop);},[]);
+  useEffect(()=>{history.replaceState({screen:"home"},"");const onPop=(e)=>{const s=e.state&&e.state.screen||"home";setScreen(s);setOpenEx(new Set());setSwapPanel(null);setProgOpen(null);};window.addEventListener("popstate",onPop);return()=>window.removeEventListener("popstate",onPop);},[]);
 
   // REST TIMER
   const parseRest=(s)=>{if(!s)return 90;const m=s.match(/(\d+)/g);return m?parseInt(m[m.length-1]):90;};
@@ -734,7 +735,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
   // REORDER
   const getCurOrder=()=>{const ck=dayKey;const cur=exOrder[ck];const len=exs.length;if(cur&&cur.length===len)return[...cur];return Array.from({length:len},(_,i)=>i);};
   const isReordered=useMemo(()=>{const ck=dayKey;const cur=exOrder[ck];if(!cur)return false;return cur.some((v,i)=>v!==i);},[exOrder,dayKey]);
-  const moveEx=async(ei,dir)=>{if(!user)return;const cur=getCurOrder();const ni=ei+dir;if(ni<0||ni>=cur.length)return;const tmp=cur[ei];cur[ei]=cur[ni];cur[ni]=tmp;const no={...exOrder,[dayKey]:cur};setExOrder(no);Cloud.save(user.uid,"exOrder",no);setOpenEx(null);};
+  const moveEx=async(ei,dir)=>{if(!user)return;const cur=getCurOrder();const ni=ei+dir;if(ni<0||ni>=cur.length)return;const tmp=cur[ei];cur[ei]=cur[ni];cur[ni]=tmp;const no={...exOrder,[dayKey]:cur};setExOrder(no);Cloud.save(user.uid,"exOrder",no);setOpenEx(new Set());};
   const resetOrder=async()=>{if(!user)return;const no={...exOrder};delete no[dayKey];setExOrder(no);Cloud.save(user.uid,"exOrder",no);};
 
   // EDIT EXERCISE
@@ -916,6 +917,16 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           {cpDraft.phases?.map((ph,pi)=>(
             <div key={pi} style={{marginBottom:12}}>
               <div style={{background:`linear-gradient(135deg,${C.acc}15,${C.card})`,border:`1px solid ${C.acc}30`,borderRadius:12,padding:"12px 16px",marginBottom:8}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                  <div style={{display:"flex",gap:4,alignItems:"center",flexShrink:0}}>
+                    {pi>0&&<button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));const tmp=np[pi];np[pi]=np[pi-1];np[pi-1]=tmp;setCpDraft({...cpDraft,phases:np});}} style={{background:"none",border:`1px solid ${C.sbdr}`,borderRadius:4,color:C.dim,cursor:"pointer",fontSize:9,padding:"2px 4px"}}>▲</button>}
+                    {pi<cpDraft.phases.length-1&&<button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));const tmp=np[pi];np[pi]=np[pi+1];np[pi+1]=tmp;setCpDraft({...cpDraft,phases:np});}} style={{background:"none",border:`1px solid ${C.sbdr}`,borderRadius:4,color:C.dim,cursor:"pointer",fontSize:9,padding:"2px 4px"}}>▼</button>}
+                  </div>
+                  <div style={{display:"flex",gap:4}}>
+                    <button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));const dup=JSON.parse(JSON.stringify(ph));dup.title+=" (Copy)";np.splice(pi+1,0,dup);setCpDraft({...cpDraft,phases:np});}} title="Duplicate phase" style={{background:"none",border:`1px solid #A78BFA30`,borderRadius:4,color:"#A78BFA",cursor:"pointer",fontSize:9,padding:"2px 6px"}}>⧉ Dup</button>
+                    {cpDraft.phases.length>1&&<button onClick={()=>{if(confirm("Delete "+ph.title+"?")){const np=JSON.parse(JSON.stringify(cpDraft.phases));np.splice(pi,1);setCpDraft({...cpDraft,phases:np});}}} title="Delete phase" style={{background:"none",border:"1px solid #EF444430",borderRadius:4,color:"#EF4444",cursor:"pointer",fontSize:9,padding:"2px 6px"}}>🗑</button>}
+                  </div>
+                </div>
                 <input value={ph.title} onChange={e=>{const np=[...cpDraft.phases];np[pi]={...ph,title:e.target.value};setCpDraft({...cpDraft,phases:np});}} style={{background:"transparent",border:"none",color:C.acc,fontSize:14,fontWeight:800,outline:"none",width:"100%",fontFamily:"inherit"}}/>
                 <div style={{display:"flex",gap:8,marginTop:4}}>
                   <input value={ph.weeks||""} onChange={e=>{const np=[...cpDraft.phases];np[pi]={...ph,weeks:e.target.value};setCpDraft({...cpDraft,phases:np});}} placeholder="Weeks 1-4" style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:6,padding:"4px 8px",color:C.dim,fontSize:11,outline:"none",width:100,fontFamily:"inherit"}}/>
@@ -925,22 +936,32 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
 
               {ph.days?.map((dy,di)=>(
                 <div key={di} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:10,padding:"10px 14px",marginBottom:6,marginLeft:8}}>
-                  <div style={{display:"flex",gap:8,marginBottom:8}}>
+                  <div style={{display:"flex",gap:6,marginBottom:8,alignItems:"center"}}>
+                    <div style={{display:"flex",flexDirection:"column",gap:0,flexShrink:0}}>
+                      <button onClick={()=>{if(di===0)return;const np=JSON.parse(JSON.stringify(cpDraft.phases));const tmp=np[pi].days[di];np[pi].days[di]=np[pi].days[di-1];np[pi].days[di-1]=tmp;setCpDraft({...cpDraft,phases:np});}} style={{background:"none",border:"none",cursor:di===0?"default":"pointer",fontSize:10,color:di===0?C.bdr:C.dim,padding:0,lineHeight:1}}>▲</button>
+                      <button onClick={()=>{if(di>=ph.days.length-1)return;const np=JSON.parse(JSON.stringify(cpDraft.phases));const tmp=np[pi].days[di];np[pi].days[di]=np[pi].days[di+1];np[pi].days[di+1]=tmp;setCpDraft({...cpDraft,phases:np});}} style={{background:"none",border:"none",cursor:di>=ph.days.length-1?"default":"pointer",fontSize:10,color:di>=ph.days.length-1?C.bdr:C.dim,padding:0,lineHeight:1}}>▼</button>
+                    </div>
                     <input value={dy.title} onChange={e=>{const np=[...cpDraft.phases];np[pi].days[di]={...dy,title:e.target.value};setCpDraft({...cpDraft,phases:np});}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:6,padding:"6px 10px",color:C.txt,fontSize:13,fontWeight:700,outline:"none",width:80,fontFamily:"inherit"}}/>
                     <input value={dy.sub} onChange={e=>{const np=[...cpDraft.phases];np[pi].days[di]={...dy,sub:e.target.value};setCpDraft({...cpDraft,phases:np});}} style={{flex:1,background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:6,padding:"6px 10px",color:C.dim,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
+                    <button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));const dup=JSON.parse(JSON.stringify(dy));dup.title="Day "+(ph.days.length+1);dup.sub+=" (Copy)";np[pi].days.splice(di+1,0,dup);setCpDraft({...cpDraft,phases:np});}} title="Duplicate day" style={{background:"none",border:`1px solid #A78BFA30`,borderRadius:6,color:"#A78BFA",cursor:"pointer",fontSize:10,padding:"4px 6px",flexShrink:0}}>⧉</button>
+                    {ph.days.length>1&&<button onClick={()=>{if(confirm("Delete "+dy.title+"?")){const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days.splice(di,1);setCpDraft({...cpDraft,phases:np});}}} title="Delete day" style={{background:"none",border:"1px solid #EF444430",borderRadius:6,color:"#EF4444",cursor:"pointer",fontSize:10,padding:"4px 6px",flexShrink:0}}>🗑</button>}
                   </div>
                   {dy.exercises?.map((ex,xi)=>(
-                    <div key={xi} style={{display:"grid",gridTemplateColumns:"1fr 80px 32px",gap:4,marginBottom:3}}>
-                      <select value={ALL_EXERCISES.includes(ex.name)?ex.name:"_custom"} onChange={e=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));const val=e.target.value;if(val==="_newcustom"){const cn=prompt("Enter custom exercise name:");if(cn&&cn.trim()){np[pi].days[di].exercises[xi].name=cn.trim();np[pi].days[di].exercises[xi].cues="Focus on form. Controlled tempo. Full range of motion.";np[pi].days[di].exercises[xi].group=ex.group||"other";}setCpDraft({...cpDraft,phases:np});}else if(val!=="_custom"){np[pi].days[di].exercises[xi].name=val;np[pi].days[di].exercises[xi].cues=autoCue(val);const grp=EX_GRP[val]||Object.entries(EX_BY_EQUIP).find(([g,pools])=>Object.values(pools).some(arr=>arr.includes(val)))?.[0]||ex.group;np[pi].days[di].exercises[xi].group=grp;setCpDraft({...cpDraft,phases:np});}}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:4,padding:"5px 8px",color:C.txt,fontSize:11,outline:"none",fontFamily:"inherit",maxWidth:180,appearance:"auto"}}><option value="_newcustom">✏️ Custom...</option>{!ALL_EXERCISES.includes(ex.name)&&<option value="_custom">{ex.name}</option>}{ALL_EXERCISES.map(n=><option key={n} value={n}>{n}</option>)}</select>
-                      <input value={ex.sets} onChange={e=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days[di].exercises[xi].sets=e.target.value;setCpDraft({...cpDraft,phases:np});}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:4,padding:"5px 6px",color:C.dim,fontSize:10,outline:"none",textAlign:"center",fontFamily:"inherit"}}/>
-                      <select value={ex.ss||""} onChange={e=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days[di].exercises[xi].ss=e.target.value;setCpDraft({...cpDraft,phases:np});}} title="Superset group" style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:4,padding:"3px",color:ex.ss?"#A78BFA":C.fnt,fontSize:9,outline:"none",fontFamily:"inherit",width:32,textAlign:"center"}}><option value="">–</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select>
-                      <button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days[di].exercises.splice(xi,1);setCpDraft({...cpDraft,phases:np});}} style={{background:"transparent",border:"none",color:"#EF4444",cursor:"pointer",fontSize:14,padding:0}}>✕</button>
+                    <div key={xi} style={{display:"flex",alignItems:"center",gap:3,marginBottom:4}}>
+                      <div style={{display:"flex",flexDirection:"column",gap:0,flexShrink:0}}>
+                        <button onClick={()=>{if(xi===0)return;const np=JSON.parse(JSON.stringify(cpDraft.phases));const tmp=np[pi].days[di].exercises[xi];np[pi].days[di].exercises[xi]=np[pi].days[di].exercises[xi-1];np[pi].days[di].exercises[xi-1]=tmp;setCpDraft({...cpDraft,phases:np});}} style={{background:"none",border:"none",cursor:xi===0?"default":"pointer",fontSize:8,color:xi===0?C.bdr:C.dim,padding:0,lineHeight:1}}>▲</button>
+                        <button onClick={()=>{if(xi>=dy.exercises.length-1)return;const np=JSON.parse(JSON.stringify(cpDraft.phases));const tmp=np[pi].days[di].exercises[xi];np[pi].days[di].exercises[xi]=np[pi].days[di].exercises[xi+1];np[pi].days[di].exercises[xi+1]=tmp;setCpDraft({...cpDraft,phases:np});}} style={{background:"none",border:"none",cursor:xi>=dy.exercises.length-1?"default":"pointer",fontSize:8,color:xi>=dy.exercises.length-1?C.bdr:C.dim,padding:0,lineHeight:1}}>▼</button>
+                      </div>
+                      <select value={ALL_EXERCISES.includes(ex.name)?ex.name:"_custom"} onChange={e=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));const val=e.target.value;if(val==="_newcustom"){const cn=prompt("Enter custom exercise name:");if(cn&&cn.trim()){np[pi].days[di].exercises[xi].name=cn.trim();np[pi].days[di].exercises[xi].cues="Focus on form. Controlled tempo. Full range of motion.";np[pi].days[di].exercises[xi].group=ex.group||"other";}setCpDraft({...cpDraft,phases:np});}else if(val!=="_custom"){np[pi].days[di].exercises[xi].name=val;np[pi].days[di].exercises[xi].cues=autoCue(val);const grp=EX_GRP[val]||Object.entries(EX_BY_EQUIP).find(([g,pools])=>Object.values(pools).some(arr=>arr.includes(val)))?.[0]||ex.group;np[pi].days[di].exercises[xi].group=grp;setCpDraft({...cpDraft,phases:np});}}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:4,padding:"5px 8px",color:C.txt,fontSize:11,outline:"none",fontFamily:"inherit",flex:1,minWidth:0,appearance:"auto"}}><option value="_newcustom">✏️ Custom...</option>{!ALL_EXERCISES.includes(ex.name)&&<option value="_custom">{ex.name}</option>}{ALL_EXERCISES.map(n=><option key={n} value={n}>{n}</option>)}</select>
+                      <input value={ex.sets} onChange={e=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days[di].exercises[xi].sets=e.target.value;setCpDraft({...cpDraft,phases:np});}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:4,padding:"5px 6px",color:C.dim,fontSize:10,outline:"none",textAlign:"center",fontFamily:"inherit",width:70,flexShrink:0}}/>
+                      <select value={ex.ss||""} onChange={e=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days[di].exercises[xi].ss=e.target.value;setCpDraft({...cpDraft,phases:np});}} title="Superset group" style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:4,padding:"3px",color:ex.ss?"#A78BFA":C.fnt,fontSize:9,outline:"none",fontFamily:"inherit",width:28,flexShrink:0,textAlign:"center"}}><option value="">–</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select>
+                      <button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days[di].exercises.splice(xi,1);setCpDraft({...cpDraft,phases:np});}} style={{background:"transparent",border:"none",color:"#EF4444",cursor:"pointer",fontSize:12,padding:"4px",flexShrink:0,lineHeight:1}}>✕</button>
                     </div>
                   ))}
                   <button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));const defEx=ALL_EXERCISES[0]||"Push-Ups";const defGrp=EX_GRP[defEx]||Object.entries(EX_BY_EQUIP).find(([g,pools])=>Object.values(pools).some(arr=>arr.includes(defEx)))?.[0]||"other";np[pi].days[di].exercises.push({name:defEx,sets:"3×10–12",cues:autoCue(defEx),group:defGrp});setCpDraft({...cpDraft,phases:np});}} style={{fontSize:11,color:C.acc,background:"transparent",border:`1px dashed ${C.acc}40`,borderRadius:6,padding:"4px 8px",cursor:"pointer",width:"100%",marginTop:4}}>+ Add Exercise</button>
                 </div>
               ))}
-              <div style={{display:"flex",gap:6,marginLeft:8,marginBottom:8}}><button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days.push({title:"Day "+(ph.days.length+1),sub:"Muscle Group",exercises:[{name:"Exercise",sets:"3×10–12",cues:"Form cues.",group:"other"}]});setCpDraft({...cpDraft,phases:np});}} style={{fontSize:11,color:"#5B8DEF",background:"transparent",border:`1px dashed #5B8DEF40`,borderRadius:8,padding:"6px 10px",cursor:"pointer",flex:1}}>+ Add Day</button><button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));const dup=JSON.parse(JSON.stringify(ph.days[ph.days.length-1]||{title:"Day 1",sub:"Copy",exercises:[]}));dup.title="Day "+(ph.days.length+1);dup.sub+=" (Copy)";np[pi].days.push(dup);setCpDraft({...cpDraft,phases:np});}} style={{fontSize:11,color:"#A78BFA",background:"transparent",border:`1px dashed #A78BFA40`,borderRadius:8,padding:"6px 10px",cursor:"pointer",flex:1}}>⧉ Duplicate Last Day</button></div>
+              <button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days.push({title:"Day "+(ph.days.length+1),sub:"Muscle Group",exercises:[{name:"Exercise",sets:"3×10–12",cues:"Form cues.",group:"other"}]});setCpDraft({...cpDraft,phases:np});}} style={{fontSize:11,color:"#5B8DEF",background:"transparent",border:`1px dashed #5B8DEF40`,borderRadius:8,padding:"6px 10px",cursor:"pointer",width:"100%",marginLeft:8,marginBottom:8}}>+ Add Day</button>
             </div>
           ))}
           <button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases||[]));np.push({title:"Phase "+(np.length+1),weeks:"Weeks X–Y",desc:"Description",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[{title:"Day 1",sub:"Muscle Group",exercises:[{name:"Exercise",sets:"3×10–12",cues:"Form cues.",group:"other"}]}]});setCpDraft({...cpDraft,phases:np});}} style={{fontSize:12,color:"#A78BFA",background:"transparent",border:`1px dashed #A78BFA40`,borderRadius:10,padding:"10px",cursor:"pointer",width:"100%",marginBottom:16}}>+ Add Phase</button>
@@ -1470,7 +1491,8 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         {hasNoPlan&&(<div style={{marginBottom:20}}>
           <div style={{background:"linear-gradient(135deg,#1A1420,#141A22)",borderRadius:16,padding:"24px 20px",marginBottom:16,border:`1px solid ${C.bdr}`,textAlign:"center"}}>
             <div style={{fontSize:36,marginBottom:12}}>💪</div>
-            <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:C.acc,marginBottom:6}}>Welcome to Wieser Workouts!</div>
+            {hasNoPlanTip&&<button onClick={()=>setHasNoPlanTip(false)} style={{position:"absolute",top:12,right:12,background:"none",border:`1px solid ${C.sbdr}`,borderRadius:8,color:C.dim,cursor:"pointer",fontSize:11,padding:"4px 10px",fontWeight:600}}>✕ Close</button>}
+            <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:C.acc,marginBottom:6}}>{hasNoPlanTip?"Instructions & Tips":"Welcome to Wieser Workouts!"}</div>
             <div style={{fontSize:14,color:C.dim,lineHeight:1.7}}>Your personal workout tracker. Let's get you set up.</div>
           </div>
 
@@ -1806,6 +1828,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,color:C.txt}}>Push Notifications</span><button onClick={requestPushPermission} style={{padding:"6px 14px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:pushEnabled?"#22C55E":C.dim,fontSize:12,fontWeight:600,cursor:"pointer"}}>{pushEnabled?"✅ Enabled":"Enable"}</button></div>
             <button onClick={()=>setNavEditOpen(true)} style={{padding:"10px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"left"}}>🔧 Edit Navigation Bar</button>
             <button onClick={()=>{setScreen("changelog");history.pushState({screen:"changelog"},"");}} style={{padding:"10px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"left"}}>📋 Latest App Updates</button>
+            <button onClick={()=>{setScreen("home");setHasNoPlanTip(true);history.pushState({screen:"home"},"");}} style={{padding:"10px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"left"}}>💡 Instructions & Tips</button>
           </div>
         </div>
 
@@ -1894,7 +1917,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         {isReordered&&(<button onClick={resetOrder} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",padding:"10px",background:"#F59E0B08",border:"1px solid #F59E0B25",borderRadius:10,color:"#F59E0B",fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:8}}>↩ Reset to Default Order</button>)}
 
         {exs.map((exercise,ei)=>{
-          const open=openEx===ei;const pe=prev?.[ei];const pool=SWAP_POOLS[exercise.group]||[];const le=log[ei];const gc=GC[exercise.group]||"#6B7280";const isDur=DURATION_EX.has(exercise.name);const isRepsOnly=REPS_ONLY_EX.has(exercise.name);const curBest=(()=>{if(isDur||!le?.sets)return 0;let b=0;le.sets.forEach(s=>{const w=parseFloat(s.weight)||0;if(w>b)b=w;});return b;})();const prevPR=Stats.getPR(hist,planId,exercise.name);const isNewPR=curBest>0&&curBest>prevPR;
+          const open=openEx.has(ei);const pe=prev?.[ei];const pool=SWAP_POOLS[exercise.group]||[];const le=log[ei];const gc=GC[exercise.group]||"#6B7280";const isDur=DURATION_EX.has(exercise.name);const isRepsOnly=REPS_ONLY_EX.has(exercise.name);const curBest=(()=>{if(isDur||!le?.sets)return 0;let b=0;le.sets.forEach(s=>{const w=parseFloat(s.weight)||0;if(w>b)b=w;});return b;})();const prevPR=Stats.getPR(hist,planId,exercise.name);const isNewPR=curBest>0&&curBest>prevPR;
           const linked=isSS(ei);const linkedFromAbove=ei>0&&isSS(ei-1);const isCustom=exercise.custom;const customIdx=isCustom?exercise._origIdx-day.exercises.length:-1;const isEditing=editPanel===ei;
           return(
             <div key={ei}>
@@ -1906,7 +1929,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
                   <button onClick={(e)=>{e.stopPropagation();moveEx(ei,-1);}} disabled={ei===0} style={{background:"none",border:"none",cursor:ei===0?"default":"pointer",padding:0,lineHeight:1,fontSize:14,color:ei===0?C.bdr:C.dim,opacity:ei===0?.3:1}}>▲</button>
                   <button onClick={(e)=>{e.stopPropagation();moveEx(ei,1);}} disabled={ei===exs.length-1} style={{background:"none",border:"none",cursor:ei===exs.length-1?"default":"pointer",padding:0,lineHeight:1,fontSize:14,color:ei===exs.length-1?C.bdr:C.dim,opacity:ei===exs.length-1?.3:1}}>▼</button>
                 </div>
-                <button onClick={()=>{setOpenEx(open?null:ei);setSwapPanel(null);if(open)setEditPanel(null);}} style={{display:"flex",flex:1,alignItems:"center",justifyContent:"space-between",padding:"12px 14px 12px 8px",background:"none",border:"none",cursor:"pointer",textAlign:"left",minWidth:0}}>
+                <button onClick={()=>{setOpenEx(prev=>{const ns=new Set(prev);if(ns.has(ei)){ns.delete(ei);setEditPanel(null);}else{ns.add(ei);const curSS=exercise.ss;if(curSS){exs.forEach((e2,j)=>{if(e2.ss===curSS)ns.add(j);});}}setSwapPanel(null);return ns;});}} style={{display:"flex",flex:1,alignItems:"center",justifyContent:"space-between",padding:"12px 14px 12px 8px",background:"none",border:"none",cursor:"pointer",textAlign:"left",minWidth:0}}>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <span style={{background:C.acc,color:"#000",fontWeight:800,fontSize:11,minWidth:22,height:22,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{ei+1}</span>

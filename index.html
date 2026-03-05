@@ -2447,7 +2447,7 @@ function App() {
   const [log, setLog] = useState({});
   const [hist, setHist] = useState({});
   const [swaps, setSwaps] = useState({});
-  const [openEx, setOpenEx] = useState(null);
+  const [openEx, setOpenEx] = useState(new Set());
   const [planMenu, setPlanMenu] = useState(false);
   const [saved, setSaved] = useState(false);
   const [swapPanel, setSwapPanel] = useState(null);
@@ -2675,11 +2675,12 @@ function App() {
   const [coachDirLoading, setCoachDirLoading] = useState(false);
   const [coachAccepting, setCoachAccepting] = useState(true);
   const [coachSpecialty, setCoachSpecialty] = useState("");
+  const [hasNoPlanTip, setHasNoPlanTip] = useState(false);
   const unsubs = useRef([]);
   const C = theme === "dark" ? DARK : LIGHT;
   const allPlans = useMemo(() => [...ALL, ...Object.values(myPlans).filter(p => p._published !== false), ...Object.values(coachPlans).filter(p => p._published !== false)], [myPlans, coachPlans]);
   const visiblePlans = useMemo(() => allPlans.filter(p => !hiddenPlans.includes(p.id)), [allPlans, hiddenPlans]);
-  const hasNoPlan = visiblePlans.length === 0;
+  const hasNoPlan = visiblePlans.length === 0 || hasNoPlanTip;
   const plan = visiblePlans.find(p => p.id === planId) || visiblePlans[0] || allPlans[0];
   const phase = plan.phases[phaseIdx];
   const day = phase?.days[dayIdx];
@@ -3997,7 +3998,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     setPhaseIdx(p);
     setDayIdx(d);
     setScreen("workout");
-    setOpenEx(null);
+    setOpenEx(new Set());
     setSaved(false);
     setSwapPanel(null);
     setAddExForm(null);
@@ -4018,7 +4019,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     const onPop = e => {
       const s = e.state && e.state.screen || "home";
       setScreen(s);
-      setOpenEx(null);
+      setOpenEx(new Set());
       setSwapPanel(null);
       setProgOpen(null);
     };
@@ -4275,7 +4276,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     };
     setExOrder(no);
     Cloud.save(user.uid, "exOrder", no);
-    setOpenEx(null);
+    setOpenEx(new Set());
   };
   const resetOrder = async () => {
     if (!user) return;
@@ -5825,7 +5826,108 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       padding: "12px 16px",
       marginBottom: 8
     }
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 4,
+      alignItems: "center",
+      flexShrink: 0
+    }
+  }, pi > 0 && /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      const np = JSON.parse(JSON.stringify(cpDraft.phases));
+      const tmp = np[pi];
+      np[pi] = np[pi - 1];
+      np[pi - 1] = tmp;
+      setCpDraft({
+        ...cpDraft,
+        phases: np
+      });
+    },
+    style: {
+      background: "none",
+      border: `1px solid ${C.sbdr}`,
+      borderRadius: 4,
+      color: C.dim,
+      cursor: "pointer",
+      fontSize: 9,
+      padding: "2px 4px"
+    }
+  }, "\u25B2"), pi < cpDraft.phases.length - 1 && /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      const np = JSON.parse(JSON.stringify(cpDraft.phases));
+      const tmp = np[pi];
+      np[pi] = np[pi + 1];
+      np[pi + 1] = tmp;
+      setCpDraft({
+        ...cpDraft,
+        phases: np
+      });
+    },
+    style: {
+      background: "none",
+      border: `1px solid ${C.sbdr}`,
+      borderRadius: 4,
+      color: C.dim,
+      cursor: "pointer",
+      fontSize: 9,
+      padding: "2px 4px"
+    }
+  }, "\u25BC")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 4
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      const np = JSON.parse(JSON.stringify(cpDraft.phases));
+      const dup = JSON.parse(JSON.stringify(ph));
+      dup.title += " (Copy)";
+      np.splice(pi + 1, 0, dup);
+      setCpDraft({
+        ...cpDraft,
+        phases: np
+      });
+    },
+    title: "Duplicate phase",
+    style: {
+      background: "none",
+      border: `1px solid #A78BFA30`,
+      borderRadius: 4,
+      color: "#A78BFA",
+      cursor: "pointer",
+      fontSize: 9,
+      padding: "2px 6px"
+    }
+  }, "\u29C9 Dup"), cpDraft.phases.length > 1 && /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (confirm("Delete " + ph.title + "?")) {
+        const np = JSON.parse(JSON.stringify(cpDraft.phases));
+        np.splice(pi, 1);
+        setCpDraft({
+          ...cpDraft,
+          phases: np
+        });
+      }
+    },
+    title: "Delete phase",
+    style: {
+      background: "none",
+      border: "1px solid #EF444430",
+      borderRadius: 4,
+      color: "#EF4444",
+      cursor: "pointer",
+      fontSize: 9,
+      padding: "2px 6px"
+    }
+  }, "\uD83D\uDDD1"))), /*#__PURE__*/React.createElement("input", {
     value: ph.title,
     onChange: e => {
       const np = [...cpDraft.phases];
@@ -5917,10 +6019,60 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
-      gap: 8,
-      marginBottom: 8
+      gap: 6,
+      marginBottom: 8,
+      alignItems: "center"
     }
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 0,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (di === 0) return;
+      const np = JSON.parse(JSON.stringify(cpDraft.phases));
+      const tmp = np[pi].days[di];
+      np[pi].days[di] = np[pi].days[di - 1];
+      np[pi].days[di - 1] = tmp;
+      setCpDraft({
+        ...cpDraft,
+        phases: np
+      });
+    },
+    style: {
+      background: "none",
+      border: "none",
+      cursor: di === 0 ? "default" : "pointer",
+      fontSize: 10,
+      color: di === 0 ? C.bdr : C.dim,
+      padding: 0,
+      lineHeight: 1
+    }
+  }, "\u25B2"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (di >= ph.days.length - 1) return;
+      const np = JSON.parse(JSON.stringify(cpDraft.phases));
+      const tmp = np[pi].days[di];
+      np[pi].days[di] = np[pi].days[di + 1];
+      np[pi].days[di + 1] = tmp;
+      setCpDraft({
+        ...cpDraft,
+        phases: np
+      });
+    },
+    style: {
+      background: "none",
+      border: "none",
+      cursor: di >= ph.days.length - 1 ? "default" : "pointer",
+      fontSize: 10,
+      color: di >= ph.days.length - 1 ? C.bdr : C.dim,
+      padding: 0,
+      lineHeight: 1
+    }
+  }, "\u25BC")), /*#__PURE__*/React.createElement("input", {
     value: dy.title,
     onChange: e => {
       const np = [...cpDraft.phases];
@@ -5969,15 +6121,109 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       outline: "none",
       fontFamily: "inherit"
     }
-  })), dy.exercises?.map((ex, xi) => /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      const np = JSON.parse(JSON.stringify(cpDraft.phases));
+      const dup = JSON.parse(JSON.stringify(dy));
+      dup.title = "Day " + (ph.days.length + 1);
+      dup.sub += " (Copy)";
+      np[pi].days.splice(di + 1, 0, dup);
+      setCpDraft({
+        ...cpDraft,
+        phases: np
+      });
+    },
+    title: "Duplicate day",
+    style: {
+      background: "none",
+      border: `1px solid #A78BFA30`,
+      borderRadius: 6,
+      color: "#A78BFA",
+      cursor: "pointer",
+      fontSize: 10,
+      padding: "4px 6px",
+      flexShrink: 0
+    }
+  }, "\u29C9"), ph.days.length > 1 && /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (confirm("Delete " + dy.title + "?")) {
+        const np = JSON.parse(JSON.stringify(cpDraft.phases));
+        np[pi].days.splice(di, 1);
+        setCpDraft({
+          ...cpDraft,
+          phases: np
+        });
+      }
+    },
+    title: "Delete day",
+    style: {
+      background: "none",
+      border: "1px solid #EF444430",
+      borderRadius: 6,
+      color: "#EF4444",
+      cursor: "pointer",
+      fontSize: 10,
+      padding: "4px 6px",
+      flexShrink: 0
+    }
+  }, "\uD83D\uDDD1")), dy.exercises?.map((ex, xi) => /*#__PURE__*/React.createElement("div", {
     key: xi,
     style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 80px 32px",
-      gap: 4,
-      marginBottom: 3
+      display: "flex",
+      alignItems: "center",
+      gap: 3,
+      marginBottom: 4
     }
-  }, /*#__PURE__*/React.createElement("select", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 0,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (xi === 0) return;
+      const np = JSON.parse(JSON.stringify(cpDraft.phases));
+      const tmp = np[pi].days[di].exercises[xi];
+      np[pi].days[di].exercises[xi] = np[pi].days[di].exercises[xi - 1];
+      np[pi].days[di].exercises[xi - 1] = tmp;
+      setCpDraft({
+        ...cpDraft,
+        phases: np
+      });
+    },
+    style: {
+      background: "none",
+      border: "none",
+      cursor: xi === 0 ? "default" : "pointer",
+      fontSize: 8,
+      color: xi === 0 ? C.bdr : C.dim,
+      padding: 0,
+      lineHeight: 1
+    }
+  }, "\u25B2"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (xi >= dy.exercises.length - 1) return;
+      const np = JSON.parse(JSON.stringify(cpDraft.phases));
+      const tmp = np[pi].days[di].exercises[xi];
+      np[pi].days[di].exercises[xi] = np[pi].days[di].exercises[xi + 1];
+      np[pi].days[di].exercises[xi + 1] = tmp;
+      setCpDraft({
+        ...cpDraft,
+        phases: np
+      });
+    },
+    style: {
+      background: "none",
+      border: "none",
+      cursor: xi >= dy.exercises.length - 1 ? "default" : "pointer",
+      fontSize: 8,
+      color: xi >= dy.exercises.length - 1 ? C.bdr : C.dim,
+      padding: 0,
+      lineHeight: 1
+    }
+  }, "\u25BC")), /*#__PURE__*/React.createElement("select", {
     value: ALL_EXERCISES.includes(ex.name) ? ex.name : "_custom",
     onChange: e => {
       const np = JSON.parse(JSON.stringify(cpDraft.phases));
@@ -6013,7 +6259,8 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       fontSize: 11,
       outline: "none",
       fontFamily: "inherit",
-      maxWidth: 180,
+      flex: 1,
+      minWidth: 0,
       appearance: "auto"
     }
   }, /*#__PURE__*/React.createElement("option", {
@@ -6042,7 +6289,9 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       fontSize: 10,
       outline: "none",
       textAlign: "center",
-      fontFamily: "inherit"
+      fontFamily: "inherit",
+      width: 70,
+      flexShrink: 0
     }
   }), /*#__PURE__*/React.createElement("select", {
     value: ex.ss || "",
@@ -6064,7 +6313,8 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       fontSize: 9,
       outline: "none",
       fontFamily: "inherit",
-      width: 32,
+      width: 28,
+      flexShrink: 0,
       textAlign: "center"
     }
   }, /*#__PURE__*/React.createElement("option", {
@@ -6089,8 +6339,10 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       border: "none",
       color: "#EF4444",
       cursor: "pointer",
-      fontSize: 14,
-      padding: 0
+      fontSize: 12,
+      padding: "4px",
+      flexShrink: 0,
+      lineHeight: 1
     }
   }, "\u2715"))), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
@@ -6119,14 +6371,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       width: "100%",
       marginTop: 4
     }
-  }, "+ Add Exercise"))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 6,
-      marginLeft: 8,
-      marginBottom: 8
-    }
-  }, /*#__PURE__*/React.createElement("button", {
+  }, "+ Add Exercise"))), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       const np = JSON.parse(JSON.stringify(cpDraft.phases));
       np[pi].days.push({
@@ -6152,35 +6397,11 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       borderRadius: 8,
       padding: "6px 10px",
       cursor: "pointer",
-      flex: 1
+      width: "100%",
+      marginLeft: 8,
+      marginBottom: 8
     }
-  }, "+ Add Day"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      const np = JSON.parse(JSON.stringify(cpDraft.phases));
-      const dup = JSON.parse(JSON.stringify(ph.days[ph.days.length - 1] || {
-        title: "Day 1",
-        sub: "Copy",
-        exercises: []
-      }));
-      dup.title = "Day " + (ph.days.length + 1);
-      dup.sub += " (Copy)";
-      np[pi].days.push(dup);
-      setCpDraft({
-        ...cpDraft,
-        phases: np
-      });
-    },
-    style: {
-      fontSize: 11,
-      color: "#A78BFA",
-      background: "transparent",
-      border: `1px dashed #A78BFA40`,
-      borderRadius: 8,
-      padding: "6px 10px",
-      cursor: "pointer",
-      flex: 1
-    }
-  }, "\u29C9 Duplicate Last Day")))), /*#__PURE__*/React.createElement("button", {
+  }, "+ Add Day"))), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       const np = JSON.parse(JSON.stringify(cpDraft.phases || []));
       np.push({
@@ -9264,7 +9485,22 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       fontSize: 36,
       marginBottom: 12
     }
-  }, "\uD83D\uDCAA"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCAA"), hasNoPlanTip && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setHasNoPlanTip(false),
+    style: {
+      position: "absolute",
+      top: 12,
+      right: 12,
+      background: "none",
+      border: `1px solid ${C.sbdr}`,
+      borderRadius: 8,
+      color: C.dim,
+      cursor: "pointer",
+      fontSize: 11,
+      padding: "4px 10px",
+      fontWeight: 600
+    }
+  }, "\u2715 Close"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "Outfit",
       fontSize: 22,
@@ -9272,7 +9508,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       color: C.acc,
       marginBottom: 6
     }
-  }, "Welcome to Wieser Workouts!"), /*#__PURE__*/React.createElement("div", {
+  }, hasNoPlanTip ? "Instructions & Tips" : "Welcome to Wieser Workouts!"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       color: C.dim,
@@ -11461,7 +11697,26 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       cursor: "pointer",
       textAlign: "left"
     }
-  }, "\uD83D\uDCCB Latest App Updates"))), /*#__PURE__*/React.createElement("button", {
+  }, "\uD83D\uDCCB Latest App Updates"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setScreen("home");
+      setHasNoPlanTip(true);
+      history.pushState({
+        screen: "home"
+      }, "");
+    },
+    style: {
+      padding: "10px",
+      borderRadius: 8,
+      border: `1px solid ${C.sbdr}`,
+      background: C.srf,
+      color: C.dim,
+      fontSize: 12,
+      fontWeight: 600,
+      cursor: "pointer",
+      textAlign: "left"
+    }
+  }, "\uD83D\uDCA1 Instructions & Tips"))), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setPlanMenu(false);
       setLinkMsg("");
@@ -11890,7 +12145,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       marginBottom: 8
     }
   }, "\u21A9 Reset to Default Order"), exs.map((exercise, ei) => {
-    const open = openEx === ei;
+    const open = openEx.has(ei);
     const pe = prev?.[ei];
     const pool = SWAP_POOLS[exercise.group] || [];
     const le = log[ei];
@@ -11986,9 +12241,23 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       }
     }, "\u25BC")), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
-        setOpenEx(open ? null : ei);
-        setSwapPanel(null);
-        if (open) setEditPanel(null);
+        setOpenEx(prev => {
+          const ns = new Set(prev);
+          if (ns.has(ei)) {
+            ns.delete(ei);
+            setEditPanel(null);
+          } else {
+            ns.add(ei);
+            const curSS = exercise.ss;
+            if (curSS) {
+              exs.forEach((e2, j) => {
+                if (e2.ss === curSS) ns.add(j);
+              });
+            }
+          }
+          setSwapPanel(null);
+          return ns;
+        });
       },
       style: {
         display: "flex",
