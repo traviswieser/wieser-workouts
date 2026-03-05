@@ -46,7 +46,7 @@ const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const
 const link=document.createElement('link');link.rel='manifest';link.href=mUrl;document.head.appendChild(link);
 const iconLink=document.createElement('link');iconLink.rel='icon';iconLink.href=iconUrl;iconLink.type='image/svg+xml';document.head.appendChild(iconLink);
 const appleIcon=document.createElement('link');appleIcon.rel='apple-touch-icon';appleIcon.href=iconUrl;document.head.appendChild(appleIcon);
-if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v31';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
+if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v32';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
 const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.auth();const db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
 </script>
 </head>
@@ -130,89 +130,7 @@ const autoCue=(name)=>{const m={"Barbell Bench Press":"Arch back slightly. Retra
 const mkEx=(n,s,c,g)=>({name:n,sets:s,cues:c,group:g||EX_GRP[n]||"other"});
 
 // V1 PLAN
-const V1={id:"v1",name:"V1 — Original Plan",subtitle:"Cable Tower + Adjustable Bench + Dumbbells",phases:[
-{title:"Phase 1: Foundation",weeks:"Weeks 1–4",desc:"Build a base. Learn movement patterns, establish mind-muscle connection.",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[
-{title:"Day 1",sub:"Chest & Back",exercises:[mkEx("DB Flat Bench Press","3×10–12","Retract shoulder blades. Control eccentric 2–3 sec.","chest"),mkEx("DB Bent-Over Row","3×10–12","Hinge 45°. Pull to ribcage. Squeeze blades 1 sec.","back"),mkEx("DB Goblet Squat","3×12","Hold DB at chest. Heels down, chest up. Break parallel.","quads"),mkEx("Cable Chest Fly","3×12","Slight elbow bend. Stretch wide. Squeeze at midline.","chest"),mkEx("Lat Pulldown","3×10–12","Lat bar. Pull to upper chest. Lean back slightly.","back"),mkEx("DB Romanian Deadlift","3×10–12","Hinge at hips, soft knees. Feel hamstring stretch.","hamstrings"),mkEx("DB Lateral Raise","3×12–15","Lead with elbows. Stop at shoulder height.","shoulders"),mkEx("DB Bicep Curl","3×10–12","Pin elbows. No swinging. Full extension.","biceps"),mkEx("Cable Tricep Pushdown (Rope)","3×10–12","Elbows pinned. Spread rope at bottom.","triceps"),mkEx("Plank","3×30–45s","Squeeze glutes. Brace core. Neutral spine.","core")]},
-{title:"Day 2",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: arm circles, leg swings, hip circles, world's greatest stretch.","cardio"),mkEx("Air Bike","1×duration","Moderate pace. RPM 50–70. Stand every 5 min to stretch hips. Cool down last 2 min.","cardio"),mkEx("Dead Bug","2×10 each","Low-impact core. Press low back to floor. Slow and controlled.","core"),mkEx("Plank","2×30–45s","Squeeze glutes. Brace core. Neutral spine.","core")]},
-{title:"Day 3",sub:"Shoulders & Legs",exercises:[mkEx("DB Incline Bench Press","3×10–12","Bench 30–45°. Drive through chest.","chest"),mkEx("Seated Cable Row","3×10–12","V-bar. Sit tall. Pull to navel.","back"),mkEx("DB Bulgarian Split Squat","3×10 each","Rear foot on bench. Shin vertical.","quads"),mkEx("Cable Face Pull","3×12–15","Pull to forehead. Externally rotate.","back"),mkEx("DB Overhead Press","3×10–12","Seated. Brace core. Press to lockout.","shoulders"),mkEx("DB Hip Thrust","3×12","Drive through heels. Squeeze glutes 2 sec.","glutes"),mkEx("DB Hammer Curl","3×10–12","Neutral grip. Controlled negative.","biceps"),mkEx("Cable Overhead Tricep Ext.","3×10–12","Face away. Rope behind head. Extend fully.","triceps"),mkEx("DB Calf Raise","3×15","Full stretch at bottom. Pause at top.","calves"),mkEx("Stability Ball Crunch","3×15","Lower back on ball. Slow crunch.","core")]},
-{title:"Day 4",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: walking lunges, inchworms, cat-cow, thoracic rotations.","cardio"),mkEx("Air Bike","1×duration","Easy to moderate. Alternate 2 min arms-focused, 2 min legs-focused. Cool down last 2 min.","cardio"),mkEx("Cable Pallof Press","2×10 each","Light weight. Anti-rotation. Hold 2 sec. Great for core stability.","core"),mkEx("Stretches","5–10 min","Static cool-down: hip flexors, hamstrings, chest, lats. Hold each 30+ sec.","cardio")]},
-{title:"Day 5",sub:"Pull & Arms",exercises:[mkEx("Pull-Ups","3×AMRAP","Band if needed. Full hang. Chin over bar.","back"),mkEx("Cable Crossover","3×12","Pulleys high. Wide arc. Cross at midline.","chest"),mkEx("DB Lunge (Walking)","3×10 each","Long stride. Upright torso.","quads"),mkEx("Single-Arm Cable Row","3×10 each","D-handle. Square hips. Pull to hip.","back"),mkEx("DB Arnold Press","3×10–12","Palms in → rotate out as you press.","shoulders"),mkEx("Stability Ball Hamstring Curl","3×12","Hips up. Curl heels to glutes.","hamstrings"),mkEx("DB Incline Curl","3×10–12","Bench 45°. Arms hang straight.","biceps"),mkEx("Cable Tricep Pushdown (V-Bar)","3×10–12","V-bar. Elbows pinned. Full lockout.","triceps"),mkEx("Cable Woodchop","3×10 each","Rotate torso — arms straight.","core"),mkEx("Neck Curl (Harness)","2×15","Face-up. Light weight. Smooth reps.","neck")]}]},
-{title:"Phase 2: Growth",weeks:"Weeks 5–8",desc:"More volume & intensity. Supersets introduced. Push closer to failure.",rest:"60–120s",sr:"3–4×8–12",rir:"RIR 1–2",days:[
-{title:"Day 1",sub:"Chest & Back",exercises:[mkEx("DB Flat Bench Press","4×8–10","Heavier. 3-sec eccentric. Drive explosively.","chest"),mkEx("DB Bent-Over Row","4×8–10","Heavier. 1-sec pause at top.","back"),mkEx("Slant Board DB Squat","4×10–12","Heels elevated for deep quad stretch.","quads"),mkEx("Incline Cable Fly","3×12","Bench 30°. D-handles. Deep stretch.","chest"),mkEx("Lat Pulldown","4×8–10","Lean back. Pull to chest. Squeeze lats.","back"),mkEx("Cable Pull-Through","3×12","Rope through legs. Hinge. Squeeze glutes.","glutes"),mkEx("Cable Lateral Raise","3×12–15","Ankle strap on wrist. Constant tension.","shoulders"),mkEx("DB Bicep Curl","3×10","⚡ SUPERSET with Pushdowns.","biceps"),mkEx("Cable Tricep Pushdown (Rope)","3×10","⚡ SUPERSET. No rest from curls.","triceps"),mkEx("Cable Crunch (Rope)","3×15","Kneel. Crunch ribs to hips. Exhale hard.","core")]},
-{title:"Day 2",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: arm circles, leg swings, hip circles, world's greatest stretch.","cardio"),mkEx("Air Bike","1×duration","Moderate pace. RPM 50–70. Stand every 5 min to stretch hips. Cool down last 2 min.","cardio"),mkEx("Dead Bug","2×10 each","Low-impact core. Press low back to floor. Slow and controlled.","core"),mkEx("Plank","2×30–45s","Squeeze glutes. Brace core. Neutral spine.","core")]},
-{title:"Day 3",sub:"Shoulders & Legs",exercises:[mkEx("DB Incline Bench Press","4×8–10","Heavier. Shoulder blades pinned.","chest"),mkEx("V-Bar Cable Row","4×8–10","Close grip. Pull to lower chest.","back"),mkEx("DB Bulgarian Split Squat","4×8–10 each","1-sec pause in hole. Drive through heel.","quads"),mkEx("Cable Rear Delt Fly","3×12–15","Cross cables. Fly wide. Squeeze rear delts.","shoulders"),mkEx("DB Overhead Press","4×8–10","Heavier. Brace core hard.","shoulders"),mkEx("DB Romanian Deadlift","4×8–10","3-sec eccentric. Deep hamstring stretch.","hamstrings"),mkEx("Cable Hammer Curl (Rope)","3×10–12","Squeeze brachialis. 2-sec negative.","biceps"),mkEx("DB Overhead Tricep Ext.","3×10–12","Single heavy DB. Full stretch.","triceps"),mkEx("Single-Leg DB Calf Raise","3×12 each","3-sec eccentrics. Full ROM.","calves"),mkEx("Hanging Leg Raise","3×10–12","Control swing. Curl pelvis up.","core")]},
-{title:"Day 4",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: walking lunges, inchworms, cat-cow, thoracic rotations.","cardio"),mkEx("Air Bike","1×duration","Easy to moderate. Alternate 2 min arms-focused, 2 min legs-focused. Cool down last 2 min.","cardio"),mkEx("Cable Pallof Press","2×10 each","Light weight. Anti-rotation. Hold 2 sec. Great for core stability.","core"),mkEx("Stretches","5–10 min","Static cool-down: hip flexors, hamstrings, chest, lats. Hold each 30+ sec.","cardio")]},
-{title:"Day 5",sub:"Pull & Arms",exercises:[mkEx("Chin-Ups","4×AMRAP","Underhand. Add weight if >12.","back"),mkEx("DB Squeeze Press","3×10–12","Press DBs together entire set.","chest"),mkEx("DB Front Squat","4×10","DBs at shoulders. Deep squat.","quads"),mkEx("T-Bar Cable Row","4×8–10","Pull to lower chest. Squeeze scapulae.","back"),mkEx("DB Arnold Press","4×8–10","Heavier. Full rotation.","shoulders"),mkEx("Cable Hamstring Curl (Ankle Strap)","3×12 each","Standing. Curl heel to glute.","hamstrings"),mkEx("DB Concentration Curl","3×10 each","Elbow on thigh. Peak squeeze.","biceps"),mkEx("Cable Kickback","3×12 each","Full extension. Squeeze 1 sec.","triceps"),mkEx("Cable Pallof Press","3×10 each","Anti-rotation. Hold 2 sec.","core"),mkEx("Neck Extension (Harness)","3×12–15","Controlled. No jerking.","neck")]}]},
-{title:"Phase 3: Peak",weeks:"Weeks 9–12",desc:"Max hypertrophy. Drop sets, pause reps, slow eccentrics.",rest:"60s–2 min",sr:"3–4×8–15",rir:"RIR 0–1",days:[
-{title:"Day 1",sub:"Chest & Back",exercises:[mkEx("DB Flat Bench Press","4×8–10 + drop","Near failure → drop 30% → AMRAP.","chest"),mkEx("DB Bent-Over Row","4×8–10 + drop","Drop set final set.","back"),mkEx("Slant Board DB Squat","4×10 + pause","3-sec pause × 6.","quads"),mkEx("Cable Low-to-High Fly","3×12","Sweep up. Peak contraction.","chest"),mkEx("Cable Straight-Arm Pulldown","3×12","Arms straight. Squeeze lats.","back"),mkEx("DB Hip Thrust","4×10 + hold","3-sec hold EVERY rep.","glutes"),mkEx("Cable Lateral Raise","4×12 + drop","Drop set last set.","shoulders"),mkEx("DB Incline Curl","3×10 + slow neg","4-sec lowering EVERY rep.","biceps"),mkEx("Cable Overhead Tricep Ext.","3×10 + drop","Drop set on final set.","triceps"),mkEx("Cable Crunch (Rope)","3×15–20","Slow tempo. Peak squeeze.","core")]},
-{title:"Day 2",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: arm circles, leg swings, hip circles, world's greatest stretch.","cardio"),mkEx("Air Bike","1×duration","Moderate pace. RPM 50–70. Stand every 5 min to stretch hips. Cool down last 2 min.","cardio"),mkEx("Dead Bug","2×10 each","Low-impact core. Press low back to floor. Slow and controlled.","core"),mkEx("Plank","2×30–45s","Squeeze glutes. Brace core. Neutral spine.","core")]},
-{title:"Day 3",sub:"Shoulders & Legs",exercises:[mkEx("DB Incline Bench Press","4×8–10 + drop","Drop set → AMRAP.","chest"),mkEx("Lat Pulldown","4×8–10 + drop","Drop 30%. Max reps.","back"),mkEx("DB Bulgarian Split Squat","4×8 each + pause","2-sec pause EVERY rep.","quads"),mkEx("Cable Face Pull","4×12–15","3-sec eccentric every rep.","back"),mkEx("DB Arnold Press","4×8–10 + mech drop","Failure → standard press → AMRAP.","shoulders"),mkEx("Cable Hamstring Curl (Ankle Strap)","3×10 each + drop","Drop set final set.","hamstrings"),mkEx("Cable Bicep Curl","3×10 + drop","Drop last set.","biceps"),mkEx("Cable Tricep Pushdown (V-Bar)","3×10 + drop","Drop final set.","triceps"),mkEx("DB Calf Raise","4×12 + slow ecc","5-sec lowering EVERY rep.","calves"),mkEx("Dead Bug","3×10 each","Press low back to floor.","core")]},
-{title:"Day 4",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: walking lunges, inchworms, cat-cow, thoracic rotations.","cardio"),mkEx("Air Bike","1×duration","Easy to moderate. Alternate 2 min arms-focused, 2 min legs-focused. Cool down last 2 min.","cardio"),mkEx("Cable Pallof Press","2×10 each","Light weight. Anti-rotation. Hold 2 sec. Great for core stability.","core"),mkEx("Stretches","5–10 min","Static cool-down: hip flexors, hamstrings, chest, lats. Hold each 30+ sec.","cardio")]},
-{title:"Day 5",sub:"Pull & Arms",exercises:[mkEx("Pull-Ups","4×AMRAP + neg","After failure: 3–5 slow negatives.","back"),mkEx("Cable Crossover","4×10 + drop","Drop set final set.","chest"),mkEx("DB Sumo Squat","4×10 + pulse","10 full + 10 pulse reps.","quads"),mkEx("Single-Arm Cable Row","4×8–10 each","3-sec eccentric stretch.","back"),mkEx("DB Rear Delt Fly","4×12–15","Max squeeze at top.","shoulders"),mkEx("KB Swing","3×15","Explosive hip drive.","hamstrings"),mkEx("DB Hammer Curl","3×10 + slow neg","4-sec lowering per rep.","biceps"),mkEx("Diamond Push-Ups","3×AMRAP","Hands together. To failure.","triceps"),mkEx("Cable Woodchop","3×10 each + hold","2-sec hold at end range.","core"),mkEx("Band Neck Side Flexion","2×12 each","Light band. Both sides.","neck")]}]}]};
 
-// V2 PLAN
-const V2={id:"v2",name:"V2 — Apex Edition",subtitle:"Apex Bench + Leg Trainer + Nordic Max + Cable Tower",phases:[
-{title:"Phase 1: Foundation",weeks:"Weeks 1–4",desc:"Build a base with Apex gear. Learn Nordic eccentrics.",rest:"60–90s",sr:"3×10–12",rir:"RIR 3–4",days:[
-{title:"Day 1",sub:"Chest & Back",exercises:[mkEx("DB Flat Bench Press","3×10–12","Retract shoulder blades. 2–3 sec eccentric.","chest"),mkEx("DB Bent-Over Row","3×10–12","Hinge 45°. Pull to ribcage.","back"),mkEx("DB Goblet Squat","3×12","Hold at chest. Heels down.","quads"),mkEx("Cable Chest Fly","3×12","Slight bend. Stretch wide.","chest"),mkEx("Lat Pulldown","3×10–12","Lat bar. Pull to upper chest.","back"),mkEx("Apex Leg Extension","3×12","Slow eccentric. 1-sec hold at full extension.","quads"),mkEx("DB Lateral Raise","3×12–15","Lead with elbows. Stop at shoulder height.","shoulders"),mkEx("DB Bicep Curl","3×10–12","Pin elbows. No swinging.","biceps"),mkEx("Cable Tricep Pushdown (Rope)","3×10–12","Spread rope at bottom.","triceps"),mkEx("Plank","3×30–45s","Squeeze glutes. Brace core.","core")]},
-{title:"Day 2",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: arm circles, leg swings, hip circles, world's greatest stretch.","cardio"),mkEx("Air Bike","1×duration","Moderate pace. RPM 50–70. Stand every 5 min to stretch hips. Cool down last 2 min.","cardio"),mkEx("Dead Bug","2×10 each","Low-impact core. Press low back to floor. Slow and controlled.","core"),mkEx("Plank","2×30–45s","Squeeze glutes. Brace core. Neutral spine.","core")]},
-{title:"Day 3",sub:"Shoulders & Legs",exercises:[mkEx("DB Incline Bench Press","3×10–12","Bench 30–45°. Drive through chest.","chest"),mkEx("Seated Cable Row","3×10–12","V-bar. Nordic Max footplate.","back"),mkEx("DB Bulgarian Split Squat","3×10 each","Rear foot on bench. Shin vertical.","quads"),mkEx("Cable Face Pull","3×12–15","Pull to forehead. Externally rotate.","back"),mkEx("DB Overhead Press","3×10–12","Seated on Apex bench. Brace core.","shoulders"),mkEx("Apex Lying Leg Curl","3×12","Slow eccentric. Squeeze hamstrings.","hamstrings"),mkEx("DB Hammer Curl","3×10–12","Neutral grip. Controlled negative.","biceps"),mkEx("Cable Overhead Tricep Ext.","3×10–12","Face away. Rope behind head.","triceps"),mkEx("DB Calf Raise","3×15","Full stretch at bottom.","calves"),mkEx("Stability Ball Crunch","3×15","Slow. Exhale at top.","core")]},
-{title:"Day 4",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: walking lunges, inchworms, cat-cow, thoracic rotations.","cardio"),mkEx("Air Bike","1×duration","Easy to moderate. Alternate 2 min arms-focused, 2 min legs-focused. Cool down last 2 min.","cardio"),mkEx("Cable Pallof Press","2×10 each","Light weight. Anti-rotation. Hold 2 sec. Great for core stability.","core"),mkEx("Stretches","5–10 min","Static cool-down: hip flexors, hamstrings, chest, lats. Hold each 30+ sec.","cardio")]},
-{title:"Day 5",sub:"Pull & Arms",exercises:[mkEx("Pull-Ups","3×AMRAP","Band assist if needed. Full hang.","back"),mkEx("Cable Crossover","3×12","Pulleys high. Wide arc.","chest"),mkEx("DB Lunge (Walking)","3×10 each","Long stride. Upright torso.","quads"),mkEx("Single-Arm Cable Row","3×10 each","D-handle. Square hips.","back"),mkEx("DB Arnold Press","3×10–12","Palms in → rotate out.","shoulders"),mkEx("Nordic Curl (Eccentric Only)","3×5","5-sec lowering. Catch with hands.","hamstrings"),mkEx("DB Incline Curl","3×10–12","Bench 45°. Arms hang straight.","biceps"),mkEx("Cable Tricep Pushdown (V-Bar)","3×10–12","V-bar. Elbows pinned.","triceps"),mkEx("Cable Woodchop","3×10 each","Rotate torso. Arms straight.","core"),mkEx("Neck Curl (Harness)","2×15","Light weight. Smooth reps.","neck")]}]},
-{title:"Phase 2: Growth",weeks:"Weeks 5–8",desc:"Band-assisted Nordics, heavier Leg Trainer, supersets.",rest:"60–120s",sr:"3–4×8–12",rir:"RIR 1–2",days:[
-{title:"Day 1",sub:"Chest & Back",exercises:[mkEx("DB Flat Bench Press","4×8–10","Heavier. 3-sec eccentric.","chest"),mkEx("DB Bent-Over Row","4×8–10","Heavier. 1-sec pause.","back"),mkEx("Slant Board DB Squat","4×10–12","Heels elevated. Deep quad stretch.","quads"),mkEx("Incline Cable Fly","3×12","Bench 30°. Deep stretch.","chest"),mkEx("Lat Pulldown","4×8–10","Lean back. Pull to chest.","back"),mkEx("Apex Lying Leg Curl","4×10–12","3-sec eccentric. Squeeze at top.","hamstrings"),mkEx("Cable Lateral Raise","3×12–15","Ankle strap. Constant tension.","shoulders"),mkEx("DB Bicep Curl","3×10","⚡ SUPERSET with Pushdowns.","biceps"),mkEx("Cable Tricep Pushdown (Rope)","3×10","⚡ SUPERSET. No rest.","triceps"),mkEx("Cable Crunch (Rope)","3×15","Crunch ribs to hips.","core")]},
-{title:"Day 2",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: arm circles, leg swings, hip circles, world's greatest stretch.","cardio"),mkEx("Air Bike","1×duration","Moderate pace. RPM 50–70. Stand every 5 min to stretch hips. Cool down last 2 min.","cardio"),mkEx("Dead Bug","2×10 each","Low-impact core. Press low back to floor. Slow and controlled.","core"),mkEx("Plank","2×30–45s","Squeeze glutes. Brace core. Neutral spine.","core")]},
-{title:"Day 3",sub:"Shoulders & Legs",exercises:[mkEx("DB Incline Bench Press","4×8–10","Heavier. Shoulder blades pinned.","chest"),mkEx("V-Bar Cable Row","4×8–10","Nordic Max footplate. Close grip.","back"),mkEx("DB Bulgarian Split Squat","4×8–10 each","1-sec pause. Drive through heel.","quads"),mkEx("Cable Rear Delt Fly","3×12–15","Cross cables. Fly wide.","shoulders"),mkEx("DB Overhead Press","4×8–10","Heavier. Brace hard.","shoulders"),mkEx("Apex Leg Extension","4×10–12","Squeeze quads. 2-sec hold.","quads"),mkEx("Nordic Curl (Band Assisted)","3×6–8","Band around chest. Full ROM.","hamstrings"),mkEx("Cable Hammer Curl (Rope)","3×10–12","Squeeze at top. 2-sec negative.","biceps"),mkEx("DB Overhead Tricep Ext.","3×10–12","Single heavy DB. Full stretch.","triceps"),mkEx("Hanging Leg Raise","3×10–12","Control swing. Curl pelvis.","core")]},
-{title:"Day 4",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: walking lunges, inchworms, cat-cow, thoracic rotations.","cardio"),mkEx("Air Bike","1×duration","Easy to moderate. Alternate 2 min arms-focused, 2 min legs-focused. Cool down last 2 min.","cardio"),mkEx("Cable Pallof Press","2×10 each","Light weight. Anti-rotation. Hold 2 sec. Great for core stability.","core"),mkEx("Stretches","5–10 min","Static cool-down: hip flexors, hamstrings, chest, lats. Hold each 30+ sec.","cardio")]},
-{title:"Day 5",sub:"Pull & Arms",exercises:[mkEx("Chin-Ups","4×AMRAP","Underhand. Add weight if >12.","back"),mkEx("DB Squeeze Press","3×10–12","Press DBs together entire set.","chest"),mkEx("DB Front Squat","4×10","DBs at shoulders. Deep squat.","quads"),mkEx("T-Bar Cable Row","4×8–10","Pull to lower chest.","back"),mkEx("DB Arnold Press","4×8–10","Heavier. Full rotation.","shoulders"),mkEx("Apex Lying Leg Curl","3×10–12","Control negative.","hamstrings"),mkEx("DB Concentration Curl","3×10 each","Elbow on thigh. Peak squeeze.","biceps"),mkEx("Cable Kickback","3×12 each","Full extension. Squeeze 1 sec.","triceps"),mkEx("Cable Pallof Press","3×10 each","Anti-rotation. Hold 2 sec.","core"),mkEx("Neck Extension (Harness)","3×12–15","Controlled. No jerking.","neck")]}]},
-{title:"Phase 3: Peak",weeks:"Weeks 9–12",desc:"Full Nordics, drop sets, slow eccentrics. Push to failure.",rest:"60s–2 min",sr:"3–4×8–15",rir:"RIR 0–1",days:[
-{title:"Day 1",sub:"Chest & Back",exercises:[mkEx("DB Flat Bench Press","4×8–10 + drop","Near failure → drop 30% → AMRAP.","chest"),mkEx("DB Bent-Over Row","4×8–10 + drop","Drop set final set.","back"),mkEx("Slant Board DB Squat","4×10 + pause","3-sec pause × 6.","quads"),mkEx("Cable Low-to-High Fly","3×12","Sweep up. Peak contraction.","chest"),mkEx("Cable Straight-Arm Pulldown","3×12","Arms straight. Squeeze lats.","back"),mkEx("Apex Leg Extension","4×10 + drop","Strip plates → AMRAP.","quads"),mkEx("Cable Lateral Raise","4×12 + drop","Drop set last set.","shoulders"),mkEx("DB Incline Curl","3×10 + slow neg","4-sec lowering EVERY rep.","biceps"),mkEx("Cable Overhead Tricep Ext.","3×10 + drop","Drop set final set.","triceps"),mkEx("Cable Crunch (Rope)","3×15–20","Slow tempo. Peak squeeze.","core")]},
-{title:"Day 2",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: arm circles, leg swings, hip circles, world's greatest stretch.","cardio"),mkEx("Air Bike","1×duration","Moderate pace. RPM 50–70. Stand every 5 min to stretch hips. Cool down last 2 min.","cardio"),mkEx("Dead Bug","2×10 each","Low-impact core. Press low back to floor. Slow and controlled.","core"),mkEx("Plank","2×30–45s","Squeeze glutes. Brace core. Neutral spine.","core")]},
-{title:"Day 3",sub:"Shoulders & Legs",exercises:[mkEx("DB Incline Bench Press","4×8–10 + drop","Drop set → AMRAP.","chest"),mkEx("Lat Pulldown","4×8–10 + drop","Drop 30%. Max reps.","back"),mkEx("DB Bulgarian Split Squat","4×8 each + pause","2-sec pause EVERY rep.","quads"),mkEx("Cable Face Pull","4×12–15","3-sec eccentric every rep.","back"),mkEx("DB Arnold Press","4×8–10 + mech drop","Failure → standard press → AMRAP.","shoulders"),mkEx("Nordic Curl","4×5–6 + ecc","Full reps → 3 slow eccentrics.","hamstrings"),mkEx("Apex Lying Leg Curl","3×10 + drop","Drop set. Add bands.","hamstrings"),mkEx("Cable Bicep Curl","3×10 + drop","Drop last set.","biceps"),mkEx("Cable Tricep Pushdown (V-Bar)","3×10 + drop","Drop final set.","triceps"),mkEx("Dead Bug","3×10 each","Press low back to floor.","core")]},
-{title:"Day 4",sub:"Cardio & Mobility",exercises:[mkEx("Stretches","5–10 min","Dynamic warm-up: walking lunges, inchworms, cat-cow, thoracic rotations.","cardio"),mkEx("Air Bike","1×duration","Easy to moderate. Alternate 2 min arms-focused, 2 min legs-focused. Cool down last 2 min.","cardio"),mkEx("Cable Pallof Press","2×10 each","Light weight. Anti-rotation. Hold 2 sec. Great for core stability.","core"),mkEx("Stretches","5–10 min","Static cool-down: hip flexors, hamstrings, chest, lats. Hold each 30+ sec.","cardio")]},
-{title:"Day 5",sub:"Pull & Arms",exercises:[mkEx("Pull-Ups","4×AMRAP + neg","After failure: 3–5 slow negatives.","back"),mkEx("Cable Crossover","4×10 + drop","Drop set final set.","chest"),mkEx("DB Sumo Squat","4×10 + pulse","10 full + 10 pulse.","quads"),mkEx("Single-Arm Cable Row","4×8–10 each","3-sec eccentric.","back"),mkEx("DB Rear Delt Fly","4×12–15","Max squeeze at top.","shoulders"),mkEx("Apex Leg Extension","3×12 + slow ecc","4-sec lowering.","quads"),mkEx("Decline Nordic Curl","3×6–8","Slight decline. Slow.","hamstrings"),mkEx("DB Hammer Curl","3×10 + slow neg","4-sec lowering.","biceps"),mkEx("Diamond Push-Ups","3×AMRAP","Hands together. To failure.","triceps"),mkEx("Cable Woodchop","3×10 each + hold","2-sec hold at end.","core")]}]}]};
-
-// V3 MOUNTAIN MAN PLAN
-const V3={id:"v3",name:"V3 — Mountain Man",subtitle:"Dan's Dumbbell Hypertrophy Plan",phases:[
-{title:"Mountain Man Program",weeks:"Ongoing",desc:"Full-body hypertrophy with dumbbells and bodyweight. Warm up every session, then rotate through 3 workout days.",rest:"60–90s",sr:"3×10–12",rir:"RIR 2–3",days:[
-{title:"Warm-Up",sub:"Basics",exercises:[
-mkEx("Stretches","5–10 min","Dynamic stretches: arm circles, leg swings, hip circles, world's greatest stretch.","cardio"),
-mkEx("Push-Ups","3×10–15","Hands shoulder-width. Full range of motion. Chest to floor.","chest"),
-mkEx("Prisoner Squats","3×15","Hands behind head. Chest up, break parallel. Controlled tempo.","quads"),
-mkEx("DB Bench Press","3×10–12","Retract shoulder blades. Control the descent 2–3 sec.","chest"),
-mkEx("DB Curls","3×10–12","Pin elbows at sides. Full extension at bottom. No swinging.","biceps"),
-mkEx("Plank","3×30–45s","Squeeze glutes. Brace core like expecting a punch. Neutral spine.","core"),
-mkEx("Biking","1×duration","Steady pace. RPM 70–90. Cool down last 2 minutes.","cardio")]},
-{title:"Day 1",sub:"Pull & Press",exercises:[
-mkEx("Pull-Ups","3×AMRAP","Band assist if needed. Full hang at bottom. Chin over bar.","back"),
-mkEx("Lunges","3×10 each","Long stride. Upright torso. Back knee near floor.","quads"),
-mkEx("DB Shrugs","3×12–15","Heavy DBs. Shrug straight up — don't roll shoulders. Hold 1 sec at top.","shoulders"),
-mkEx("Curl to Shoulder Press","3×10","Curl DBs up, then press overhead in one fluid motion. Control the negative.","shoulders"),
-mkEx("Jumping Jacks","3×30","Full arm extension overhead. Light on your feet. Keep pace steady.","cardio"),
-mkEx("Side Bends","3×12 each","Hold one DB. Lean to opposite side slowly. Feel the oblique stretch.","core"),
-mkEx("Standing DB Press","3×10–12","Brace core tight. Press to full lockout. Don't arch your back.","shoulders"),
-mkEx("Biking","1×duration","Moderate intensity. Keep a steady cadence. Great for recovery.","cardio")]},
-{title:"Day 2",sub:"Push & Squat",exercises:[
-mkEx("Incline DB Bench","3×10–12","Bench 30–45°. Drive through chest. Control the descent.","chest"),
-mkEx("Bent-Over DB Row","3×10–12","Hinge 45°. Pull to ribcage. Squeeze shoulder blades 1 sec.","back"),
-mkEx("Goblet Squats","3×12","Hold DB at chest. Heels down, chest up. Break parallel.","quads"),
-mkEx("Diamond Push-Ups","3×AMRAP","Hands together. Elbows tight. Great tricep builder.","triceps"),
-mkEx("Reverse DB Flys","3×12–15","Slight bend in elbows. Squeeze rear delts hard at top.","shoulders"),
-mkEx("DB Curls","3×10–12","Pin elbows. Controlled negative. Full range of motion.","biceps"),
-mkEx("Sit-Ups","3×15–20","Feet anchored. Hands across chest. Exhale as you crunch up.","core"),
-mkEx("Biking","1×duration","Steady ride. Push the pace a little. Cool down last 2 minutes.","cardio")]},
-{title:"Day 3",sub:"Push & Lunge",exercises:[
-mkEx("Decline Push-Ups","3×10–15","Feet elevated on bench. Targets upper chest. Full range.","chest"),
-mkEx("Side Lunges","3×10 each","Wide step to the side. Sit hips back. Keep trailing leg straight.","quads"),
-mkEx("DB Arnold Press","3×10–12","Palms in at bottom → rotate out as you press. Full lockout.","shoulders"),
-mkEx("Dips","3×AMRAP","Lean forward slightly for chest emphasis. Controlled descent.","triceps"),
-mkEx("DB Side Raises","3×12–15","Lead with elbows. Stop at shoulder height. Light weight, strict form.","shoulders"),
-mkEx("DB Bench Press","3×10–12","Flat bench. Shoulder blades retracted. 2-sec eccentric.","chest"),
-mkEx("Reverse Lunges","3×10 each","Step back, not forward. Front shin vertical. Drive through front heel.","quads"),
-mkEx("Biking","1×duration","Easy to moderate pace. Great finish to the session.","cardio")]}]}
-]};
-
-
-// PLAN TEMPLATES
 const TEMPLATES=[
   {key:"ppl",name:"Push / Pull / Legs",sub:"Classic 3-day split",icon:"💪",gen:(eq)=>{
     const mk=(n,s,g)=>({name:n,sets:s,cues:autoCue(n),group:g});
@@ -269,9 +187,89 @@ const TEMPLATES=[
     ]}]};
   }}
 ];
-const ALL=[V1,V2,V3];
+const ALL=[];
+
+// ══════ FEATURED INFLUENCER PLANS ══════
+const INFLUENCER_PROFILES={
+  "jeff-nippard":{name:"Jeff Nippard",handle:"jeffnippard",bio:"Science-based approach to natural bodybuilding. Canadian powerlifter turned coach with a focus on evidence-based training and nutrition.",youtube:"https://youtube.com/@JeffNippard",photoPlaceholder:"JN",color:"#3B82F6",planCount:3},
+  "athlean-x":{name:"Jeff Cavaliere (Athlean-X)",handle:"athleanx",bio:"Physical therapist and strength coach known for training like an athlete. Former head physical therapist for the NY Mets.",youtube:"https://youtube.com/@ataborz",photoPlaceholder:"AX",color:"#EF4444",planCount:3},
+  "kneesovertoes":{name:"Ben Patrick (Kneesovertoesguy)",handle:"kneesovertoes",bio:"Pioneer of ATG (Athletic Truth Group) training. Focuses on bulletproofing knees, ankles, and building lower body resilience through full ROM exercises.",youtube:"https://youtube.com/@TheKneesovertoesguy",photoPlaceholder:"BP",color:"#22C55E",planCount:3},
+  "jeremy-ethier":{name:"Jeremy Ethier",handle:"jeremyethier",bio:"Kinesiologist and fitness researcher. Breaks down scientific studies into practical, efficient workout programs for natural lifters.",youtube:"https://youtube.com/@JeremyEthier",photoPlaceholder:"JE",color:"#F59E0B",planCount:3},
+  "sydney-cummings":{name:"Sydney Cummings Houdyshell",handle:"sydneycummings",bio:"At-home fitness coach with 1000+ free workout videos. Known for high-energy, accessible full-body routines using minimal equipment.",youtube:"https://youtube.com/@SydneyCummings",photoPlaceholder:"SC",color:"#A78BFA",planCount:3}
+};
+
+const mk2=(n,s,g)=>({name:n,sets:s,cues:autoCue(n),group:g});
+const FEATURED_PLANS=[
+  // ── Jeff Nippard ──
+  {id:"feat_jn1",name:"Push Pull Legs (Science-Based)",subtitle:"Inspired by Jeff Nippard's PPL program",creator:"jeff-nippard",category:"Push/Pull/Legs",phases:[{title:"PPL Rotation",weeks:"Ongoing",desc:"Science-based push/pull/legs split.",rest:"90-120s",sr:"3-4×8-12",rir:"RIR 1-2",days:[
+    {title:"Push",sub:"Chest, Shoulders, Triceps",exercises:[mk2("DB Flat Bench Press","4×8-10","chest"),mk2("DB Overhead Press","3×10-12","shoulders"),mk2("DB Incline Bench Press","3×10-12","chest"),mk2("Cable Lateral Raise","4×12-15","shoulders"),mk2("Cable Tricep Pushdown (Rope)","3×10-12","triceps"),mk2("DB Overhead Tricep Ext.","3×10-12","triceps")]},
+    {title:"Pull",sub:"Back, Biceps, Rear Delts",exercises:[mk2("Pull-Ups","4×6-10","back"),mk2("Seated Cable Row","4×10-12","back"),mk2("Lat Pulldown","3×10-12","back"),mk2("Cable Face Pull","3×15-20","shoulders"),mk2("DB Bicep Curl","3×10-12","biceps"),mk2("DB Hammer Curl","3×10-12","biceps")]},
+    {title:"Legs",sub:"Quads, Hams, Glutes, Calves",exercises:[mk2("Barbell Back Squat","4×6-8","quads"),mk2("Barbell Romanian Deadlift","3×8-10","hamstrings"),mk2("Leg Press","3×10-12","quads"),mk2("Lying Leg Curl","3×10-12","hamstrings"),mk2("DB Calf Raise","4×12-15","calves"),mk2("Hanging Leg Raise","3×10-12","core")]}]}]},
+  {id:"feat_jn2",name:"Upper Lower (Hypertrophy)",subtitle:"Inspired by Jeff Nippard's U/L split",creator:"jeff-nippard",category:"Upper/Lower",phases:[{title:"Upper Lower",weeks:"Ongoing",desc:"4-day upper/lower for balanced growth.",rest:"90-120s",sr:"3-4×8-12",rir:"RIR 1-2",days:[
+    {title:"Upper A",sub:"Horizontal Focus",exercises:[mk2("DB Flat Bench Press","4×8-10","chest"),mk2("DB Bent-Over Row","4×8-10","back"),mk2("DB Overhead Press","3×10-12","shoulders"),mk2("Cable Chest Fly","3×12-15","chest"),mk2("Cable Face Pull","3×15-20","shoulders"),mk2("DB Bicep Curl","3×10-12","biceps"),mk2("Cable Tricep Pushdown (V-Bar)","3×10-12","triceps")]},
+    {title:"Lower A",sub:"Quad Focus",exercises:[mk2("Barbell Back Squat","4×6-8","quads"),mk2("Barbell Romanian Deadlift","3×10-12","hamstrings"),mk2("Leg Extension","3×12-15","quads"),mk2("Lying Leg Curl","3×10-12","hamstrings"),mk2("DB Calf Raise","4×12-15","calves"),mk2("Plank","3×45-60s","core")]},
+    {title:"Upper B",sub:"Vertical Focus",exercises:[mk2("Pull-Ups","4×6-10","back"),mk2("DB Incline Bench Press","4×8-10","chest"),mk2("Lat Pulldown","3×10-12","back"),mk2("DB Lateral Raise","4×12-15","shoulders"),mk2("DB Incline Curl","3×10-12","biceps"),mk2("DB Skull Crusher","3×10-12","triceps")]},
+    {title:"Lower B",sub:"Hip Hinge Focus",exercises:[mk2("Barbell Deadlift","4×5-6","hamstrings"),mk2("DB Bulgarian Split Squat","3×10 each","quads"),mk2("Hip Thrust Machine","3×10-12","glutes"),mk2("Seated Leg Curl","3×12-15","hamstrings"),mk2("Machine Calf Raise","4×12-15","calves"),mk2("Dead Bug","3×10 each","core")]}]}]},
+  {id:"feat_jn3",name:"Full Body (3-Day)",subtitle:"Inspired by Jeff Nippard's full body approach",creator:"jeff-nippard",category:"Full Body",phases:[{title:"Full Body 3x",weeks:"Ongoing",desc:"Efficient 3-day full body program.",rest:"90-120s",sr:"3×8-12",rir:"RIR 1-2",days:[
+    {title:"Day 1",sub:"Full Body A",exercises:[mk2("Barbell Back Squat","3×6-8","quads"),mk2("DB Flat Bench Press","3×8-10","chest"),mk2("Seated Cable Row","3×10-12","back"),mk2("DB Lateral Raise","3×12-15","shoulders"),mk2("DB Bicep Curl","2×10-12","biceps"),mk2("Cable Tricep Pushdown (Rope)","2×10-12","triceps")]},
+    {title:"Day 2",sub:"Full Body B",exercises:[mk2("Barbell Deadlift","3×5-6","hamstrings"),mk2("DB Incline Bench Press","3×8-10","chest"),mk2("Lat Pulldown","3×10-12","back"),mk2("DB Overhead Press","3×10-12","shoulders"),mk2("DB Hammer Curl","2×10-12","biceps"),mk2("DB Overhead Tricep Ext.","2×10-12","triceps")]},
+    {title:"Day 3",sub:"Full Body C",exercises:[mk2("Leg Press","3×10-12","quads"),mk2("Cable Chest Fly","3×12-15","chest"),mk2("DB Bent-Over Row","3×10-12","back"),mk2("Cable Face Pull","3×15-20","shoulders"),mk2("Barbell Romanian Deadlift","3×10-12","hamstrings"),mk2("Hanging Leg Raise","3×10-12","core")]}]}]},
+
+  // ── Athlean-X ──
+  {id:"feat_ax1",name:"Total Body (Athlete-Style)",subtitle:"Inspired by Athlean-X training philosophy",creator:"athlean-x",category:"Full Body",phases:[{title:"Athlete Training",weeks:"Ongoing",desc:"Train like an athlete. Compound movements with corrective focus.",rest:"60-90s",sr:"3×10-12",rir:"RIR 2-3",days:[
+    {title:"Day 1",sub:"Push + Core",exercises:[mk2("DB Flat Bench Press","4×8-10","chest"),mk2("DB Overhead Press","3×10-12","shoulders"),mk2("Push-Ups","3×AMRAP","chest"),mk2("Cable Lateral Raise","3×12-15","shoulders"),mk2("Cable Tricep Pushdown (Rope)","3×10-12","triceps"),mk2("Cable Woodchop","3×10 each","core")]},
+    {title:"Day 2",sub:"Pull + Corrective",exercises:[mk2("Pull-Ups","4×AMRAP","back"),mk2("DB Single-Arm Row","3×10 each","back"),mk2("Cable Face Pull","4×15-20","shoulders"),mk2("Band Pull-Apart","3×15-20","shoulders"),mk2("DB Bicep Curl","3×10-12","biceps"),mk2("Dead Bug","3×10 each","core")]},
+    {title:"Day 3",sub:"Legs + Power",exercises:[mk2("DB Goblet Squat","4×10-12","quads"),mk2("DB Romanian Deadlift","3×10-12","hamstrings"),mk2("DB Lunge (Walking)","3×10 each","quads"),mk2("DB Hip Thrust","3×12","glutes"),mk2("Bodyweight Calf Raise","3×20","calves"),mk2("Plank","3×45-60s","core")]}]}]},
+  {id:"feat_ax2",name:"Push Pull Legs (No Gym)",subtitle:"Inspired by Athlean-X home workout style",creator:"athlean-x",category:"Push/Pull/Legs",phases:[{title:"Home PPL",weeks:"Ongoing",desc:"Minimal equipment PPL for home training.",rest:"45-60s",sr:"3×12-15",rir:"RIR 1-2",days:[
+    {title:"Push",sub:"Chest, Shoulders, Triceps",exercises:[mk2("Push-Ups","4×AMRAP","chest"),mk2("Decline Push-Ups","3×12-15","chest"),mk2("Pike Push-Ups","3×10-12","shoulders"),mk2("Diamond Push-Ups","3×AMRAP","triceps"),mk2("DB Lateral Raise","3×12-15","shoulders"),mk2("Bench Dips","3×12-15","triceps")]},
+    {title:"Pull",sub:"Back, Biceps",exercises:[mk2("Pull-Ups","4×AMRAP","back"),mk2("Inverted Row","3×10-12","back"),mk2("DB Bent-Over Row","3×10-12","back"),mk2("Band Face Pull","3×15-20","shoulders"),mk2("DB Bicep Curl","3×10-12","biceps"),mk2("DB Hammer Curl","3×10-12","biceps")]},
+    {title:"Legs",sub:"Full Lower Body",exercises:[mk2("Jump Squats","3×12","quads"),mk2("DB Bulgarian Split Squat","3×10 each","quads"),mk2("DB Romanian Deadlift","3×10-12","hamstrings"),mk2("Glute Bridge","3×15","glutes"),mk2("Single-Leg Calf Raise","3×15 each","calves"),mk2("Mountain Climbers","3×20 each","core")]}]}]},
+  {id:"feat_ax3",name:"Corrective Upper Lower",subtitle:"Inspired by Athlean-X rehab-focused training",creator:"athlean-x",category:"Upper/Lower",phases:[{title:"Corrective U/L",weeks:"Ongoing",desc:"Balanced training with injury prevention focus.",rest:"60-90s",sr:"3×10-12",rir:"RIR 2-3",days:[
+    {title:"Upper",sub:"Push + Pull Balanced",exercises:[mk2("DB Flat Bench Press","3×10-12","chest"),mk2("DB Bent-Over Row","3×10-12","back"),mk2("Cable Face Pull","4×15-20","shoulders"),mk2("DB Overhead Press","3×10-12","shoulders"),mk2("DB Bicep Curl","3×10-12","biceps"),mk2("Cable Tricep Pushdown (Rope)","3×10-12","triceps"),mk2("Band Pull-Apart","3×15","shoulders")]},
+    {title:"Lower",sub:"Strength + Mobility",exercises:[mk2("DB Goblet Squat","3×10-12","quads"),mk2("DB Romanian Deadlift","3×10-12","hamstrings"),mk2("DB Step-Up","3×10 each","quads"),mk2("DB Hip Thrust","3×12","glutes"),mk2("DB Calf Raise","3×15","calves"),mk2("Cable Pallof Press","3×10 each","core"),mk2("Dead Bug","3×10 each","core")]}]}]},
+
+  // ── Kneesovertoesguy ──
+  {id:"feat_kotg1",name:"ATG Zero (Beginner)",subtitle:"Inspired by Ben Patrick's Zero program",creator:"kneesovertoes",category:"Specialty",phases:[{title:"ATG Zero",weeks:"Ongoing",desc:"Bulletproof your knees and build lower body resilience.",rest:"60s",sr:"3×10-15",rir:"RIR 2-3",days:[
+    {title:"Session A",sub:"Knee & Ankle Focus",exercises:[mk2("Bodyweight Calf Raise","3×25","calves"),mk2("DB Step-Up","3×10 each","quads"),mk2("DB Goblet Squat","3×15","quads"),mk2("DB Romanian Deadlift","3×12","hamstrings"),mk2("Glute Bridge","3×15","glutes"),mk2("Plank","3×30-45s","core")]},
+    {title:"Session B",sub:"Hip & Posterior Chain",exercises:[mk2("DB Lunge (Walking)","3×10 each","quads"),mk2("Nordic Curl","3×5","hamstrings"),mk2("DB Bulgarian Split Squat","3×8 each","quads"),mk2("Single-Leg Glute Bridge","3×10 each","glutes"),mk2("DB Calf Raise","3×20","calves"),mk2("Dead Bug","3×10 each","core")]}]}]},
+  {id:"feat_kotg2",name:"ATG Dense (Intermediate)",subtitle:"Inspired by Ben Patrick's Dense program",creator:"kneesovertoes",category:"Specialty",phases:[{title:"ATG Dense",weeks:"Ongoing",desc:"Progressive overload on ATG movements.",rest:"90s",sr:"3-4×8-12",rir:"RIR 1-2",days:[
+    {title:"Day 1",sub:"Squat Focus",exercises:[mk2("DB Goblet Squat","4×10-12","quads"),mk2("DB Bulgarian Split Squat","3×8 each","quads"),mk2("Nordic Curl","4×5-8","hamstrings"),mk2("DB Calf Raise","4×15-20","calves"),mk2("DB Step-Up","3×10 each","quads"),mk2("Plank","3×45-60s","core")]},
+    {title:"Day 2",sub:"Upper Body",exercises:[mk2("DB Overhead Press","3×10-12","shoulders"),mk2("Pull-Ups","3×AMRAP","back"),mk2("DB Flat Bench Press","3×10-12","chest"),mk2("DB Bent-Over Row","3×10-12","back"),mk2("DB Bicep Curl","2×10-12","biceps"),mk2("Cable Tricep Pushdown (Rope)","2×10-12","triceps")]},
+    {title:"Day 3",sub:"Hinge & Carry",exercises:[mk2("Barbell Deadlift","4×5-6","hamstrings"),mk2("DB Lunge (Walking)","3×10 each","quads"),mk2("DB Hip Thrust","3×12","glutes"),mk2("Single-Leg Calf Raise","3×15 each","calves"),mk2("Hanging Leg Raise","3×10","core"),mk2("DB Romanian Deadlift","3×10-12","hamstrings")]}]}]},
+  {id:"feat_kotg3",name:"Knee Rehab (Starter)",subtitle:"Inspired by Kneesovertoesguy's rehab principles",creator:"kneesovertoes",category:"Specialty",phases:[{title:"Knee Rehab",weeks:"Weeks 1-8",desc:"Gentle progressive loading for knee recovery.",rest:"60s",sr:"2-3×10-15",rir:"RIR 3-4",days:[
+    {title:"Session",sub:"Full Knee Protocol",exercises:[mk2("Bodyweight Calf Raise","3×25","calves"),mk2("Wall Sit","3×20-30s","quads"),mk2("Glute Bridge","3×15","glutes"),mk2("DB Step-Up","2×8 each","quads"),mk2("DB Romanian Deadlift","2×12","hamstrings"),mk2("Dead Bug","3×10 each","core")]}]}]},
+
+  // ── Jeremy Ethier ──
+  {id:"feat_je1",name:"Full Body (Science-Applied)",subtitle:"Inspired by Jeremy Ethier's full body split",creator:"jeremy-ethier",category:"Full Body",phases:[{title:"Full Body 3x",weeks:"Ongoing",desc:"Evidence-based full body for efficient gains.",rest:"90-120s",sr:"3×8-12",rir:"RIR 1-2",days:[
+    {title:"Workout A",sub:"Full Body",exercises:[mk2("Barbell Back Squat","3×6-8","quads"),mk2("DB Flat Bench Press","3×8-10","chest"),mk2("Lat Pulldown","3×10-12","back"),mk2("DB Lateral Raise","3×12-15","shoulders"),mk2("DB Bicep Curl","2×10-12","biceps"),mk2("Cable Tricep Pushdown (Rope)","2×10-12","triceps")]},
+    {title:"Workout B",sub:"Full Body",exercises:[mk2("Barbell Deadlift","3×5-6","hamstrings"),mk2("DB Incline Bench Press","3×8-10","chest"),mk2("Seated Cable Row","3×10-12","back"),mk2("DB Overhead Press","3×10-12","shoulders"),mk2("DB Hammer Curl","2×10-12","biceps"),mk2("DB Skull Crusher","2×10-12","triceps")]},
+    {title:"Workout C",sub:"Full Body",exercises:[mk2("Leg Press","3×10-12","quads"),mk2("Cable Chest Fly","3×12-15","chest"),mk2("Pull-Ups","3×AMRAP","back"),mk2("Cable Face Pull","3×15-20","shoulders"),mk2("Barbell Romanian Deadlift","3×10-12","hamstrings"),mk2("Hanging Leg Raise","3×10-12","core")]}]}]},
+  {id:"feat_je2",name:"Upper Lower (Lean Bulk)",subtitle:"Inspired by Jeremy Ethier's lean bulk program",creator:"jeremy-ethier",category:"Upper/Lower",phases:[{title:"Lean Bulk U/L",weeks:"Ongoing",desc:"Optimized for muscle gain with minimal fat.",rest:"90-120s",sr:"3-4×8-12",rir:"RIR 1-2",days:[
+    {title:"Upper A",sub:"Push Emphasis",exercises:[mk2("DB Flat Bench Press","4×8-10","chest"),mk2("DB Bent-Over Row","3×10-12","back"),mk2("DB Overhead Press","3×10-12","shoulders"),mk2("Cable Lateral Raise","3×12-15","shoulders"),mk2("DB Bicep Curl","3×10-12","biceps"),mk2("Cable Tricep Pushdown (V-Bar)","3×10-12","triceps")]},
+    {title:"Lower A",sub:"Quad Emphasis",exercises:[mk2("Barbell Back Squat","4×6-8","quads"),mk2("DB Romanian Deadlift","3×10-12","hamstrings"),mk2("Leg Extension","3×12-15","quads"),mk2("Lying Leg Curl","3×10-12","hamstrings"),mk2("DB Calf Raise","4×12-15","calves"),mk2("Plank","3×45-60s","core")]},
+    {title:"Upper B",sub:"Pull Emphasis",exercises:[mk2("Pull-Ups","4×6-10","back"),mk2("DB Incline Bench Press","3×10-12","chest"),mk2("Seated Cable Row","3×10-12","back"),mk2("Cable Face Pull","3×15-20","shoulders"),mk2("DB Incline Curl","3×10-12","biceps"),mk2("DB Overhead Tricep Ext.","3×10-12","triceps")]},
+    {title:"Lower B",sub:"Hip Hinge Focus",exercises:[mk2("Barbell Deadlift","3×5-6","hamstrings"),mk2("DB Bulgarian Split Squat","3×10 each","quads"),mk2("DB Hip Thrust","3×12","glutes"),mk2("Seated Leg Curl","3×12-15","hamstrings"),mk2("Machine Calf Raise","4×12-15","calves"),mk2("Cable Crunch (Rope)","3×12-15","core")]}]}]},
+  {id:"feat_je3",name:"Beginner Starter (4-Week)",subtitle:"Inspired by Jeremy Ethier's beginner guide",creator:"jeremy-ethier",category:"Full Body",phases:[{title:"Beginner Phase",weeks:"Weeks 1-4",desc:"Perfect for beginners. Learn the movements.",rest:"60-90s",sr:"3×10-12",rir:"RIR 3-4",days:[
+    {title:"Day A",sub:"Full Body",exercises:[mk2("DB Goblet Squat","3×12","quads"),mk2("Push-Ups","3×10-15","chest"),mk2("DB Bent-Over Row","3×10-12","back"),mk2("DB Overhead Press","3×10-12","shoulders"),mk2("DB Bicep Curl","2×10-12","biceps"),mk2("Plank","3×30s","core")]},
+    {title:"Day B",sub:"Full Body",exercises:[mk2("DB Romanian Deadlift","3×10-12","hamstrings"),mk2("DB Flat Bench Press","3×10-12","chest"),mk2("Lat Pulldown","3×10-12","back"),mk2("DB Lateral Raise","3×12-15","shoulders"),mk2("DB Hammer Curl","2×10-12","biceps"),mk2("Dead Bug","3×10 each","core")]}]}]},
+
+  // ── Sydney Cummings ──
+  {id:"feat_sc1",name:"Full Body Burn (At Home)",subtitle:"Inspired by Sydney Cummings' home workouts",creator:"sydney-cummings",category:"Full Body",phases:[{title:"Full Body Burn",weeks:"Ongoing",desc:"High-energy full body with dumbbells. Minimal rest.",rest:"30-45s",sr:"3×12-15",rir:"RIR 1-2",days:[
+    {title:"Day 1",sub:"Upper Body Burn",exercises:[mk2("Push-Ups","3×12-15","chest"),mk2("DB Overhead Press","3×12-15","shoulders"),mk2("DB Bent-Over Row","3×12-15","back"),mk2("DB Lateral Raise","3×15","shoulders"),mk2("DB Bicep Curl","3×12-15","biceps"),mk2("DB Overhead Tricep Ext.","3×12-15","triceps")]},
+    {title:"Day 2",sub:"Lower Body Burn",exercises:[mk2("DB Goblet Squat","3×15","quads"),mk2("DB Lunge (Walking)","3×12 each","quads"),mk2("DB Romanian Deadlift","3×12-15","hamstrings"),mk2("DB Hip Thrust","3×15","glutes"),mk2("DB Calf Raise","3×20","calves"),mk2("Mountain Climbers","3×20 each","core")]},
+    {title:"Day 3",sub:"Total Body Circuit",exercises:[mk2("Burpees","3×10","cardio"),mk2("DB Goblet Squat","3×12","quads"),mk2("DB Flat Bench Press","3×12","chest"),mk2("DB Single-Arm Row","3×10 each","back"),mk2("Jumping Jacks","3×30","cardio"),mk2("Plank","3×45s","core")]}]}]},
+  {id:"feat_sc2",name:"Strength & Sculpt",subtitle:"Inspired by Sydney Cummings' strength series",creator:"sydney-cummings",category:"Full Body",phases:[{title:"Strength & Sculpt",weeks:"Ongoing",desc:"Moderate weight, higher reps for muscle definition.",rest:"45-60s",sr:"3-4×10-15",rir:"RIR 1-2",days:[
+    {title:"Push Day",sub:"Chest, Shoulders, Tris",exercises:[mk2("DB Flat Bench Press","3×12","chest"),mk2("DB Incline Bench Press","3×12","chest"),mk2("DB Overhead Press","3×12","shoulders"),mk2("DB Front Raise","3×12","shoulders"),mk2("DB Kickback","3×12","triceps"),mk2("Diamond Push-Ups","3×AMRAP","triceps")]},
+    {title:"Pull Day",sub:"Back, Biceps, Core",exercises:[mk2("DB Bent-Over Row","3×12","back"),mk2("DB Single-Arm Row","3×10 each","back"),mk2("DB Rear Delt Fly","3×12","shoulders"),mk2("DB Bicep Curl","3×12","biceps"),mk2("DB Hammer Curl","3×12","biceps"),mk2("Bicycle Crunches","3×20 each","core")]},
+    {title:"Leg Day",sub:"Quads, Glutes, Hams",exercises:[mk2("DB Goblet Squat","4×12","quads"),mk2("DB Bulgarian Split Squat","3×10 each","quads"),mk2("DB Sumo Squat","3×15","glutes"),mk2("DB Romanian Deadlift","3×12","hamstrings"),mk2("Glute Bridge","3×20","glutes"),mk2("DB Calf Raise","3×20","calves")]}]}]},
+  {id:"feat_sc3",name:"Quick HIIT (30 Min)",subtitle:"Inspired by Sydney Cummings' HIIT style",creator:"sydney-cummings",category:"Cardio",phases:[{title:"Quick HIIT",weeks:"Ongoing",desc:"30-minute high-intensity circuits. Bodyweight + light DBs.",rest:"15-30s",sr:"3×30-45s",rir:"RIR 0-1",days:[
+    {title:"HIIT A",sub:"Cardio Blast",exercises:[mk2("Burpees","3×12","cardio"),mk2("Jump Squats","3×15","quads"),mk2("Mountain Climbers","3×20 each","core"),mk2("High Knees","3×30s","cardio"),mk2("Push-Ups","3×AMRAP","chest"),mk2("Plank","3×45s","core")]},
+    {title:"HIIT B",sub:"Strength Circuit",exercises:[mk2("DB Goblet Squat","3×15","quads"),mk2("DB Flat Bench Press","3×12","chest"),mk2("DB Bent-Over Row","3×12","back"),mk2("Jumping Jacks","3×30","cardio"),mk2("DB Lunge (Walking)","3×10 each","quads"),mk2("V-Ups","3×12","core")]}]}]}
+];
+
 
 const CHANGELOG=[
+  {ver:"v32",date:"2026-03-04",title:"Profiles, Coach Directory & Featured Plans",items:["Removed built-in official plans — use Community Plans or create your own","15 featured workout plans inspired by Jeff Nippard, Athlean-X, Kneesovertoesguy, Jeremy Ethier, and Sydney Cummings","Profile landing pages for each featured fitness creator with YouTube links","User profiles — add bio, fitness goals, experience level, and social links","Coach Directory — browse available coaches and connect directly","Dual coach/athlete — be both a coach AND an athlete simultaneously","Coaches can toggle accepting new athletes and set their specialty","Settings page — clean dedicated page for all app settings","Streamlined menu — navigation only, settings moved to Settings page"]},
   {ver:"v31",date:"2026-03-04",title:"Mega Update — 13 Features",items:["Session Summary — after saving, see total volume, sets, exercises, duration, and PRs","Undo — undo last set change during a workout with full history stack","Duplicate Day — copy the last day in a phase when building plans","Superset Support — tag exercises with superset groups (A/B/C) in plan editor, shown during workouts","1RM Estimates — Epley formula estimates displayed as cards on the Progress page","Workout Streaks & Badges — track your current streak, best streak, and earn badges (10/25/50/100/200 sessions)","Rest Day Recommendations — alerts when you've been training hard without rest","Performance Charts — weekly volume bar chart and sets-by-muscle-group breakdown","Coach Analytics Dashboard — new analytics tab showing athlete compliance, activity heatmap, and top 1RMs","Offline Mode Indicator — banner shows when you're offline, changes sync on reconnect","Data Export — JSON backup and printable progress report alongside CSV","Push Notifications — enable browser notifications from the menu","App Store Wrapper — TWA configuration for Google Play Store publishing"]},
   {ver:"v30",date:"2026-03-03",title:"Navigation Dock & Custom Exercises",items:["Bottom navigation bar for quick access to key screens","Customize your nav bar — choose up to 5 items and reorder them","Custom exercise option in the plan editor — type any exercise name","Edit Navigation Bar option in the dropdown menu"]},
   {ver:"v29",date:"2026-03-03",title:"Community Plans & Manage Plans Overhaul",items:["Community Plans Catalog — browse and import workout plans shared by other users","Share your plans to the community via long press in Manage Plans","Filter community plans by creator name, plan type, or sort by date","Long press any plan in Manage Plans to share, print, or delete","Sort plans by date created, recently used, or default order","Print any workout plan for offline use","Removed accidental delete buttons from dropdown menu and plan cards","Coach-assigned plans now shown as a separate section in Manage Plans","Updated instructions on the Manage Plans page"]},
@@ -417,6 +415,7 @@ function App(){
   const [namePrompt,setNamePrompt]=useState(false);
   const [hiddenPlans,setHiddenPlans]=useState([]);
   const [userRole,setUserRole]=useState(null);
+  const [isCoach,setIsCoach]=useState(false);
   const [coachCode,setCoachCode]=useState("");
   const [coachRoster,setCoachRoster]=useState([]);
   const [myCoaches,setMyCoaches]=useState([]);
@@ -463,7 +462,7 @@ function App(){
   const [longPressMenu,setLongPressMenu]=useState(null);
   const [longPressTimer,setLongPressTimer]=useState(null);
   const [plansHelpOpen,setPlansHelpOpen]=useState(false);
-  const NAV_OPTIONS=[{id:"plans",label:"My Plans",icon:"📋",action:()=>{setScreen("plans");history.pushState({screen:"plans"},"");}},{id:"community",label:"Community",icon:"🌐",action:()=>{setScreen("community");loadCommunityPlans();history.pushState({screen:"community"},"");}},{id:"create",label:"Create Plan",icon:"✨",action:()=>{setCpScreen("main");setCpDraft(null);setAiError("");setScreen("create");history.pushState({screen:"create"},"");}},{id:"coaching",label:"Coaching",icon:"🎯",action:()=>{setCoachMsg("");setScreen("coaching");loadRoster();history.pushState({screen:"coaching"},"");}},{id:"leaderboard",label:"Leaderboard",icon:"🏆",action:()=>{setScreen("leaderboard");loadLeaderboard();history.pushState({screen:"leaderboard"},"");}},{id:"progress",label:"Progress",icon:"📊",action:()=>{setScreen("progress");setProgEx(loggedExercises[0]||"");setProgDay("all");setProgOpen(null);history.pushState({screen:"progress"},"");}},{id:"chat",label:"Messages",icon:"💬",action:()=>{setScreen("chatlist");loadChatList();history.pushState({screen:"chatlist"},"");}},{id:"home",label:"Home",icon:"🏠",action:()=>{setScreen("home");history.pushState({screen:"home"},"");}}];
+  const NAV_OPTIONS=[{id:"plans",label:"My Plans",icon:"📋",action:()=>{setScreen("plans");history.pushState({screen:"plans"},"");}},{id:"community",label:"Community",icon:"🌐",action:()=>{setScreen("community");loadCommunityPlans();history.pushState({screen:"community"},"");}},{id:"create",label:"Create Plan",icon:"✨",action:()=>{setCpScreen("main");setCpDraft(null);setAiError("");setScreen("create");history.pushState({screen:"create"},"");}},{id:"coaching",label:"Coaching",icon:"🎯",action:()=>{setCoachMsg("");setScreen("coaching");loadRoster();history.pushState({screen:"coaching"},"");}},{id:"leaderboard",label:"Leaderboard",icon:"🏆",action:()=>{setScreen("leaderboard");loadLeaderboard();history.pushState({screen:"leaderboard"},"");}},{id:"progress",label:"Progress",icon:"📊",action:()=>{setScreen("progress");setProgEx(loggedExercises[0]||"");setProgDay("all");setProgOpen(null);history.pushState({screen:"progress"},"");}},{id:"chat",label:"Messages",icon:"💬",action:()=>{setScreen("chatlist");loadChatList();history.pushState({screen:"chatlist"},"");}},{id:"home",label:"Home",icon:"🏠",action:()=>{setScreen("home");history.pushState({screen:"home"},"");}},{id:"coachDir",label:"Find Coach",icon:"📋",action:()=>{setScreen("coachDir");loadCoachDir();history.pushState({screen:"coachDir"},"");}},{id:"settings",label:"Settings",icon:"⚙️",action:()=>{setScreen("settings");history.pushState({screen:"settings"},"");}}];
   const DEFAULT_NAV=["plans","community","create","coaching","leaderboard"];
   const [navItems,setNavItems]=useState(DEFAULT_NAV);
   const [navEditOpen,setNavEditOpen]=useState(false);
@@ -473,6 +472,12 @@ function App(){
   const [isOffline,setIsOffline]=useState(!navigator.onLine);
   const [pushEnabled,setPushEnabled]=useState(false);
   const [coachAnalyticsTab,setCoachAnalyticsTab]=useState("overview");
+  const [myProfile,setMyProfile]=useState({bio:"",goals:[],socialLinks:{},experience:"",photoURL:""});
+  const [viewProfile,setViewProfile]=useState(null);
+  const [coachDirList,setCoachDirList]=useState([]);
+  const [coachDirLoading,setCoachDirLoading]=useState(false);
+  const [coachAccepting,setCoachAccepting]=useState(true);
+  const [coachSpecialty,setCoachSpecialty]=useState("");
   const unsubs=useRef([]);
   const C=theme==="dark"?DARK:LIGHT;
 
@@ -500,7 +505,7 @@ function App(){
     setSyncing(true);const uid=user.uid;
     Promise.all([Cloud.load(uid,"state"),Cloud.load(uid,"history"),Cloud.load(uid,"swaps"),Cloud.load(uid,"customEx"),Cloud.load(uid,"ssLinks"),Cloud.load(uid,"exOrder"),Cloud.load(uid,"exEdits"),Cloud.load(uid,"bodyWeight"),Cloud.load(uid,"prefs"),Cloud.load(uid,"myPlans"),Cloud.load(uid,"hiddenPlans"),Cloud.load(uid,"coachPlans"),Cloud.load(uid,"coachNotes")]).then(([st,h,s,ce,sl,eo,ee,bw,pf,mp,hp,cp,cn])=>{
       if(st){setPlanId(st.p||"v1");setPhaseIdx(st.ph||0);setDayIdx(st.d||0);}
-      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(pf&&pf.navItems)setNavItems(pf.navItems);if(pf&&pf.userName)setUserName(pf.userName);if(pf&&pf.role)setUserRole(pf.role);if(pf&&pf.coachCode)setCoachCode(pf.coachCode);if(pf?.notifySession===false)setNotifySession(false);if(pf?.notifyPlan===false)setNotifyPlan(false);if(mp)setMyPlans(mp);if(hp&&hp.ids)setHiddenPlans(hp.ids);if(cp)setCoachPlans(cp);if(cn)setCoachNotes(cn);setSyncing(false);if(!pf?.userName){setNamePrompt(true);if(!hp||!hp.ids){const defaultHidden=["v1","v2","v3"];setHiddenPlans(defaultHidden);Cloud.save(uid,"hiddenPlans",{ids:defaultHidden});}}
+      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(pf&&pf.navItems)setNavItems(pf.navItems);if(pf&&pf.userName)setUserName(pf.userName);if(pf&&pf.role)setUserRole(pf.role);if(pf&&pf.isCoach)setIsCoach(true);if(pf&&pf.profile)setMyProfile(pf.profile);if(pf&&pf.coachAccepting!==undefined)setCoachAccepting(pf.coachAccepting);if(pf&&pf.coachSpecialty)setCoachSpecialty(pf.coachSpecialty);if(pf&&pf.coachCode)setCoachCode(pf.coachCode);if(pf?.notifySession===false)setNotifySession(false);if(pf?.notifyPlan===false)setNotifyPlan(false);if(mp)setMyPlans(mp);if(hp&&hp.ids)setHiddenPlans(hp.ids);if(cp)setCoachPlans(cp);if(cn)setCoachNotes(cn);setSyncing(false);if(!pf?.userName){setNamePrompt(true);}
     });
     unsubs.current.push(
       Cloud.listen(uid,"history",data=>setHist(data)),
@@ -511,7 +516,7 @@ function App(){
       Cloud.listen(uid,"exOrder",data=>{if(data)setExOrder(data);}),
       Cloud.listen(uid,"exEdits",data=>{if(data)setExEdits(data);}),
       Cloud.listen(uid,"bodyWeight",data=>{if(data)setBodyWt(data);}),
-      Cloud.listen(uid,"prefs",data=>{if(data&&data.theme)setTheme(data.theme);if(data&&data.aiKey)setAiKey(data.aiKey);if(data&&data.aiProvider)setAiProvider(data.aiProvider);if(data?.bwEnabled===false)setBwEnabled(false);else if(data?.bwEnabled===true)setBwEnabled(true);if(data&&data.userName)setUserName(data.userName);if(data&&data.role)setUserRole(data.role);if(data&&data.coachCode)setCoachCode(data.coachCode);if(data?.notifySession===false)setNotifySession(false);else if(data?.notifySession===true)setNotifySession(true);if(data?.notifyPlan===false)setNotifyPlan(false);else if(data?.notifyPlan===true)setNotifyPlan(true);}),
+      Cloud.listen(uid,"prefs",data=>{if(data&&data.theme)setTheme(data.theme);if(data&&data.aiKey)setAiKey(data.aiKey);if(data&&data.aiProvider)setAiProvider(data.aiProvider);if(data?.bwEnabled===false)setBwEnabled(false);else if(data?.bwEnabled===true)setBwEnabled(true);if(data&&data.userName)setUserName(data.userName);if(data&&data.role)setUserRole(data.role);if(data&&data.isCoach!==undefined)setIsCoach(!!data.isCoach);if(data&&data.coachCode)setCoachCode(data.coachCode);if(data?.notifySession===false)setNotifySession(false);else if(data?.notifySession===true)setNotifySession(true);if(data?.notifyPlan===false)setNotifyPlan(false);else if(data?.notifyPlan===true)setNotifyPlan(true);}),
       Cloud.listen(uid,"myPlans",data=>{if(data)setMyPlans(data);}),
       Cloud.listen(uid,"hiddenPlans",data=>{if(data&&data.ids)setHiddenPlans(data.ids);}),
       Cloud.listen(uid,"coachPlans",data=>{if(data)setCoachPlans(data);}),
@@ -533,9 +538,9 @@ function App(){
   const linkGoogle=async()=>{setLinkMsg("");try{await user.linkWithPopup(new firebase.auth.GoogleAuthProvider());setLinkMsg("Google account linked!");}catch(e){setLinkMsg(e.code==="auth/credential-already-in-use"?"That Google account is linked to another user.":e.code==="auth/provider-already-linked"?"Google already linked.":e.message);}};
   const linkEmail=async()=>{setLinkMsg("");if(!linkEmailIn||!linkPassIn)return setLinkMsg("Enter email and password.");if(linkPassIn.length<6)return setLinkMsg("Password must be at least 6 characters.");try{const cr=firebase.auth.EmailAuthProvider.credential(linkEmailIn,linkPassIn);await user.linkWithCredential(cr);setLinkMsg("Email linked!");setLinkEmailIn("");setLinkPassIn("");}catch(e){setLinkMsg(e.code==="auth/email-already-in-use"?"That email is linked to another account.":e.message);}};
       const generateCoachCode=()=>{const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let code="";for(let i=0;i<6;i++)code+=chars[Math.floor(Math.random()*chars.length)];return code;};
-  const becomeCoach=async()=>{if(!user||!userName)return setCoachMsg("Set your name first.");const code=generateCoachCode();await db.collection("coaches").doc(user.uid).set({name:userName,code,email:user.email||"",createdAt:Date.now()});setCoachCode(code);setUserRole("coach");savePrefs({role:"coach",coachCode:code});setCoachMsg("You are now a coach! Share your code: "+code);};
+  const becomeCoach=async()=>{if(!user||!userName)return setCoachMsg("Set your name first.");const code=generateCoachCode();await db.collection("coaches").doc(user.uid).set({name:userName,code,email:user.email||"",createdAt:Date.now()});setCoachCode(code);setIsCoach(true);setUserRole(userRole||"coach");savePrefs({role:userRole||"coach",isCoach:true,coachCode:code});setCoachMsg("You are now a coach! Share your code: "+code);};
   const loadRoster=async()=>{if(!user)return;setRosterLoading(true);try{const snap=await db.collection("connections").where("coachUid","==",user.uid).where("status","==","active").get();const athletes=[];for(const doc of snap.docs){const d=doc.data();const nameSnap=await Cloud.load(d.athleteUid,"prefs");athletes.push({uid:d.athleteUid,name:nameSnap?.userName||"Unknown",connId:doc.id,joinedAt:d.joinedAt});}setCoachRoster(athletes);}catch(e){console.error("Roster:",e);}setRosterLoading(false);};
-  const joinCoach=async()=>{if(!user||!joinCode.trim())return setCoachMsg("Enter a coach code.");setCoachMsg("");try{const snap=await db.collection("coaches").where("code","==",joinCode.trim().toUpperCase()).get();if(snap.empty)return setCoachMsg("Invalid code. Check with your coach.");const coachDoc=snap.docs[0];const coachUid=coachDoc.id;const coachData=coachDoc.data();if(coachUid===user.uid)return setCoachMsg("That is your own coach code.");const connId=coachUid+"_"+user.uid;const existDoc=await db.collection("connections").doc(connId).get();if(existDoc.exists&&existDoc.data().status==="active")return setCoachMsg("Already connected to "+coachData.name+".");await db.collection("connections").doc(connId).set({coachUid,athleteUid:user.uid,status:"active",joinedAt:Date.now()});setMyCoaches(prev=>[...prev,{uid:coachUid,name:coachData.name,connId}]);setUserRole("athlete");savePrefs({role:"athlete"});setJoinCode("");setCoachMsg("Connected to coach: "+coachData.name+"!");}catch(e){setCoachMsg(e.message);}};
+  const joinCoach=async()=>{if(!user||!joinCode.trim())return setCoachMsg("Enter a coach code.");setCoachMsg("");try{const snap=await db.collection("coaches").where("code","==",joinCode.trim().toUpperCase()).get();if(snap.empty)return setCoachMsg("Invalid code. Check with your coach.");const coachDoc=snap.docs[0];const coachUid=coachDoc.id;const coachData=coachDoc.data();if(coachUid===user.uid)return setCoachMsg("That is your own coach code.");const connId=coachUid+"_"+user.uid;const existDoc=await db.collection("connections").doc(connId).get();if(existDoc.exists&&existDoc.data().status==="active")return setCoachMsg("Already connected to "+coachData.name+".");await db.collection("connections").doc(connId).set({coachUid,athleteUid:user.uid,status:"active",joinedAt:Date.now()});setMyCoaches(prev=>[...prev,{uid:coachUid,name:coachData.name,connId}]);setUserRole(isCoach?"coach":"athlete");savePrefs({role:isCoach?"coach":"athlete"});setJoinCode("");setCoachMsg("Connected to coach: "+coachData.name+"!");}catch(e){setCoachMsg(e.message);}};
   const loadMyCoaches=async()=>{if(!user)return;try{const snap=await db.collection("connections").where("athleteUid","==",user.uid).where("status","==","active").get();const coaches=[];for(const doc of snap.docs){const d=doc.data();const cSnap=await db.collection("coaches").doc(d.coachUid).get();if(cSnap.exists)coaches.push({uid:d.coachUid,name:cSnap.data().name,connId:doc.id});}setMyCoaches(coaches);}catch(e){console.error("LoadCoaches:",e);}};
   const leaveCoach=async(coach)=>{if(!coach?.connId)return;try{await db.collection("connections").doc(coach.connId).update({status:"inactive"});setMyCoaches(prev=>prev.filter(c=>c.connId!==coach.connId));setCoachMsg("Disconnected from "+coach.name+".");}catch(e){setCoachMsg(e.message);}};
   const removeAthlete=async(connId,name)=>{if(!confirm("Remove "+name+" from your roster?"))return;try{await db.collection("connections").doc(connId).update({status:"inactive"});setCoachRoster(r=>r.filter(a=>a.connId!==connId));setCoachMsg(name+" removed.");}catch(e){setCoachMsg(e.message);}};
@@ -651,7 +656,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     finally{setAiLoading(false);}
   };
 
-  const savePrefs=(extra={})=>{if(!user)return;Cloud.save(user.uid,"prefs",{theme,aiKey,aiProvider,bwEnabled,userName,role:userRole,coachCode,notifySession,notifyPlan,...extra});};
+  const savePrefs=(extra={})=>{if(!user)return;Cloud.save(user.uid,"prefs",{theme,aiKey,aiProvider,bwEnabled,userName,role:userRole,isCoach,coachCode,notifySession,notifyPlan,...extra});};
   const saveAIKey=()=>savePrefs();
 
   // LEADERBOARD
@@ -659,11 +664,13 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
   const countSessions=(h)=>{return Object.keys(h).filter(k=>{const p=k.split("-");const dt=p.length>=4?p.slice(-3).join("-"):"";return dt.match(/^\d{4}-\d{2}-\d{2}$/);}).length;};
   const countMonthSessions=(h)=>{const mo=getLbMonth();return Object.keys(h).filter(k=>{const p=k.split("-");const dt=p.length>=4?p.slice(-3).join("-"):"";return dt.startsWith(mo);}).length;};
   const updateLeaderboard=async()=>{if(!user||!userName)return;const mo=countMonthSessions(hist);const lt=countSessions(hist);try{await db.collection("leaderboard").doc(user.uid).set({name:userName,month:mo,lifetime:lt,monthKey:getLbMonth(),updatedAt:Date.now()});}catch(e){console.error("LB update:",e);}};
+  const loadCoachDir=async()=>{setCoachDirLoading(true);try{const snap=await db.collection("coaches").get();const arr=[];for(const doc of snap.docs){const d=doc.data();arr.push({uid:doc.id,...d});}setCoachDirList(arr);}catch(e){console.error("Coach dir:",e);}setCoachDirLoading(false);};
+  const updateCoachProfile=async()=>{if(!user)return;try{await db.collection("coaches").doc(user.uid).update({accepting:coachAccepting,specialty:coachSpecialty,bio:myProfile.bio||""});setCoachMsg("Coach profile updated!");}catch(e){console.error(e);}};
   const loadLeaderboard=async()=>{try{const snap=await db.collection("leaderboard").get();const arr=[];snap.forEach(d=>{const data=d.data();arr.push({uid:d.id,...data});});setLbData(arr);}catch(e){console.error("LB load:",e);}};
   useEffect(()=>{if(user&&userName&&Object.keys(hist).length>0)updateLeaderboard();},[hist,userName,user]);
-  useEffect(()=>{if(user&&screen==="leaderboard")loadLeaderboard();},[screen,user]);
+  useEffect(()=>{if(user&&screen==="leaderboard")loadLeaderboard();if(user&&screen==="coachDir")loadCoachDir();},[screen,user]);
   useEffect(()=>{if(screen!=="chat"&&chatUnsub.current){chatUnsub.current();chatUnsub.current=null;}},[screen]);
-  useEffect(()=>{if(user&&screen==="coaching"&&userRole==="coach")loadRoster();},[screen,user,userRole]);
+  useEffect(()=>{if(user&&screen==="coaching"&&isCoach)loadRoster();},[screen,user,userRole]);
   const publishPlan=(p)=>{if(!user)return;const pub={...p,_published:true};const nm={...myPlans,[p.id]:pub};setMyPlans(nm);Cloud.save(user.uid,"myPlans",nm);setCpDraft(null);setCpScreen("main");setPlanId(p.id);setPhaseIdx(0);setDayIdx(0);setScreen("home");};
   const togglePlanVisibility=(pid)=>{if(!user)return;const nh=hiddenPlans.includes(pid)?hiddenPlans.filter(id=>id!==pid):[...hiddenPlans,pid];setHiddenPlans(nh);Cloud.save(user.uid,"hiddenPlans",{ids:nh});};
   const deletePlan=(pid)=>{if(!user)return;const nm={...myPlans};delete nm[pid];setMyPlans(nm);Cloud.save(user.uid,"myPlans",nm);if(planId===pid){setPlanId("v1");setPhaseIdx(0);setDayIdx(0);}};
@@ -814,9 +821,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
                 <button onClick={()=>{setPlanMenu(false);setScreen("plans");history.pushState({screen:"plans"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontWeight:600,fontSize:13}}>⚙️ Manage Plans</button>
                 <button onClick={()=>{setPlanMenu(false);setScreen("community");loadCommunityPlans();history.pushState({screen:"community"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontWeight:600,fontSize:13}}>🌐 Community Plans</button>
                 <button onClick={()=>{setPlanMenu(false);setScreen("leaderboard");loadLeaderboard();history.pushState({screen:"leaderboard"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontWeight:600,fontSize:13}}>🏆 Leaderboard</button>
-                <button onClick={()=>{setScreen("changelog");setPlanMenu(false);history.pushState({screen:"changelog"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontSize:12,fontWeight:600}}>📋 Latest App Updates</button>
-                <button onClick={()=>{setPlanMenu(false);setNavEditOpen(true);}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontSize:12,fontWeight:600}}>🔧 Edit Navigation Bar</button>
-                <button onClick={()=>{setPlanMenu(false);requestPushPermission();}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontSize:12,fontWeight:600}}>{pushEnabled?"✅ Notifications Enabled":"🔔 Enable Notifications"}</button>
+                <button onClick={()=>{setPlanMenu(false);setScreen("settings");history.pushState({screen:"settings"},"");}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:C.dim,cursor:"pointer",fontSize:12,fontWeight:600}}>⚙️ Settings</button>
                 <button onClick={()=>{setPlanMenu(false);if(navigator.share){navigator.share({title:"Wieser Workouts",text:"Check out Wieser Workouts — a free workout tracker with custom plans, progress tracking, and coaching!",url:window.location.origin}).catch(()=>{});}else{navigator.clipboard.writeText(window.location.origin);alert("Link copied to clipboard!");}}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:"#22C55E",cursor:"pointer",fontSize:12,fontWeight:600}}>📤 Share This App</button>
                 <div style={{borderTop:`1px solid ${C.bdr}`,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>{user.photoURL&&<img src={user.photoURL} style={{width:24,height:24,borderRadius:12}} referrerPolicy="no-referrer"/>}<span onClick={()=>setNamePrompt(true)} style={{fontSize:11,color:userName?C.dim:C.acc,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",cursor:"pointer"}}>{userName||"Set your name ✎"}</span></div>
@@ -1006,19 +1011,14 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
 
         {coachMsg&&<div style={{padding:"10px 14px",marginBottom:16,borderRadius:10,fontSize:13,background:coachMsg.includes("!")?coachMsg.includes("Invalid")||coachMsg.includes("removed")||coachMsg.includes("Disconnected")?"#F59E0B18":"#22C55E18":"#F59E0B18",border:`1px solid ${coachMsg.includes("!")?coachMsg.includes("Invalid")||coachMsg.includes("removed")||coachMsg.includes("Disconnected")?"#F59E0B30":"#22C55E30":"#F59E0B30"}`,color:coachMsg.includes("!")?coachMsg.includes("Invalid")||coachMsg.includes("removed")||coachMsg.includes("Disconnected")?"#F59E0B":"#22C55E":"#F59E0B"}}>{coachMsg}</div>}
 
-        {/* ROLE SELECTION - only if no role set */}
-        {!userRole&&myCoaches.length===0&&(
-          <div style={{marginBottom:24}}>
-            <div style={{fontSize:13,color:C.dim,marginBottom:16}}>Choose how you want to use coaching features.</div>
-            <div style={{display:"flex",gap:10}}>
-              <button onClick={becomeCoach} style={{flex:1,padding:"20px 12px",borderRadius:14,border:`1px solid ${C.acc}30`,background:C.acc+"08",color:C.txt,cursor:"pointer",textAlign:"center"}}><div style={{fontSize:24,marginBottom:6}}>&#x1f3af;</div><div style={{fontWeight:700,fontSize:14}}>I'm a Coach</div><div style={{fontSize:11,color:C.dim,marginTop:4}}>Manage athletes & assign plans</div></button>
-              <button onClick={()=>{setUserRole("athlete");savePrefs({role:"athlete"});}} style={{flex:1,padding:"20px 12px",borderRadius:14,border:`1px solid ${C.sbdr}`,background:C.card,color:C.txt,cursor:"pointer",textAlign:"center"}}><div style={{fontSize:24,marginBottom:6}}>&#x1f3cb;</div><div style={{fontWeight:700,fontSize:14}}>I'm an Athlete</div><div style={{fontSize:11,color:C.dim,marginTop:4}}>Connect with a coach</div></button>
-            </div>
-          </div>
-        )}
+        {/* COACHING ACTIONS */}
+        <div style={{display:"flex",gap:8,marginBottom:16}}>
+          {!isCoach&&<button onClick={becomeCoach} style={{flex:1,padding:"12px",borderRadius:10,border:`1px solid ${C.acc}30`,background:C.acc+"08",color:C.acc,fontSize:13,fontWeight:700,cursor:"pointer"}}>🎯 Become a Coach</button>}
+          <button onClick={()=>{setScreen("coachDir");loadCoachDir();history.pushState({screen:"coachDir"},"");}} style={{flex:1,padding:"12px",borderRadius:10,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:13,fontWeight:600,cursor:"pointer"}}>📋 Coach Directory</button>
+        </div>
 
         {/* ─── COACH VIEW ─── */}
-        {userRole==="coach"&&!viewAthlete&&(<>
+        {isCoach&&!viewAthlete&&(<>
           <div style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:12,padding:"14px 16px",marginBottom:20}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div><div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1}}>Your Coach Code</div>
@@ -1062,7 +1062,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         </>)}
 
         {/* ─── COACH VIEW: ATHLETE DETAIL ─── */}
-        {userRole==="coach"&&viewAthlete&&(<>
+        {isCoach&&viewAthlete&&(<>
           <button onClick={()=>{setViewAthlete(null);setAthleteData(null);setExpandSession(null);setAthleteDetailTab("sessions");setAthleteNoteInput("");}} style={{padding:"6px 14px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:12}}>&#x2190; Back to Roster</button>
           <div style={{fontFamily:"Outfit",fontSize:18,fontWeight:800,marginBottom:12}}>{viewAthlete.name}</div>
           {!athleteData?<div style={{color:C.dim,fontSize:13}}>Loading athlete data...</div>:(<>
@@ -1270,7 +1270,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
               <button onClick={()=>{if(active){alert("Can't hide the active plan. Switch to another plan first.");return;}togglePlanVisibility(p.id);}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${hidden?"#EF444430":C.acc+"40"}`,background:hidden?"#EF444410":C.acc+"10",color:hidden?"#EF4444":C.acc,fontSize:12,fontWeight:700,cursor:"pointer",minWidth:70,textAlign:"center",flexShrink:0}}>{hidden?"Hidden":"Visible"}</button>
             </div>);};
 
-          const officialItems=ALL.map(p=>({p,badge:"",meta:p.phases.length+" phases · "+p.phases.reduce((a,ph)=>a+ph.days.length,0)+" days/rotation",isOfficial:true,src:"official",_createdAt:0}));
+          const officialItems=[];
           const myItems=Object.values(myPlans).filter(p=>p._published!==false).map(p=>({p,badge:p._importedFrom?"🌐":"✨",meta:(p._createdAt?"Created "+new Date(p._createdAt).toLocaleDateString():"")+(p._importedFrom?" · from "+p._importedFrom:""),isOfficial:false,src:"my",_createdAt:p._createdAt||0}));
           const coachItems=Object.values(coachPlans).filter(p=>p._published!==false).map(p=>({p,badge:"🎯",meta:p._assignedByName?"Assigned by "+p._assignedByName:"",isOfficial:false,src:"coach",_createdAt:p._assignedAt||0}));
 
@@ -1284,8 +1284,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
 
           return(<>
             <div style={{marginBottom:24}}>
-              <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Official Plans</div>
-              {officialItems.map(item=>(<PlanCard key={item.p.id} p={item.p} badge={item.badge} meta={item.meta} isOfficial={item.isOfficial}/>))}
+
             </div>
             {myItems.length>0&&(<div style={{marginBottom:24}}>
               <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>My Plans</div>
@@ -1334,6 +1333,19 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800}}>🌐 Community Plans</div>
         </div>
         <div style={{fontSize:13,color:C.dim,marginBottom:16}}>Browse workout plans shared by other users. Import any plan to customize it for yourself.</div>
+
+        {/* FEATURED PLANS */}
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#F59E0B",textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>⭐ FEATURED PLANS</div>
+          <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:8,WebkitOverflowScrolling:"touch"}}>
+            {Object.entries(INFLUENCER_PROFILES).map(([key,prof])=>(
+              <button key={key} onClick={()=>{setViewProfile(key);setScreen("profile");history.pushState({screen:"profile"},"");}} style={{minWidth:120,padding:"12px",borderRadius:12,border:`1px solid ${prof.color}30`,background:prof.color+"08",textAlign:"center",cursor:"pointer",flexShrink:0}}>
+                <div style={{width:40,height:40,borderRadius:20,background:prof.color,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:14,margin:"0 auto 6px"}}>{prof.photoPlaceholder}</div>
+                <div style={{fontSize:11,fontWeight:700,color:C.txt,whiteSpace:"nowrap"}}>{prof.name.split("(")[0].split(" ").slice(0,2).join(" ")}</div>
+                <div style={{fontSize:10,color:C.fnt}}>{prof.planCount} plans</div>
+              </button>))}
+          </div>
+        </div>
 
         {/* SEARCH AND FILTERS */}
         <input placeholder="Search by plan name or creator..." value={communityFilter} onChange={e=>setCommunityFilter(e.target.value)} style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:"12px 14px",color:C.txt,fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"inherit",marginBottom:10}}/>
@@ -1747,6 +1759,121 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
               </div>);})}
         </div>
       </div>)}
+
+    {/* ══════ SETTINGS PAGE ══════ */}
+    {screen==="settings"&&user&&(
+      <div className="fade-in" style={{padding:"16px 16px 80px"}}>
+        <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,marginBottom:16}}>⚙️ Settings</div>
+
+        {/* PROFILE */}
+        <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:14,padding:"16px",marginBottom:16}}>
+          <div style={{fontSize:11,color:C.acc,fontWeight:700,letterSpacing:"0.5px",marginBottom:12}}>👤 MY PROFILE</div>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+            {(myProfile.photoURL||user.photoURL)?<img src={myProfile.photoURL||user.photoURL} style={{width:48,height:48,borderRadius:24}} referrerPolicy="no-referrer"/>:<div style={{width:48,height:48,borderRadius:24,background:C.acc,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:18}}>{(userName||"?")[0].toUpperCase()}</div>}
+            <div><div style={{fontWeight:700,color:C.txt}}>{userName||"Set your name"}</div><div style={{fontSize:11,color:C.fnt}}>{user.email}</div></div>
+          </div>
+          <div style={{fontSize:11,color:C.fnt,marginBottom:4}}>Bio</div>
+          <textarea value={myProfile.bio} onChange={e=>setMyProfile(p=>({...p,bio:e.target.value}))} rows={2} placeholder="Tell others about yourself..." style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"8px 10px",color:C.txt,fontSize:12,outline:"none",boxSizing:"border-box",fontFamily:"inherit",resize:"vertical",marginBottom:8}}/>
+          <div style={{fontSize:11,color:C.fnt,marginBottom:4}}>Experience Level</div>
+          <select value={myProfile.experience} onChange={e=>setMyProfile(p=>({...p,experience:e.target.value}))} style={{marginBottom:8}}><option value="">Select...</option><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select>
+          <div style={{fontSize:11,color:C.fnt,marginBottom:4}}>Fitness Goals</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}}>
+            {["Muscle Gain","Weight Loss","Endurance","Strength","Flexibility","General Fitness"].map(g=>(<button key={g} onClick={()=>setMyProfile(p=>{const goals=p.goals||[];return{...p,goals:goals.includes(g)?goals.filter(x=>x!==g):[...goals,g]};})} style={{padding:"4px 10px",borderRadius:6,border:`1px solid ${(myProfile.goals||[]).includes(g)?C.acc+"60":C.sbdr}`,background:(myProfile.goals||[]).includes(g)?C.acc+"15":"transparent",color:(myProfile.goals||[]).includes(g)?C.acc:C.dim,fontSize:11,fontWeight:600,cursor:"pointer"}}>{g}</button>))}
+          </div>
+          <div style={{fontSize:11,color:C.fnt,marginBottom:4}}>Social Links</div>
+          <input value={myProfile.socialLinks?.instagram||""} onChange={e=>setMyProfile(p=>({...p,socialLinks:{...p.socialLinks,instagram:e.target.value}}))} placeholder="Instagram username" style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"8px 10px",color:C.txt,fontSize:12,outline:"none",boxSizing:"border-box",fontFamily:"inherit",marginBottom:4}}/>
+          <input value={myProfile.socialLinks?.youtube||""} onChange={e=>setMyProfile(p=>({...p,socialLinks:{...p.socialLinks,youtube:e.target.value}}))} placeholder="YouTube channel URL" style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"8px 10px",color:C.txt,fontSize:12,outline:"none",boxSizing:"border-box",fontFamily:"inherit",marginBottom:4}}/>
+          <input value={myProfile.socialLinks?.website||""} onChange={e=>setMyProfile(p=>({...p,socialLinks:{...p.socialLinks,website:e.target.value}}))} placeholder="Website URL" style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"8px 10px",color:C.txt,fontSize:12,outline:"none",boxSizing:"border-box",fontFamily:"inherit",marginBottom:8}}/>
+          <button onClick={()=>{savePrefs({profile:myProfile});}} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>Save Profile</button>
+        </div>
+
+        {/* COACH SETTINGS */}
+        {isCoach&&(<div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:14,padding:"16px",marginBottom:16}}>
+          <div style={{fontSize:11,color:"#22C55E",fontWeight:700,letterSpacing:"0.5px",marginBottom:12}}>🎯 COACH SETTINGS</div>
+          <div style={{fontSize:12,color:C.dim,marginBottom:8}}>Coach Code: <b style={{color:C.acc}}>{coachCode}</b></div>
+          <div style={{display:"flex",gap:8,marginBottom:8}}>
+            <button onClick={()=>{setCoachAccepting(!coachAccepting);}} style={{flex:1,padding:"10px",borderRadius:8,border:`1px solid ${coachAccepting?"#22C55E30":"#EF444430"}`,background:coachAccepting?"#22C55E10":"#EF444410",color:coachAccepting?"#22C55E":"#EF4444",fontSize:12,fontWeight:700,cursor:"pointer"}}>{coachAccepting?"✅ Accepting New Athletes":"❌ Not Accepting"}</button>
+          </div>
+          <input value={coachSpecialty} onChange={e=>setCoachSpecialty(e.target.value)} placeholder="Specialty (e.g. Hypertrophy, Powerlifting)" style={{width:"100%",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:8,padding:"8px 10px",color:C.txt,fontSize:12,outline:"none",boxSizing:"border-box",fontFamily:"inherit",marginBottom:8}}/>
+          <button onClick={updateCoachProfile} style={{width:"100%",padding:"10px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer"}}>Update Coach Profile</button>
+        </div>)}
+
+        {/* APP SETTINGS */}
+        <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:14,padding:"16px",marginBottom:16}}>
+          <div style={{fontSize:11,color:"#5B8DEF",fontWeight:700,letterSpacing:"0.5px",marginBottom:12}}>🔧 APP SETTINGS</div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,color:C.txt}}>Theme</span><button onClick={toggleTheme} style={{padding:"6px 14px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer"}}>{theme==="dark"?"☀️ Light":"🌙 Dark"}</button></div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,color:C.txt}}>Push Notifications</span><button onClick={requestPushPermission} style={{padding:"6px 14px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:pushEnabled?"#22C55E":C.dim,fontSize:12,fontWeight:600,cursor:"pointer"}}>{pushEnabled?"✅ Enabled":"Enable"}</button></div>
+            <button onClick={()=>setNavEditOpen(true)} style={{padding:"10px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"left"}}>🔧 Edit Navigation Bar</button>
+            <button onClick={()=>{setScreen("changelog");history.pushState({screen:"changelog"},"");}} style={{padding:"10px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"left"}}>📋 Latest App Updates</button>
+          </div>
+        </div>
+
+        <button onClick={()=>{setPlanMenu(false);setLinkMsg("");setScreen("account");history.pushState({screen:"account"},"");}} style={{width:"100%",padding:"12px",borderRadius:10,border:`1px solid ${C.sbdr}`,background:C.srf,color:"#5B8DEF",fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:8}}>🔑 Account & Security</button>
+        <button onClick={signOut} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #EF444425",background:"#EF444408",color:"#EF4444",fontSize:13,fontWeight:600,cursor:"pointer"}}>Sign Out</button>
+      </div>
+    )}
+
+    {/* ══════ PROFILE VIEW ══════ */}
+    {screen==="profile"&&viewProfile&&(
+      <div className="fade-in" style={{padding:"16px 16px 80px"}}>
+        {(()=>{
+          const isInfluencer=!!INFLUENCER_PROFILES[viewProfile];
+          const prof=isInfluencer?INFLUENCER_PROFILES[viewProfile]:{name:"User"};
+          const plans=FEATURED_PLANS.filter(p=>p.creator===viewProfile);
+          return(<>
+            <button onClick={()=>history.back()} style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:12}}>← Back</button>
+            <div style={{textAlign:"center",marginBottom:20}}>
+              <div style={{width:80,height:80,borderRadius:40,background:prof.color||C.acc,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:28,margin:"0 auto 12px"}}>{prof.photoPlaceholder||(prof.name||"?")[0]}</div>
+              <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800}}>{prof.name}</div>
+              {isInfluencer&&<div style={{fontSize:12,color:C.fnt,marginTop:4}}>Community plans inspired by their programs</div>}
+            </div>
+            <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:14,padding:"16px",marginBottom:16}}>
+              <div style={{fontSize:13,color:C.dim,lineHeight:1.6}}>{prof.bio}</div>
+              {prof.youtube&&<a href={prof.youtube} target="_blank" rel="noopener" style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:12,padding:"8px 14px",borderRadius:8,background:"#EF444415",border:"1px solid #EF444430",color:"#EF4444",fontSize:12,fontWeight:700,textDecoration:"none"}}>▶️ YouTube Channel</a>}
+            </div>
+            {plans.length>0&&(<div style={{marginBottom:16}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>COMMUNITY PLANS ({plans.length})</div>
+              {plans.map(p=>(
+                <div key={p.id} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"14px 16px",marginBottom:8}}>
+                  <div style={{fontWeight:700,fontSize:14,color:C.txt}}>{p.name}</div>
+                  <div style={{fontSize:11,color:C.fnt,marginTop:2}}>{p.subtitle}</div>
+                  <div style={{display:"flex",gap:8,marginTop:8}}>
+                    <span style={{fontSize:10,background:C.srf,padding:"2px 8px",borderRadius:6,color:C.dim}}>{p.category}</span>
+                    <span style={{fontSize:10,background:C.srf,padding:"2px 8px",borderRadius:6,color:C.dim}}>{p.phases[0]?.days?.length||0} days</span>
+                  </div>
+                  <button onClick={()=>{const copy={...JSON.parse(JSON.stringify(p)),id:"feat_import_"+Date.now(),_createdBy:user.uid,_createdAt:Date.now(),_published:true,_importedFrom:prof.name.split("(")[0].trim()};const nm={...myPlans,[copy.id]:copy};setMyPlans(nm);Cloud.save(user.uid,"myPlans",nm);alert("Plan imported!");}} style={{marginTop:8,padding:"8px 14px",borderRadius:8,border:`1px solid ${C.acc}40`,background:C.acc+"10",color:C.acc,fontSize:12,fontWeight:700,cursor:"pointer"}}>📥 Import Plan</button>
+                </div>))}
+            </div>)}
+          </>);
+        })()}
+      </div>
+    )}
+
+    {/* ══════ COACH DIRECTORY ══════ */}
+    {screen==="coachDir"&&user&&(
+      <div className="fade-in" style={{padding:"16px 16px 80px"}}>
+        <div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,marginBottom:4}}>📋 Coach Directory</div>
+        <div style={{fontSize:13,color:C.dim,marginBottom:16}}>Find a coach to guide your training.</div>
+        {coachDirLoading&&<div style={{textAlign:"center",padding:20,color:C.fnt}}>Loading coaches...</div>}
+        {!coachDirLoading&&coachDirList.filter(c=>c.accepting!==false).length===0&&<div style={{textAlign:"center",padding:20,color:C.fnt}}>No coaches listed yet.</div>}
+        {coachDirList.filter(c=>c.accepting!==false).map(c=>(
+          <div key={c.uid} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"14px 16px",marginBottom:8}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+              <div>
+                <div style={{fontWeight:700,fontSize:14,color:C.txt}}>{c.name}</div>
+                {c.specialty&&<div style={{fontSize:11,color:C.fnt,marginTop:2}}>{c.specialty}</div>}
+                {c.bio&&<div style={{fontSize:12,color:C.dim,marginTop:4}}>{c.bio}</div>}
+              </div>
+              {c.accepting!==false&&<span style={{fontSize:10,color:"#22C55E",background:"#22C55E15",padding:"2px 8px",borderRadius:6,fontWeight:600}}>Accepting</span>}
+            </div>
+            <div style={{display:"flex",gap:8,marginTop:10}}>
+              <button onClick={()=>{setJoinCode(c.code);setCoachMsg("");setScreen("coaching");history.pushState({screen:"coaching"},"");}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${C.acc}40`,background:C.acc+"10",color:C.acc,fontSize:12,fontWeight:700,cursor:"pointer"}}>Connect (Code: {c.code})</button>
+              <button onClick={()=>openChat(c.uid,c.name,true)} style={{padding:"8px 14px",borderRadius:8,border:`1px solid #5B8DEF40`,background:"#5B8DEF10",color:"#5B8DEF",fontSize:12,fontWeight:700,cursor:"pointer"}}>💬 Message</button>
+            </div>
+          </div>))}
+      </div>
+    )}
 
     {/* ══════ WORKOUT ══════ */}
     {screen==="workout"&&day&&(
