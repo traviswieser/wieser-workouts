@@ -46,7 +46,7 @@ const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const
 const link=document.createElement('link');link.rel='manifest';link.href=mUrl;document.head.appendChild(link);
 const iconLink=document.createElement('link');iconLink.rel='icon';iconLink.href=iconUrl;iconLink.type='image/svg+xml';document.head.appendChild(iconLink);
 const appleIcon=document.createElement('link');appleIcon.rel='apple-touch-icon';appleIcon.href=iconUrl;document.head.appendChild(appleIcon);
-if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v32';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
+if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v33';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
 const fbApp=firebase.initializeApp(window.FIREBASE_CONFIG);const auth=firebase.auth();const db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(function(){});
 </script>
 </head>
@@ -85,9 +85,10 @@ const getVidCh=(n)=>VIDEO_DB[n]?.ch||"";
 const SWAP_POOLS={chest:["DB Flat Bench Press","DB Incline Bench Press","DB Decline Bench Press","Cable Chest Fly","Incline Cable Fly","Cable Crossover","DB Squeeze Press","DB Pullover","Push-Ups","Cable Low-to-High Fly","Incline DB Fly","DB Bench Press","Incline DB Bench","Decline Push-Ups"],back:["Pull-Ups","Chin-Ups","Lat Pulldown","Seated Cable Row","Single-Arm Cable Row","DB Bent-Over Row","Cable Straight-Arm Pulldown","Cable Face Pull","V-Bar Cable Row","T-Bar Cable Row","Inverted Row","DB Pullover (Back)","Bent-Over DB Row"],shoulders:["DB Overhead Press","DB Lateral Raise","Cable Lateral Raise","Cable Front Raise","DB Rear Delt Fly","Cable Rear Delt Fly","DB Arnold Press","Cable Upright Row","DB Shrug","Cable Y-Raise","DB Shrugs","DB Side Raises","Standing DB Press","Curl to Shoulder Press","Reverse DB Flys"],biceps:["DB Bicep Curl","DB Hammer Curl","DB Incline Curl","Cable Bicep Curl","DB Concentration Curl","Cable Hammer Curl (Rope)","DB Curls"],triceps:["Cable Tricep Pushdown (Rope)","Cable Tricep Pushdown (V-Bar)","DB Overhead Tricep Ext.","Cable Overhead Tricep Ext.","DB Skull Crusher","Cable Kickback","Diamond Push-Ups","Dips"],quads:["DB Goblet Squat","DB Bulgarian Split Squat","DB Lunge (Walking)","DB Reverse Lunge","DB Step-Up","DB Sumo Squat","Slant Board DB Squat","DB Front Squat","Apex Leg Extension","Cable Leg Ext. (Ankle Strap)","Prisoner Squats","Lunges","Side Lunges","Goblet Squats","Reverse Lunges"],hamstrings:["DB Romanian Deadlift","Apex Lying Leg Curl","Nordic Curl","Nordic Curl (Eccentric Only)","Nordic Curl (Band Assisted)","Decline Nordic Curl","Stability Ball Hamstring Curl","Cable Hamstring Curl (Ankle Strap)","Cable Pull-Through","KB Swing"],glutes:["DB Hip Thrust","Cable Pull-Through","KB Swing","DB Reverse Lunge"],core:["Plank","Cable Crunch (Rope)","Cable Woodchop","Cable Pallof Press","Hanging Leg Raise","Stability Ball Crunch","Dead Bug","Ab Wheel (Stability Ball)","Sit-Ups","Side Bends"],calves:["DB Calf Raise","Single-Leg DB Calf Raise"],neck:["Neck Curl (Harness)","Neck Extension (Harness)","Band Neck Side Flexion"],cardio:["Jumping Jacks","Stretches","Biking","Air Bike","Rower"]};
 const EX_GRP={};Object.entries(SWAP_POOLS).forEach(([g,exs])=>exs.forEach(e=>{EX_GRP[e]=g;}));
 const GC={chest:"#EF4444",back:"#3B82F6",shoulders:"#F59E0B",biceps:"#8B5CF6",triceps:"#EC4899",quads:"#10B981",hamstrings:"#06B6D4",glutes:"#F97316",core:"#6366F1",calves:"#14B8A6",neck:"#A78BFA",cardio:"#F472B6",other:"#6B7280"};
-const DURATION_EX=new Set(["Biking","Air Bike","Rower"]);
-const MILES_EX=new Set(["Biking","Air Bike","Rower"]);
-const REPS_ONLY_EX=new Set(["Stretches","Jumping Jacks"]);
+const DURATION_EX=new Set(["Biking","Air Bike","Rower","Treadmill"]);
+const MILES_EX=new Set(["Biking","Air Bike","Rower","Treadmill"]);
+const REPS_ONLY_EX=new Set(["Stretches","Jumping Jacks","Burpees","Mountain Climbers","High Knees","Jump Squats","Jump Rope"]);
+const TIME_HOLD_EX=new Set(["Plank","Side Plank","Wall Sit"]);
 const ADMIN_EMAILS=new Set(["traviswieser@gmail.com"]);
 
 const EQUIPMENT=[
@@ -269,6 +270,7 @@ const FEATURED_PLANS=[
 
 
 const CHANGELOG=[
+  {ver:"v33",date:"2026-03-05",title:"Theme System, Progress Dashboard & Bug Fixes",items:["Match Device theme — auto-detects dark/light mode (new default)","8 accent color palettes in Settings","Progress dashboard shows data across all workout plans with toggle","Weekly chart now tracks total sets instead of volume","Chat input no longer covered by nav bar","Chat send bug fixed with better error handling","Coach Directory connect button now works — auto-joins directly","Superset graphic shows between exercises during workouts","Superset toggle button improved in plan editor","Exercise types fixed — Treadmill, Plank, bodyweight exercises properly categorized","Default nav bar: Home, My Plans, Coaching, Progress, Leaderboard","Nav bar no longer flashes default layout on refresh"]},
   {ver:"v32",date:"2026-03-04",title:"Profiles, Coach Directory & Featured Plans",items:["Removed built-in official plans — use Community Plans or create your own","15 featured workout plans inspired by Jeff Nippard, Athlean-X, Kneesovertoesguy, Jeremy Ethier, and Sydney Cummings","Profile landing pages for each featured fitness creator with YouTube links","User profiles — add bio, fitness goals, experience level, and social links","Coach Directory — browse available coaches and connect directly","Dual coach/athlete — be both a coach AND an athlete simultaneously","Coaches can toggle accepting new athletes and set their specialty","Settings page — clean dedicated page for all app settings","Streamlined menu — navigation only, settings moved to Settings page"]},
   {ver:"v31",date:"2026-03-04",title:"Mega Update — 13 Features",items:["Session Summary — after saving, see total volume, sets, exercises, duration, and PRs","Undo — undo last set change during a workout with full history stack","Duplicate Day — copy the last day in a phase when building plans","Superset Support — tag exercises with superset groups (A/B/C) in plan editor, shown during workouts","1RM Estimates — Epley formula estimates displayed as cards on the Progress page","Workout Streaks & Badges — track your current streak, best streak, and earn badges (10/25/50/100/200 sessions)","Rest Day Recommendations — alerts when you've been training hard without rest","Performance Charts — weekly volume bar chart and sets-by-muscle-group breakdown","Coach Analytics Dashboard — new analytics tab showing athlete compliance, activity heatmap, and top 1RMs","Offline Mode Indicator — banner shows when you're offline, changes sync on reconnect","Data Export — JSON backup and printable progress report alongside CSV","Push Notifications — enable browser notifications from the menu","App Store Wrapper — TWA configuration for Google Play Store publishing"]},
   {ver:"v30",date:"2026-03-03",title:"Navigation Dock & Custom Exercises",items:["Bottom navigation bar for quick access to key screens","Customize your nav bar — choose up to 5 items and reorder them","Custom exercise option in the plan editor — type any exercise name","Edit Navigation Bar option in the dropdown menu"]},
@@ -312,25 +314,35 @@ const GoogleIcon=()=><svg width="20" height="20" viewBox="0 0 48 48"><path fill=
 const ChartIcon=({s=18})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
 const DARK={bg:"#08080A",card:"#111116",bdr:"#1C1C24",acc:"#FF6B2C",grn:"#22C55E",txt:"#E8E8EC",dim:"#A0A0AC",fnt:"#78788A",srf:"#18181E",sbdr:"#252530"};
 const LIGHT={bg:"#F4F4F6",card:"#FFFFFF",bdr:"#E0E0E6",acc:"#E8551A",grn:"#16A34A",txt:"#1A1A1E",dim:"#555566",fnt:"#888898",srf:"#EBEBF0",sbdr:"#D0D0DA"};
+const PALETTES=[
+  {id:"orange",name:"Orange Blaze",acc:"#FF6B2C",accLight:"#E8551A"},
+  {id:"blue",name:"Ocean Blue",acc:"#3B82F6",accLight:"#2563EB"},
+  {id:"green",name:"Forest Green",acc:"#22C55E",accLight:"#16A34A"},
+  {id:"purple",name:"Royal Purple",acc:"#8B5CF6",accLight:"#7C3AED"},
+  {id:"red",name:"Crimson Red",acc:"#EF4444",accLight:"#DC2626"},
+  {id:"pink",name:"Hot Pink",acc:"#EC4899",accLight:"#DB2777"},
+  {id:"teal",name:"Teal Wave",acc:"#14B8A6",accLight:"#0D9488"},
+  {id:"amber",name:"Golden Amber",acc:"#F59E0B",accLight:"#D97706"}
+];
 
 // PROGRESS HELPERS
 const Stats={
-  getDates:(hist,pid)=>{const dates=[];Object.keys(hist).forEach(k=>{if(k.startsWith(pid+"-")){const p=k.split("-");const d=p.slice(3).join("-");if(d&&!dates.includes(d))dates.push(d);}});return dates.sort();},
+  getDates:(hist,pid)=>{const dates=[];Object.keys(hist).forEach(k=>{if(pid&&!k.startsWith(pid+"-"))return;const p=k.split("-");const d=pid?p.slice(3).join("-"):p.slice(p.length>=6?3:3).join("-");if(d&&d.match(/^\d{4}-/)&&!dates.includes(d))dates.push(d);});return dates.sort();},
   getWeek:(hist,pid)=>{const dates=Stats.getDates(hist,pid);if(!dates.length)return 0;const first=new Date(dates[0]);const now=new Date();return Math.min(Math.floor((now-first)/(7*864e5))+1,12);},
   getTotal:(hist,pid)=>Stats.getDates(hist,pid).length,
   getSessions:(hist,pid,phi,di)=>{const pre=`${pid}-${phi}-${di}-`;const s=[];Object.entries(hist).forEach(([k,v])=>{if(k.startsWith(pre))s.push({date:k.slice(pre.length),data:v});});return s.sort((a,b)=>a.date.localeCompare(b.date));},
-  getExHistory:(hist,pid,exName)=>{const pts=[];Object.entries(hist).forEach(([k,v])=>{if(!k.startsWith(pid+"-"))return;const parts=k.split("-");const date=parts.slice(3).join("-");Object.values(v).forEach(ex=>{if(ex.name===exName&&ex.sets){let bW=0,bR=0,vol=0;ex.sets.forEach(s=>{const w=parseFloat(s.weight)||0;const r=parseFloat(s.reps)||0;if(w>bW){bW=w;bR=r;}vol+=w*r;});if(bW>0)pts.push({date,weight:bW,reps:bR,volume:vol,sets:ex.sets});}});});return pts.sort((a,b)=>a.date.localeCompare(b.date));},
-  getLoggedExercises:(hist,pid)=>{const names=new Set();Object.entries(hist).forEach(([k,v])=>{if(!k.startsWith(pid+"-"))return;Object.values(v).forEach(ex=>{if(ex.name&&ex.sets&&ex.sets.some(s=>parseFloat(s.weight)>0))names.add(ex.name);});});return Array.from(names).sort();},
-  getTotalMiles:(hist,pid,exName)=>{let total=0;Object.entries(hist).forEach(([k,v])=>{if(!k.startsWith(pid+"-"))return;Object.values(v).forEach(ex=>{if(ex.name===exName&&ex.sets){ex.sets.forEach(s=>{total+=parseFloat(s.reps)||0;});}});});return Math.round(total*10)/10;},
-  getPR:(hist,pid,exName)=>{let best=0;Object.entries(hist).forEach(([k,v])=>{if(!k.startsWith(pid+"-"))return;Object.values(v).forEach(ex=>{if(ex.name===exName&&ex.sets){ex.sets.forEach(s=>{const w=parseFloat(s.weight)||0;if(w>best)best=w;});}});});return best;},
+  getExHistory:(hist,pid,exName)=>{const pts=[];Object.entries(hist).forEach(([k,v])=>{if(pid&&!k.startsWith(pid+"-"))return;const parts=k.split("-");const date=parts.slice(3).join("-");Object.values(v).forEach(ex=>{if(ex.name===exName&&ex.sets){let bW=0,bR=0,vol=0;ex.sets.forEach(s=>{const w=parseFloat(s.weight)||0;const r=parseFloat(s.reps)||0;if(w>bW){bW=w;bR=r;}vol+=w*r;});if(bW>0)pts.push({date,weight:bW,reps:bR,volume:vol,sets:ex.sets});}});});return pts.sort((a,b)=>a.date.localeCompare(b.date));},
+  getLoggedExercises:(hist,pid)=>{const names=new Set();Object.entries(hist).forEach(([k,v])=>{if(pid&&!k.startsWith(pid+"-"))return;Object.values(v).forEach(ex=>{if(ex.name&&ex.sets&&ex.sets.some(s=>parseFloat(s.weight)>0||parseFloat(s.reps)>0))names.add(ex.name);});});return Array.from(names).sort();},
+  getTotalMiles:(hist,pid,exName)=>{let total=0;Object.entries(hist).forEach(([k,v])=>{if(pid&&!k.startsWith(pid+"-"))return;Object.values(v).forEach(ex=>{if(ex.name===exName&&ex.sets){ex.sets.forEach(s=>{total+=parseFloat(s.reps)||0;});}});});return Math.round(total*10)/10;},
+  getPR:(hist,pid,exName)=>{let best=0;Object.entries(hist).forEach(([k,v])=>{if(pid&&!k.startsWith(pid+"-"))return;Object.values(v).forEach(ex=>{if(ex.name===exName&&ex.sets){ex.sets.forEach(s=>{const w=parseFloat(s.weight)||0;if(w>best)best=w;});}});});return best;},
   fmtDate:(d)=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}),
   fmtDateFull:(d)=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}),
   getPctChange:(pts)=>{if(pts.length<2)return null;const f=pts[0].weight,l=pts[pts.length-1].weight;return f===0?null:Math.round(((l-f)/f)*100);},
   calc1RM:(w,r)=>{if(!w||!r||r<=0)return 0;if(r===1)return w;return Math.round(w*(1+r/30));},
-  getAll1RMs:(hist,pid)=>{const map={};Object.entries(hist).forEach(([k,v])=>{if(!k.startsWith(pid+"-"))return;Object.values(v).forEach(ex=>{if(!ex.name||!ex.sets||DURATION_EX.has(ex.name))return;ex.sets.forEach(s=>{const w=parseFloat(s.weight)||0;const r=parseFloat(s.reps)||0;if(w>0&&r>0){const orm=Stats.calc1RM(w,r);if(!map[ex.name]||orm>map[ex.name].orm)map[ex.name]={orm,weight:w,reps:r};}});});});return map;},
+  getAll1RMs:(hist,pid)=>{const map={};Object.entries(hist).forEach(([k,v])=>{if(pid&&!k.startsWith(pid+"-"))return;Object.values(v).forEach(ex=>{if(!ex.name||!ex.sets||DURATION_EX.has(ex.name)||TIME_HOLD_EX.has(ex.name)||REPS_ONLY_EX.has(ex.name))return;ex.sets.forEach(s=>{const w=parseFloat(s.weight)||0;const r=parseFloat(s.reps)||0;if(w>0&&r>0){const orm=Stats.calc1RM(w,r);if(!map[ex.name]||orm>map[ex.name].orm)map[ex.name]={orm,weight:w,reps:r};}});});});return map;},
   getStreak:(hist)=>{const allDates=new Set();Object.keys(hist).forEach(k=>{const p=k.split("-");const d=p.slice(3).join("-");if(d)allDates.add(d);});if(!allDates.size)return{current:0,best:0,thisWeek:0};const sorted=[...allDates].sort().reverse();let cur=0;const today=new Date();for(let i=0;i<400;i++){const d=new Date(today);d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);if(allDates.has(ds))cur++;else if(i>0)break;}let best=0,run=0,prev=null;[...allDates].sort().forEach(d=>{const dt=new Date(d+"T12:00:00");if(prev){const diff=Math.round((dt-prev)/(864e5));if(diff<=2)run++;else run=1;}else run=1;prev=dt;if(run>best)best=run;});const weekStart=new Date(today);weekStart.setDate(weekStart.getDate()-weekStart.getDay());const ws=weekStart.toISOString().slice(0,10);const thisWeek=[...allDates].filter(d=>d>=ws).length;return{current:cur,best,thisWeek};},
-  getWeeklyVolume:(hist,pid,weeks=8)=>{const data=[];const now=new Date();for(let w=weeks-1;w>=0;w--){const start=new Date(now);start.setDate(start.getDate()-start.getDay()-w*7);const end=new Date(start);end.setDate(end.getDate()+6);const ws=start.toISOString().slice(0,10);const we=end.toISOString().slice(0,10);let vol=0,sets=0,sessions=0;const dates=new Set();Object.entries(hist).forEach(([k,v])=>{if(!k.startsWith(pid+"-"))return;const d=k.split("-").slice(3).join("-");if(d>=ws&&d<=we){dates.add(d);Object.values(v).forEach(ex=>{if(ex.sets)ex.sets.forEach(s=>{const wt=parseFloat(s.weight)||0;const rp=parseFloat(s.reps)||0;if(wt>0){vol+=wt*rp;sets++;}});});}});sessions=dates.size;data.push({week:Stats.fmtDate(ws),volume:Math.round(vol),sets,sessions});}return data;},
-  getMuscleVolume:(hist,pid)=>{const map={};Object.entries(hist).forEach(([k,v])=>{if(!k.startsWith(pid+"-"))return;Object.values(v).forEach(ex=>{if(!ex.name||!ex.sets)return;const grp=EX_GRP[ex.name]||"other";let sets=0;ex.sets.forEach(s=>{if((parseFloat(s.weight)||0)>0||(parseFloat(s.reps)||0)>0)sets++;});map[grp]=(map[grp]||0)+sets;});});return map;},
+  getWeeklyVolume:(hist,pid,weeks=8)=>{const data=[];const now=new Date();for(let w=weeks-1;w>=0;w--){const start=new Date(now);start.setDate(start.getDate()-start.getDay()-w*7);const end=new Date(start);end.setDate(end.getDate()+6);const ws=start.toISOString().slice(0,10);const we=end.toISOString().slice(0,10);let vol=0,sets=0,sessions=0;const dates=new Set();Object.entries(hist).forEach(([k,v])=>{if(pid&&!k.startsWith(pid+"-"))return;const d=k.split("-").slice(3).join("-");if(d>=ws&&d<=we){dates.add(d);Object.values(v).forEach(ex=>{if(ex.sets)ex.sets.forEach(s=>{const wt=parseFloat(s.weight)||0;const rp=parseFloat(s.reps)||0;if(wt>0){vol+=wt*rp;sets++;}});});}});sessions=dates.size;data.push({week:Stats.fmtDate(ws),volume:Math.round(vol),sets,sessions});}return data;},
+  getMuscleVolume:(hist,pid)=>{const map={};Object.entries(hist).forEach(([k,v])=>{if(pid&&!k.startsWith(pid+"-"))return;Object.values(v).forEach(ex=>{if(!ex.name||!ex.sets)return;const grp=EX_GRP[ex.name]||"other";let sets=0;ex.sets.forEach(s=>{if((parseFloat(s.weight)||0)>0||(parseFloat(s.reps)||0)>0)sets++;});map[grp]=(map[grp]||0)+sets;});});return map;},
   getRestDayRec:(hist)=>{const allDates=new Set();Object.keys(hist).forEach(k=>{const d=k.split("-").slice(3).join("-");if(d)allDates.add(d);});const today=new Date();const last7=[];for(let i=0;i<7;i++){const d=new Date(today);d.setDate(d.getDate()-i);last7.push(d.toISOString().slice(0,10));}const recentCount=last7.filter(d=>allDates.has(d)).length;const yesterday=last7[1];const dayBefore=last7[2];const consecutive=allDates.has(yesterday)&&allDates.has(dayBefore)&&allDates.has(last7[3]);if(recentCount>=6)return{msg:"Your body needs rest! Consider taking today off.",level:"high",days:recentCount};if(consecutive)return{msg:"3+ days in a row — a rest day can boost recovery.",level:"medium",days:recentCount};if(recentCount>=4)return{msg:"Great consistency! Listen to your body.",level:"low",days:recentCount};return null;},
   getBadges:(hist)=>{const allDates=new Set();Object.keys(hist).forEach(k=>{const d=k.split("-").slice(3).join("-");if(d)allDates.add(d);});const n=allDates.size;const badges=[];if(n>=1)badges.push({icon:"🏅",name:"First Workout",desc:"Completed your first session"});if(n>=10)badges.push({icon:"🔥",name:"On Fire",desc:"10 sessions logged"});if(n>=25)badges.push({icon:"⚡",name:"Quarter Century",desc:"25 sessions logged"});if(n>=50)badges.push({icon:"💎",name:"Diamond Grinder",desc:"50 sessions logged"});if(n>=100)badges.push({icon:"🏆",name:"Century Club",desc:"100 sessions logged"});if(n>=200)badges.push({icon:"👑",name:"Legend",desc:"200 sessions logged"});const streak=Stats.getStreak(hist);if(streak.best>=7)badges.push({icon:"🔗",name:"Iron Will",desc:"7-day streak"});if(streak.best>=14)badges.push({icon:"⛓️",name:"Unbreakable",desc:"14-day streak"});if(streak.best>=30)badges.push({icon:"🌟",name:"Monthly Machine",desc:"30-day streak"});return badges;}
 };
@@ -398,7 +410,9 @@ function App(){
   const [editSets,setEditSets]=useState("");
   const [editCues,setEditCues]=useState("");
   const [editGroup,setEditGroup]=useState("chest");
-  const [theme,setTheme]=useState("dark");
+  const [theme,setTheme]=useState("auto");
+  const [accentId,setAccentId]=useState("orange");
+  const sysDark=typeof window!=="undefined"&&window.matchMedia?window.matchMedia("(prefers-color-scheme: dark)").matches:true;
   const [restSec,setRestSec]=useState(0);
   const [restRunning,setRestRunning]=useState(false);
   const [sessionStart,setSessionStart]=useState(null);
@@ -463,8 +477,8 @@ function App(){
   const [longPressTimer,setLongPressTimer]=useState(null);
   const [plansHelpOpen,setPlansHelpOpen]=useState(false);
   const NAV_OPTIONS=[{id:"plans",label:"My Plans",icon:"📋",action:()=>{setScreen("plans");history.pushState({screen:"plans"},"");}},{id:"community",label:"Community",icon:"🌐",action:()=>{setScreen("community");loadCommunityPlans();history.pushState({screen:"community"},"");}},{id:"create",label:"Create Plan",icon:"✨",action:()=>{setCpScreen("main");setCpDraft(null);setAiError("");setScreen("create");history.pushState({screen:"create"},"");}},{id:"coaching",label:"Coaching",icon:"🎯",action:()=>{setCoachMsg("");setScreen("coaching");loadRoster();history.pushState({screen:"coaching"},"");}},{id:"leaderboard",label:"Leaderboard",icon:"🏆",action:()=>{setScreen("leaderboard");loadLeaderboard();history.pushState({screen:"leaderboard"},"");}},{id:"progress",label:"Progress",icon:"📊",action:()=>{setScreen("progress");setProgEx(loggedExercises[0]||"");setProgDay("all");setProgOpen(null);history.pushState({screen:"progress"},"");}},{id:"chat",label:"Messages",icon:"💬",action:()=>{setScreen("chatlist");loadChatList();history.pushState({screen:"chatlist"},"");}},{id:"home",label:"Home",icon:"🏠",action:()=>{setScreen("home");history.pushState({screen:"home"},"");}},{id:"coachDir",label:"Find Coach",icon:"📋",action:()=>{setScreen("coachDir");loadCoachDir();history.pushState({screen:"coachDir"},"");}},{id:"settings",label:"Settings",icon:"⚙️",action:()=>{setScreen("settings");history.pushState({screen:"settings"},"");}}];
-  const DEFAULT_NAV=["plans","community","create","coaching","leaderboard"];
-  const [navItems,setNavItems]=useState(DEFAULT_NAV);
+  const DEFAULT_NAV=["home","plans","coaching","progress","leaderboard"];
+  const [navItems,setNavItems]=useState(null);
   const [navEditOpen,setNavEditOpen]=useState(false);
   const [sessionSummary,setSessionSummary]=useState(null);
   const [undoStack,setUndoStack]=useState([]);
@@ -479,8 +493,11 @@ function App(){
   const [coachAccepting,setCoachAccepting]=useState(true);
   const [coachSpecialty,setCoachSpecialty]=useState("");
   const [hasNoPlanTip,setHasNoPlanTip]=useState(false);
+  const [progScope,setProgScope]=useState("all");
   const unsubs=useRef([]);
-  const C=theme==="dark"?DARK:LIGHT;
+  const resolvedTheme=theme==="auto"?(sysDark?"dark":"light"):theme;
+  const palette=PALETTES.find(p=>p.id===accentId)||PALETTES[0];
+  const C=resolvedTheme==="dark"?{...DARK,acc:palette.acc}:{...LIGHT,acc:palette.accLight};
 
   const allPlans=useMemo(()=>[...ALL,...Object.values(myPlans).filter(p=>p._published!==false),...Object.values(coachPlans).filter(p=>p._published!==false)],[myPlans,coachPlans]);
   const visiblePlans=useMemo(()=>allPlans.filter(p=>!hiddenPlans.includes(p.id)),[allPlans,hiddenPlans]);
@@ -490,10 +507,11 @@ function App(){
   const day=phase?.days[dayIdx];
   const today=new Date().toISOString().slice(0,10);
 
-  const weekNum=useMemo(()=>Stats.getWeek(hist,planId),[hist,planId]);
-  const totalSessions=useMemo(()=>Stats.getTotal(hist,planId),[hist,planId]);
-  const loggedExercises=useMemo(()=>Stats.getLoggedExercises(hist,planId),[hist,planId]);
-  const exHistory=useMemo(()=>progEx?Stats.getExHistory(hist,planId,progEx):[],[hist,planId,progEx]);
+  const progPid=progScope==="all"?"":planId;
+  const weekNum=useMemo(()=>Stats.getWeek(hist,progPid),[hist,progPid]);
+  const totalSessions=useMemo(()=>Stats.getTotal(hist,progPid),[hist,progPid]);
+  const loggedExercises=useMemo(()=>Stats.getLoggedExercises(hist,progPid),[hist,progPid]);
+  const exHistory=useMemo(()=>progEx?Stats.getExHistory(hist,progPid,progEx):[],[hist,progPid,progEx]);
   const pctChange=useMemo(()=>Stats.getPctChange(exHistory),[exHistory]);
 
   // AUTH LISTENER
@@ -506,7 +524,7 @@ function App(){
     setSyncing(true);const uid=user.uid;
     Promise.all([Cloud.load(uid,"state"),Cloud.load(uid,"history"),Cloud.load(uid,"swaps"),Cloud.load(uid,"customEx"),Cloud.load(uid,"ssLinks"),Cloud.load(uid,"exOrder"),Cloud.load(uid,"exEdits"),Cloud.load(uid,"bodyWeight"),Cloud.load(uid,"prefs"),Cloud.load(uid,"myPlans"),Cloud.load(uid,"hiddenPlans"),Cloud.load(uid,"coachPlans"),Cloud.load(uid,"coachNotes")]).then(([st,h,s,ce,sl,eo,ee,bw,pf,mp,hp,cp,cn])=>{
       if(st){setPlanId(st.p||"v1");setPhaseIdx(st.ph||0);setDayIdx(st.d||0);}
-      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(pf&&pf.navItems)setNavItems(pf.navItems);if(pf&&pf.userName)setUserName(pf.userName);if(pf&&pf.role)setUserRole(pf.role);if(pf&&pf.isCoach)setIsCoach(true);if(pf&&pf.profile)setMyProfile(pf.profile);if(pf&&pf.coachAccepting!==undefined)setCoachAccepting(pf.coachAccepting);if(pf&&pf.coachSpecialty)setCoachSpecialty(pf.coachSpecialty);if(pf&&pf.coachCode)setCoachCode(pf.coachCode);if(pf?.notifySession===false)setNotifySession(false);if(pf?.notifyPlan===false)setNotifyPlan(false);if(mp)setMyPlans(mp);if(hp&&hp.ids)setHiddenPlans(hp.ids);if(cp)setCoachPlans(cp);if(cn)setCoachNotes(cn);setSyncing(false);if(!pf?.userName){setNamePrompt(true);}
+      if(h)setHist(h);if(s)setSwaps(s);if(ce)setCustomEx(ce);if(sl)setSsLinks(sl);if(eo)setExOrder(eo);if(ee)setExEdits(ee);if(bw)setBodyWt(bw);if(pf&&pf.theme)setTheme(pf.theme);if(pf&&pf.accentId)setAccentId(pf.accentId);if(pf&&pf.aiKey)setAiKey(pf.aiKey);if(pf&&pf.aiProvider)setAiProvider(pf.aiProvider);if(pf&&pf.bwEnabled===false)setBwEnabled(false);if(pf&&pf.navItems)setNavItems(pf.navItems);if(pf&&pf.userName)setUserName(pf.userName);if(pf&&pf.role)setUserRole(pf.role);if(pf&&pf.isCoach)setIsCoach(true);if(pf&&pf.profile)setMyProfile(pf.profile);if(pf&&pf.coachAccepting!==undefined)setCoachAccepting(pf.coachAccepting);if(pf&&pf.coachSpecialty)setCoachSpecialty(pf.coachSpecialty);if(pf&&pf.coachCode)setCoachCode(pf.coachCode);if(pf?.notifySession===false)setNotifySession(false);if(pf?.notifyPlan===false)setNotifyPlan(false);if(mp)setMyPlans(mp);if(hp&&hp.ids)setHiddenPlans(hp.ids);if(cp)setCoachPlans(cp);if(cn)setCoachNotes(cn);setSyncing(false);if(!pf?.userName){setNamePrompt(true);}
     });
     unsubs.current.push(
       Cloud.listen(uid,"history",data=>setHist(data)),
@@ -566,7 +584,7 @@ function App(){
     chatUnsub.current=db.collection("chats").doc(chatId).collection("messages").orderBy("ts","asc").limitToLast(100).onSnapshot(snap=>{const msgs=[];snap.forEach(d=>msgs.push({id:d.id,...d.data()}));setChatMsgs(msgs);setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:"smooth"}),100);
       db.collection("chats").doc(chatId).update({["unread."+user.uid]:0}).catch(()=>{});
     },()=>{});};
-  const sendChatMsg=async(text,type)=>{if(!user||!chatWith)return;const t=type||"msg";const msg={from:user.uid,fromName:userName||"User",text,type:t,ts:Date.now()};try{await db.collection("chats").doc(chatWith.chatId).collection("messages").add(msg);const unrUpdate={};unrUpdate["unread."+chatWith.uid]=firebase.firestore.FieldValue.increment(1);await db.collection("chats").doc(chatWith.chatId).update({lastMsg:text.slice(0,80),lastTs:Date.now(),...unrUpdate});}catch(e){console.error("sendMsg:",e);}};
+  const sendChatMsg=async(text,type)=>{if(!user||!chatWith){console.error("sendMsg: no user or chatWith");return;}const t=type||"msg";const msg={from:user.uid,fromName:userName||"User",text,type:t,ts:Date.now()};try{await db.collection("chats").doc(chatWith.chatId).collection("messages").add(msg);try{await db.collection("chats").doc(chatWith.chatId).update({lastMsg:text.slice(0,80),lastTs:Date.now(),[`unread.${chatWith.uid}`]:firebase.firestore.FieldValue.increment(1)});}catch(e2){console.error("update chat meta:",e2);}}catch(e){console.error("sendMsg:",e);alert("Message failed: "+e.message);}};
   const sendSystemMsg=async(chatId,recipientUid,text)=>{if(!user)return;try{const msg={from:"system",fromName:"System",text,type:"system",ts:Date.now()};await db.collection("chats").doc(chatId).collection("messages").add(msg);const unrUpdate={};unrUpdate["unread."+recipientUid]=firebase.firestore.FieldValue.increment(1);await db.collection("chats").doc(chatId).update({lastMsg:text.slice(0,80),lastTs:Date.now(),...unrUpdate});}catch(e){console.error("sysMsg:",e);}};
   const closeChat=()=>{if(chatUnsub.current){chatUnsub.current();chatUnsub.current=null;}setChatWith(null);setChatMsgs([]);};
 
@@ -698,7 +716,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
   const draftKey=`_draft_${planId}-${phaseIdx}-${dayIdx}-${today}`;
   const saveDraft=useCallback(async(logData,notes)=>{if(!user)return;try{await Cloud.save(user.uid,"workoutDraft",{key:draftKey,log:logData,notes:notes||"",ts:Date.now()});}catch(e){console.error("Draft save:",e);}},[user,draftKey]);
   const clearDraft=useCallback(async()=>{if(!user)return;try{await Cloud.save(user.uid,"workoutDraft",{});}catch(e){}},[user]);
-  const initLog=useCallback(()=>{const k=`${planId}-${phaseIdx}-${dayIdx}-${today}`;if(hist[k]){setLog(hist[k]);setWkNotes(hist[k]._notes||"");return;}const l={};getExs().forEach((e,i)=>{if(DURATION_EX.has(e.name)){l[i]={name:e.name,sets:[{weight:"",reps:""}]};}else{const n=parseInt(e.sets)||3;l[i]={name:e.name,sets:Array(Math.min(n,6)).fill(0).map(()=>({weight:"",reps:""}))};}});setLog(l);setWkNotes("");},[planId,phaseIdx,dayIdx,today,hist,getExs]);
+  const initLog=useCallback(()=>{const k=`${planId}-${phaseIdx}-${dayIdx}-${today}`;if(hist[k]){setLog(hist[k]);setWkNotes(hist[k]._notes||"");return;}const l={};getExs().forEach((e,i)=>{if(DURATION_EX.has(e.name)){l[i]={name:e.name,sets:[{weight:"",reps:""}]};}else if(TIME_HOLD_EX.has(e.name)){const n=parseInt(e.sets)||3;l[i]={name:e.name,sets:Array(Math.min(n,6)).fill(0).map(()=>({weight:"",reps:""}))};}else{const n=parseInt(e.sets)||3;l[i]={name:e.name,sets:Array(Math.min(n,6)).fill(0).map(()=>({weight:"",reps:""}))};}});setLog(l);setWkNotes("");},[planId,phaseIdx,dayIdx,today,hist,getExs]);
 
   const go=(p,d)=>{setPhaseIdx(p);setDayIdx(d);setScreen("workout");setOpenEx(new Set());setSaved(false);setSwapPanel(null);setAddExForm(null);setAddExName("");setDelConfirm(false);setEditPanel(null);history.pushState({screen:"workout"},"");};
   useEffect(()=>{if(screen==="workout"&&user)initLog();},[screen,phaseIdx,dayIdx,planId,user]);
@@ -763,7 +781,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
   const saveBW=async()=>{if(!user||!bwInput)return;const nb={...bodyWt,[weekKey]:parseFloat(bwInput)};setBodyWt(nb);Cloud.save(user.uid,"bodyWeight",nb);setBwInput("");};
 
   // THEME TOGGLE
-  const toggleTheme=()=>{const nt=theme==="dark"?"light":"dark";setTheme(nt);if(user)savePrefs({theme:nt});};
+  const toggleTheme=()=>{const nt=theme==="auto"?"dark":theme==="dark"?"light":"auto";setTheme(nt);if(user)savePrefs({theme:nt});};
 
   const prev=getPrev();const exs=getExs();
   const isSS=(ei)=>ssLinks[`${planId}-${phaseIdx}-${dayIdx}-${ei}`];
@@ -830,7 +848,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
                 <button onClick={()=>{setPlanMenu(false);if(navigator.share){navigator.share({title:"Wieser Workouts",text:"Check out Wieser Workouts — a free workout tracker with custom plans, progress tracking, and coaching!",url:window.location.origin}).catch(()=>{});}else{navigator.clipboard.writeText(window.location.origin);alert("Link copied to clipboard!");}}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 16px",background:"transparent",border:"none",borderTop:`1px solid ${C.bdr}`,color:"#22C55E",cursor:"pointer",fontSize:12,fontWeight:600}}>📤 Share This App</button>
                 <div style={{borderTop:`1px solid ${C.bdr}`,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>{user.photoURL&&<img src={user.photoURL} style={{width:24,height:24,borderRadius:12}} referrerPolicy="no-referrer"/>}<span onClick={()=>setNamePrompt(true)} style={{fontSize:11,color:userName?C.dim:C.acc,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",cursor:"pointer"}}>{userName||"Set your name ✎"}</span></div>
-                  <button onClick={toggleTheme} style={{background:"none",border:`1px solid ${C.sbdr}`,borderRadius:6,padding:"4px 10px",color:C.dim,fontSize:11,fontWeight:600,cursor:"pointer"}}>{theme==="dark"?"☀️":"🌙"}</button><button onClick={()=>{setPlanMenu(false);setLinkMsg("");setScreen("account");history.pushState({screen:"account"},"");}} style={{background:"none",border:`1px solid ${C.sbdr}`,borderRadius:6,padding:"4px 10px",color:"#5B8DEF",fontSize:11,fontWeight:600,cursor:"pointer"}}>Account</button><button onClick={signOut} style={{background:"none",border:`1px solid ${C.sbdr}`,borderRadius:6,padding:"4px 10px",color:"#EF4444",fontSize:11,fontWeight:600,cursor:"pointer"}}>Sign Out</button>
+                  <button onClick={toggleTheme} style={{background:"none",border:`1px solid ${C.sbdr}`,borderRadius:6,padding:"4px 10px",color:C.dim,fontSize:11,fontWeight:600,cursor:"pointer"}}>{theme==="auto"?"🔄":theme==="dark"?"☀️":"🌙"}</button><button onClick={()=>{setPlanMenu(false);setLinkMsg("");setScreen("account");history.pushState({screen:"account"},"");}} style={{background:"none",border:`1px solid ${C.sbdr}`,borderRadius:6,padding:"4px 10px",color:"#5B8DEF",fontSize:11,fontWeight:600,cursor:"pointer"}}>Account</button><button onClick={signOut} style={{background:"none",border:`1px solid ${C.sbdr}`,borderRadius:6,padding:"4px 10px",color:"#EF4444",fontSize:11,fontWeight:600,cursor:"pointer"}}>Sign Out</button>
                 </div>
               </div></>)}
           </div>
@@ -958,7 +976,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
                       </div>
                       <select value={ALL_EXERCISES.includes(ex.name)?ex.name:"_custom"} onChange={e=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));const val=e.target.value;if(val==="_newcustom"){const cn=prompt("Enter custom exercise name:");if(cn&&cn.trim()){np[pi].days[di].exercises[xi].name=cn.trim();np[pi].days[di].exercises[xi].cues="Focus on form. Controlled tempo. Full range of motion.";np[pi].days[di].exercises[xi].group=ex.group||"other";}setCpDraft({...cpDraft,phases:np});}else if(val!=="_custom"){np[pi].days[di].exercises[xi].name=val;np[pi].days[di].exercises[xi].cues=autoCue(val);const grp=EX_GRP[val]||Object.entries(EX_BY_EQUIP).find(([g,pools])=>Object.values(pools).some(arr=>arr.includes(val)))?.[0]||ex.group;np[pi].days[di].exercises[xi].group=grp;setCpDraft({...cpDraft,phases:np});}}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:4,padding:"5px 8px",color:C.txt,fontSize:11,outline:"none",fontFamily:"inherit",flex:1,minWidth:0,appearance:"auto"}}><option value="_newcustom">✏️ Custom...</option>{!ALL_EXERCISES.includes(ex.name)&&<option value="_custom">{ex.name}</option>}{ALL_EXERCISES.map(n=><option key={n} value={n}>{n}</option>)}</select>
                       <input value={ex.sets} onChange={e=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days[di].exercises[xi].sets=e.target.value;setCpDraft({...cpDraft,phases:np});}} style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:4,padding:"5px 6px",color:C.dim,fontSize:10,outline:"none",textAlign:"center",fontFamily:"inherit",width:70,flexShrink:0}}/>
-                      <select value={ex.ss||""} onChange={e=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days[di].exercises[xi].ss=e.target.value;setCpDraft({...cpDraft,phases:np});}} title="Superset group" style={{background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:4,padding:"3px",color:ex.ss?"#A78BFA":C.fnt,fontSize:9,outline:"none",fontFamily:"inherit",width:28,flexShrink:0,textAlign:"center"}}><option value="">–</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select>
+                      <button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));const vals=["","A","B","C"];const cur=vals.indexOf(ex.ss||"");np[pi].days[di].exercises[xi].ss=vals[(cur+1)%4];setCpDraft({...cpDraft,phases:np});}} title="Toggle superset group" style={{background:ex.ss?"#A78BFA20":"transparent",border:`1px solid ${ex.ss?"#A78BFA60":C.sbdr}`,borderRadius:4,padding:"2px 4px",color:ex.ss?"#A78BFA":C.fnt,fontSize:9,fontWeight:700,cursor:"pointer",flexShrink:0,minWidth:22,textAlign:"center"}}>{ex.ss||"SS"}</button>
                       <button onClick={()=>{const np=JSON.parse(JSON.stringify(cpDraft.phases));np[pi].days[di].exercises.splice(xi,1);setCpDraft({...cpDraft,phases:np});}} style={{background:"transparent",border:"none",color:"#EF4444",cursor:"pointer",fontSize:12,padding:"4px",flexShrink:0,lineHeight:1}}>✕</button>
                     </div>
                   ))}
@@ -1006,7 +1024,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
 
     {/* ══════ CHAT CONVERSATION ══════ */}
     {screen==="chat"&&user&&chatWith&&(
-      <div className="fade-in" style={{display:"flex",flexDirection:"column",height:"calc(100vh - 60px - env(safe-area-inset-top, 0px))",padding:0}}>
+      <div className="fade-in" style={{display:"flex",flexDirection:"column",height:"calc(100vh - 120px)",padding:0}}>
         <div style={{padding:"12px 16px",borderBottom:`1px solid ${C.bdr}`,display:"flex",alignItems:"center",gap:10}}>
           <div style={{width:32,height:32,borderRadius:16,background:C.acc+"20",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:14,color:C.acc}}>{(chatWith.name||"?")[0].toUpperCase()}</div>
           <div style={{fontWeight:700,fontSize:15,color:C.txt}}>{chatWith.name}</div>
@@ -1021,7 +1039,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           </div>);})}
           <div ref={chatEndRef}/>
         </div>
-        <div style={{padding:"10px 16px",borderTop:`1px solid ${C.bdr}`,display:"flex",gap:8}}>
+        <div style={{padding:"10px 16px",borderTop:`1px solid ${C.bdr}`,display:"flex",gap:8,flexShrink:0}}>
           <input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&chatInput.trim()){sendChatMsg(chatInput.trim());setChatInput("");}}} placeholder="Type a message..." style={{flex:1,background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,padding:"12px 14px",color:C.txt,fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"inherit"}}/>
           <button onClick={()=>{if(chatInput.trim()){sendChatMsg(chatInput.trim());setChatInput("");}}} style={{padding:"12px 18px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}}>Send</button>
         </div>
@@ -1593,6 +1611,10 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     {screen==="progress"&&(
       <div className="fade-in" style={{padding:"16px 16px 80px"}}>
         {/* Stats row */}
+        <div style={{display:"flex",gap:8,marginBottom:12}}>
+          <button onClick={()=>setProgScope("all")} style={{flex:1,padding:"8px",borderRadius:8,border:`1px solid ${progScope==="all"?C.acc+"60":C.sbdr}`,background:progScope==="all"?C.acc+"15":"transparent",color:progScope==="all"?C.acc:C.dim,fontSize:12,fontWeight:700,cursor:"pointer"}}>All Plans</button>
+          <button onClick={()=>setProgScope("current")} style={{flex:1,padding:"8px",borderRadius:8,border:`1px solid ${progScope==="current"?C.acc+"60":C.sbdr}`,background:progScope==="current"?C.acc+"15":"transparent",color:progScope==="current"?C.acc:C.dim,fontSize:12,fontWeight:700,cursor:"pointer"}}>Current Plan</button>
+        </div>
         {(()=>{const sk=Stats.getStreak(hist);return(
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:16}}>
           <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"12px 8px",textAlign:"center"}}><div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:C.acc}}>{weekNum||"–"}</div><div style={{fontSize:9,color:C.fnt,fontWeight:600,marginTop:2}}>WEEK</div></div>
@@ -1621,7 +1643,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           </div>);})()}
 
         {/* 1RM ESTIMATES */}
-        {(()=>{const orms=Stats.getAll1RMs(hist,planId);const entries=Object.entries(orms).sort((a,b)=>b[1].orm-a[1].orm);if(!entries.length)return null;return(
+        {(()=>{const orms=Stats.getAll1RMs(hist,progPid);const entries=Object.entries(orms).sort((a,b)=>b[1].orm-a[1].orm);if(!entries.length)return null;return(
           <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:14,padding:"14px 16px",marginBottom:16}}>
             <div style={{fontSize:11,color:"#EF4444",fontWeight:700,letterSpacing:"0.5px",marginBottom:10}}>🏋️ ESTIMATED 1RM (Epley Formula)</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>{entries.slice(0,12).map(([name,d])=>(
@@ -1634,19 +1656,19 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           </div>);})()}
 
         {/* WEEKLY VOLUME CHART */}
-        {(()=>{const wv=Stats.getWeeklyVolume(hist,planId);const maxVol=Math.max(...wv.map(w=>w.volume),1);if(wv.every(w=>w.volume===0))return null;return(
+        {(()=>{const wv=Stats.getWeeklyVolume(hist,progPid);const maxVol=Math.max(...wv.map(w=>w.sets),1);if(wv.every(w=>w.sets===0))return null;return(
           <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:14,padding:"14px 16px",marginBottom:16}}>
-            <div style={{fontSize:11,color:"#5B8DEF",fontWeight:700,letterSpacing:"0.5px",marginBottom:10}}>📊 WEEKLY VOLUME (8 WEEKS)</div>
+            <div style={{fontSize:11,color:"#5B8DEF",fontWeight:700,letterSpacing:"0.5px",marginBottom:10}}>📊 WEEKLY SETS (8 WEEKS)</div>
             <div style={{display:"flex",alignItems:"flex-end",gap:4,height:120,marginBottom:8}}>{wv.map((w,i)=>(
               <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-                <div style={{fontSize:8,color:C.fnt,fontWeight:600}}>{w.volume>1000?(w.volume/1000).toFixed(1)+"k":w.volume||""}</div>
-                <div style={{width:"100%",background:`linear-gradient(180deg,#5B8DEF,#5B8DEF60)`,borderRadius:"4px 4px 0 0",height:Math.max(w.volume/maxVol*100,w.volume?4:0)+"%",minHeight:w.volume?4:0,transition:"height .3s"}}/>
+                <div style={{fontSize:8,color:C.fnt,fontWeight:600}}>{w.sets||""}</div>
+                <div style={{width:"100%",background:`linear-gradient(180deg,${C.acc},${C.acc}60)`,borderRadius:"4px 4px 0 0",height:Math.max(w.sets/maxVol*100,w.sets?6:0)+"%",minHeight:w.sets?6:0,transition:"height .3s"}}/>
               </div>))}</div>
             <div style={{display:"flex",gap:4}}>{wv.map((w,i)=>(<div key={i} style={{flex:1,textAlign:"center",fontSize:8,color:C.fnt}}>{w.week}</div>))}</div>
           </div>);})()}
 
         {/* MUSCLE GROUP VOLUME */}
-        {(()=>{const mv=Stats.getMuscleVolume(hist,planId);const entries=Object.entries(mv).sort((a,b)=>b[1]-a[1]);const total=entries.reduce((a,e)=>a+e[1],0);if(!total)return null;return(
+        {(()=>{const mv=Stats.getMuscleVolume(hist,progPid);const entries=Object.entries(mv).sort((a,b)=>b[1]-a[1]);const total=entries.reduce((a,e)=>a+e[1],0);if(!total)return null;return(
           <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:14,padding:"14px 16px",marginBottom:16}}>
             <div style={{fontSize:11,color:C.grn,fontWeight:700,letterSpacing:"0.5px",marginBottom:10}}>💪 SETS BY MUSCLE GROUP</div>
             {entries.map(([grp,sets])=>(
@@ -1660,7 +1682,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         {/* Total Mileage */}
         {(()=>{const machines=[...MILES_EX].filter(m=>loggedExercises.includes(m));return machines.length>0&&(
           <div style={{display:"grid",gridTemplateColumns:machines.length===1?"1fr":"1fr 1fr",gap:8,marginBottom:16}}>
-            {machines.map(m=>{const mi=Stats.getTotalMiles(hist,planId,m);return(
+            {machines.map(m=>{const mi=Stats.getTotalMiles(hist,progPid,m);return(
               <div key={m} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,padding:"14px 12px",textAlign:"center"}}>
                 <div style={{fontFamily:"Outfit",fontSize:24,fontWeight:800,color:"#F59E0B"}}>{mi||"0"}</div>
                 <div style={{fontSize:10,color:C.fnt,fontWeight:600,marginTop:2}}>{m.toUpperCase()} MILES</div>
@@ -1741,7 +1763,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         <div style={{display:"flex",gap:8,marginBottom:16}}>
           <button onClick={exportCSV} style={{flex:1,padding:"12px",background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>📥 CSV</button>
           <button onClick={()=>{const data=JSON.stringify({history:hist,bodyWeight:bodyWt,swaps,customEx,exEdits,exOrder},null,2);const blob=new Blob([data],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="wieser-workouts-backup.json";a.click();}} style={{flex:1,padding:"12px",background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>💾 JSON Backup</button>
-          <button onClick={()=>{const w=window.open("","_blank");if(!w)return;const orms=Stats.getAll1RMs(hist,planId);const streak=Stats.getStreak(hist);const wv=Stats.getWeeklyVolume(hist,planId);let h="<html><head><title>Progress Report</title><style>body{font-family:system-ui;max-width:700px;margin:0 auto;padding:20px}h1{font-size:20px}h2{font-size:16px;margin-top:20px;border-bottom:1px solid #ddd;padding-bottom:4px}.stat{display:inline-block;background:#f5f5f5;border-radius:8px;padding:12px 20px;margin:4px;text-align:center}.stat b{display:block;font-size:24px;color:#FF6B2C}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.card{background:#f9f9f9;border-radius:8px;padding:10px}.card b{color:#FF6B2C;font-size:18px}@media print{button{display:none}}</style></head><body>";h+="<h1>Wieser Workouts — Progress Report</h1><p>Generated "+(new Date().toLocaleDateString())+"</p>";h+="<div><div class='stat'><b>"+totalSessions+"</b>Sessions</div><div class='stat'><b>"+streak.current+"</b>Current Streak</div><div class='stat'><b>"+streak.best+"</b>Best Streak</div><div class='stat'><b>"+loggedExercises.length+"</b>Exercises</div></div>";h+="<h2>Estimated 1RM</h2><div class='grid'>";Object.entries(orms).sort((a,b)=>b[1].orm-a[1].orm).slice(0,12).forEach(([n,d])=>{h+="<div class='card'><b>"+d.orm+" lbs</b><br>"+n+"<br><small>Best: "+d.weight+"×"+d.reps+"</small></div>";});h+="</div><h2>Weekly Volume</h2><table border='1' cellpadding='6' cellspacing='0' style='border-collapse:collapse;width:100%'><tr><th>Week</th><th>Volume (lbs)</th><th>Sets</th><th>Sessions</th></tr>";wv.forEach(w=>{h+="<tr><td>"+w.week+"</td><td>"+w.volume.toLocaleString()+"</td><td>"+w.sets+"</td><td>"+w.sessions+"</td></tr>";});h+="</table><br><button onclick='window.print()' style='padding:10px 20px;font-size:14px;cursor:pointer'>Print Report</button></body></html>";w.document.write(h);w.document.close();}} style={{flex:1,padding:"12px",background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>📄 Report</button>
+          <button onClick={()=>{const w=window.open("","_blank");if(!w)return;const orms=Stats.getAll1RMs(hist,progPid);const streak=Stats.getStreak(hist);const wv=Stats.getWeeklyVolume(hist,progPid);let h="<html><head><title>Progress Report</title><style>body{font-family:system-ui;max-width:700px;margin:0 auto;padding:20px}h1{font-size:20px}h2{font-size:16px;margin-top:20px;border-bottom:1px solid #ddd;padding-bottom:4px}.stat{display:inline-block;background:#f5f5f5;border-radius:8px;padding:12px 20px;margin:4px;text-align:center}.stat b{display:block;font-size:24px;color:#FF6B2C}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.card{background:#f9f9f9;border-radius:8px;padding:10px}.card b{color:#FF6B2C;font-size:18px}@media print{button{display:none}}</style></head><body>";h+="<h1>Wieser Workouts — Progress Report</h1><p>Generated "+(new Date().toLocaleDateString())+"</p>";h+="<div><div class='stat'><b>"+totalSessions+"</b>Sessions</div><div class='stat'><b>"+streak.current+"</b>Current Streak</div><div class='stat'><b>"+streak.best+"</b>Best Streak</div><div class='stat'><b>"+loggedExercises.length+"</b>Exercises</div></div>";h+="<h2>Estimated 1RM</h2><div class='grid'>";Object.entries(orms).sort((a,b)=>b[1].orm-a[1].orm).slice(0,12).forEach(([n,d])=>{h+="<div class='card'><b>"+d.orm+" lbs</b><br>"+n+"<br><small>Best: "+d.weight+"×"+d.reps+"</small></div>";});h+="</div><h2>Weekly Volume</h2><table border='1' cellpadding='6' cellspacing='0' style='border-collapse:collapse;width:100%'><tr><th>Week</th><th>Volume (lbs)</th><th>Sets</th><th>Sessions</th></tr>";wv.forEach(w=>{h+="<tr><td>"+w.week+"</td><td>"+w.volume.toLocaleString()+"</td><td>"+w.sets+"</td><td>"+w.sessions+"</td></tr>";});h+="</table><br><button onclick='window.print()' style='padding:10px 20px;font-size:14px;cursor:pointer'>Print Report</button></body></html>";w.document.write(h);w.document.close();}} style={{flex:1,padding:"12px",background:C.card,border:`1px solid ${C.bdr}`,borderRadius:12,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>📄 Report</button>
         </div>
 
         {/* SESSION HISTORY */}
@@ -1828,7 +1850,9 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:14,padding:"16px",marginBottom:16}}>
           <div style={{fontSize:11,color:"#5B8DEF",fontWeight:700,letterSpacing:"0.5px",marginBottom:12}}>🔧 APP SETTINGS</div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,color:C.txt}}>Theme</span><button onClick={toggleTheme} style={{padding:"6px 14px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer"}}>{theme==="dark"?"☀️ Light":"🌙 Dark"}</button></div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,color:C.txt}}>Theme</span><button onClick={toggleTheme} style={{padding:"6px 14px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer"}}>{theme==="auto"?"🔄 Auto (Device)":theme==="dark"?"☀️ Light":"🌙 Dark"}</button></div>
+            <div style={{fontSize:11,color:C.fnt,fontWeight:600,marginTop:4,marginBottom:4}}>ACCENT COLOR</div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{PALETTES.map(p=>(<button key={p.id} onClick={()=>{setAccentId(p.id);savePrefs({accentId:p.id});}} style={{width:32,height:32,borderRadius:16,background:p.acc,border:accentId===p.id?`3px solid ${C.txt}`:`3px solid transparent`,cursor:"pointer"}} title={p.name}/>))}</div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,color:C.txt}}>Push Notifications</span><button onClick={requestPushPermission} style={{padding:"6px 14px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:pushEnabled?"#22C55E":C.dim,fontSize:12,fontWeight:600,cursor:"pointer"}}>{pushEnabled?"✅ Enabled":"Enable"}</button></div>
             <button onClick={()=>setNavEditOpen(true)} style={{padding:"10px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"left"}}>🔧 Edit Navigation Bar</button>
             <button onClick={()=>{setScreen("changelog");history.pushState({screen:"changelog"},"");}} style={{padding:"10px",borderRadius:8,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"left"}}>📋 Latest App Updates</button>
@@ -1895,7 +1919,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
               {c.accepting!==false&&<span style={{fontSize:10,color:"#22C55E",background:"#22C55E15",padding:"2px 8px",borderRadius:6,fontWeight:600}}>Accepting</span>}
             </div>
             <div style={{display:"flex",gap:8,marginTop:10}}>
-              <button onClick={()=>{setJoinCode(c.code);setCoachMsg("");setScreen("coaching");history.pushState({screen:"coaching"},"");}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${C.acc}40`,background:C.acc+"10",color:C.acc,fontSize:12,fontWeight:700,cursor:"pointer"}}>Connect (Code: {c.code})</button>
+              <button onClick={async()=>{setCoachMsg("");try{const connId=c.uid+"_"+user.uid;const existDoc=await db.collection("connections").doc(connId).get();if(existDoc.exists&&existDoc.data().status==="active"){setCoachMsg("Already connected to "+c.name+".");setScreen("coaching");history.pushState({screen:"coaching"},"");return;}await db.collection("connections").doc(connId).set({coachUid:c.uid,athleteUid:user.uid,status:"active",joinedAt:Date.now()});setMyCoaches(prev=>[...prev,{uid:c.uid,name:c.name,connId}]);setCoachMsg("Connected to coach: "+c.name+"!");setScreen("coaching");history.pushState({screen:"coaching"},"");}catch(e){setCoachMsg("Failed to connect: "+e.message);setScreen("coaching");history.pushState({screen:"coaching"},"");}}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${C.acc}40`,background:C.acc+"10",color:C.acc,fontSize:12,fontWeight:700,cursor:"pointer"}}>Connect (Code: {c.code})</button>
               <button onClick={()=>openChat(c.uid,c.name,true)} style={{padding:"8px 14px",borderRadius:8,border:`1px solid #5B8DEF40`,background:"#5B8DEF10",color:"#5B8DEF",fontSize:12,fontWeight:700,cursor:"pointer"}}>💬 Message</button>
             </div>
           </div>))}
@@ -1922,10 +1946,10 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
 
         {exs.map((exercise,ei)=>{
           const open=openEx.has(ei);const pe=prev?.[ei];const pool=SWAP_POOLS[exercise.group]||[];const le=log[ei];const gc=GC[exercise.group]||"#6B7280";const isDur=DURATION_EX.has(exercise.name);const isRepsOnly=REPS_ONLY_EX.has(exercise.name);const curBest=(()=>{if(isDur||!le?.sets)return 0;let b=0;le.sets.forEach(s=>{const w=parseFloat(s.weight)||0;if(w>b)b=w;});return b;})();const prevPR=Stats.getPR(hist,planId,exercise.name);const isNewPR=curBest>0&&curBest>prevPR;
-          const linked=isSS(ei);const linkedFromAbove=ei>0&&isSS(ei-1);const isCustom=exercise.custom;const customIdx=isCustom?exercise._origIdx-day.exercises.length:-1;const isEditing=editPanel===ei;
+          const planSS=exercise.ss&&ei>0&&exs[ei-1]?.ss===exercise.ss;const linked=isSS(ei)||(exercise.ss&&ei<exs.length-1&&exs[ei+1]?.ss===exercise.ss);const linkedFromAbove=ei>0&&(isSS(ei-1)||planSS);const isCustom=exercise.custom;const customIdx=isCustom?exercise._origIdx-day.exercises.length:-1;const isEditing=editPanel===ei;
           return(
             <div key={ei}>
-              {linkedFromAbove&&(<div style={{display:"flex",justifyContent:"center",margin:"-3px 0"}}><span style={{fontSize:10,color:"#F59E0B",fontWeight:700,background:"#F59E0B18",border:"1px solid #F59E0B30",borderRadius:6,padding:"2px 10px"}}>⚡ SUPERSET — no rest</span></div>)}
+              {linkedFromAbove&&(<div style={{display:"flex",justifyContent:"center",margin:"-3px 0"}}><span style={{fontSize:10,color:"#F59E0B",fontWeight:700,background:"#F59E0B18",border:"1px solid #F59E0B30",borderRadius:6,padding:"2px 10px"}}>⚡ SUPERSET — no rest between sets</span></div>)}
             <div style={{background:C.card,border:`1px solid ${linked?"#F59E0B44":linkedFromAbove?"#F59E0B44":open?C.acc+"44":C.bdr}`,borderRadius:linkedFromAbove?"0 0 12px 12px":linked?"12px 12px 0 0":"12px",marginBottom:linked?0:6,overflow:"hidden"}}>
               <div style={{display:"flex",alignItems:"center"}}>
                 {/* REORDER ARROWS */}
@@ -2120,7 +2144,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     {user&&screen!=="login"&&(
       <div style={{position:"fixed",bottom:0,left:0,right:0,background:C.card,borderTop:`1px solid ${C.bdr}`,zIndex:45,paddingBottom:"env(safe-area-inset-bottom,0px)"}}>
         <div style={{display:"flex",justifyContent:"space-around",alignItems:"center",maxWidth:600,margin:"0 auto",padding:"6px 0"}}>
-          {navItems.map(id=>{const opt=NAV_OPTIONS.find(o=>o.id===id);if(!opt)return null;const isActive=(id==="home"&&screen==="home")||(id==="plans"&&screen==="plans")||(id==="community"&&screen==="community")||(id==="create"&&screen==="create")||(id==="coaching"&&screen==="coaching")||(id==="leaderboard"&&screen==="leaderboard")||(id==="progress"&&screen==="progress")||(id==="chat"&&screen==="chatlist");return(
+          {(navItems||DEFAULT_NAV).map(id=>{const opt=NAV_OPTIONS.find(o=>o.id===id);if(!opt)return null;const isActive=(id==="home"&&screen==="home")||(id==="plans"&&screen==="plans")||(id==="community"&&screen==="community")||(id==="create"&&screen==="create")||(id==="coaching"&&screen==="coaching")||(id==="leaderboard"&&screen==="leaderboard")||(id==="progress"&&screen==="progress")||(id==="chat"&&screen==="chatlist");return(
             <button key={id} onClick={()=>{setPlanMenu(false);opt.action();}} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,background:"transparent",border:"none",color:isActive?C.acc:C.fnt,cursor:"pointer",padding:"4px 8px",minWidth:0,flex:1,position:"relative"}}>
               <span style={{fontSize:18,lineHeight:1}}>{opt.icon}{id==="chat"&&chatUnread>0&&<span style={{position:"absolute",top:0,right:"calc(50% - 16px)",background:"#EF4444",color:"#fff",fontSize:8,fontWeight:800,borderRadius:8,padding:"0 4px",minWidth:12,textAlign:"center"}}>{chatUnread>9?"9+":chatUnread}</span>}</span>
               <span style={{fontSize:9,fontWeight:isActive?700:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:60}}>{opt.label}</span>
@@ -2136,21 +2160,21 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         <div style={{fontSize:12,color:C.dim,marginBottom:16}}>Tap to add or remove items. Drag to reorder. Max 5 items.</div>
 
         <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Current Navigation</div>
-        {navItems.map((id,idx)=>{const opt=NAV_OPTIONS.find(o=>o.id===id);if(!opt)return null;return(
+        {(navItems||DEFAULT_NAV).map((id,idx)=>{const opt=NAV_OPTIONS.find(o=>o.id===id);if(!opt)return null;return(
           <div key={id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:C.srf,border:`1px solid ${C.sbdr}`,borderRadius:10,marginBottom:4}}>
             <div style={{display:"flex",flexDirection:"column",gap:2}}>
-              {idx>0&&<button onClick={()=>{const n=[...navItems];[n[idx-1],n[idx]]=[n[idx],n[idx-1]];setNavItems(n);}} style={{background:"transparent",border:"none",color:C.dim,cursor:"pointer",fontSize:10,padding:0,lineHeight:1}}>▲</button>}
-              {idx<navItems.length-1&&<button onClick={()=>{const n=[...navItems];[n[idx],n[idx+1]]=[n[idx+1],n[idx]];setNavItems(n);}} style={{background:"transparent",border:"none",color:C.dim,cursor:"pointer",fontSize:10,padding:0,lineHeight:1}}>▼</button>}
+              {idx>0&&<button onClick={()=>{const n=[...(navItems||DEFAULT_NAV)];[n[idx-1],n[idx]]=[n[idx],n[idx-1]];setNavItems(n);}} style={{background:"transparent",border:"none",color:C.dim,cursor:"pointer",fontSize:10,padding:0,lineHeight:1}}>▲</button>}
+              {idx<(navItems||DEFAULT_NAV).length-1&&<button onClick={()=>{const n=[...(navItems||DEFAULT_NAV)];[n[idx],n[idx+1]]=[n[idx+1],n[idx]];setNavItems(n);}} style={{background:"transparent",border:"none",color:C.dim,cursor:"pointer",fontSize:10,padding:0,lineHeight:1}}>▼</button>}
             </div>
             <span style={{fontSize:18}}>{opt.icon}</span>
             <span style={{flex:1,fontSize:13,fontWeight:600,color:C.txt}}>{opt.label}</span>
-            <button onClick={()=>{setNavItems(navItems.filter(i=>i!==id));}} style={{padding:"4px 10px",borderRadius:6,border:"1px solid #EF444430",background:"#EF444410",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>Remove</button>
+            <button onClick={()=>{setNavItems((navItems||DEFAULT_NAV).filter(i=>i!==id));}} style={{padding:"4px 10px",borderRadius:6,border:"1px solid #EF444430",background:"#EF444410",color:"#EF4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>Remove</button>
           </div>);})}
 
-        {navItems.length<5&&(<>
+        {(navItems||DEFAULT_NAV).length<5&&(<>
           <div style={{fontSize:11,fontWeight:700,color:C.fnt,textTransform:"uppercase",letterSpacing:1,marginTop:16,marginBottom:8}}>Available Items</div>
-          {NAV_OPTIONS.filter(o=>!navItems.includes(o.id)).map(opt=>(
-            <button key={opt.id} onClick={()=>{if(navItems.length<5)setNavItems([...navItems,opt.id]);}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"10px 12px",background:"transparent",border:`1px dashed ${C.sbdr}`,borderRadius:10,marginBottom:4,cursor:"pointer",textAlign:"left"}}>
+          {NAV_OPTIONS.filter(o=>!(navItems||DEFAULT_NAV).includes(o.id)).map(opt=>(
+            <button key={opt.id} onClick={()=>{if((navItems||DEFAULT_NAV).length<5)setNavItems([...(navItems||DEFAULT_NAV),opt.id]);}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"10px 12px",background:"transparent",border:`1px dashed ${C.sbdr}`,borderRadius:10,marginBottom:4,cursor:"pointer",textAlign:"left"}}>
               <span style={{fontSize:18}}>{opt.icon}</span>
               <span style={{fontSize:13,fontWeight:600,color:C.dim}}>{opt.label}</span>
               <span style={{marginLeft:"auto",fontSize:11,color:C.acc,fontWeight:700}}>+ Add</span>
@@ -2160,7 +2184,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
 
         <div style={{display:"flex",gap:8,marginTop:16}}>
           <button onClick={()=>{setNavItems(DEFAULT_NAV);}} style={{flex:1,padding:"12px",borderRadius:10,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontSize:13,fontWeight:600,cursor:"pointer"}}>Reset Default</button>
-          <button onClick={()=>{savePrefs({navItems});setNavEditOpen(false);}} style={{flex:2,padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>Save</button>
+          <button onClick={()=>{savePrefs({navItems:navItems||DEFAULT_NAV});setNavEditOpen(false);}} style={{flex:2,padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>Save</button>
         </div>
       </div>
     </div>)}

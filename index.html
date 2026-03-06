@@ -49,7 +49,7 @@ const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const
 const link=document.createElement('link');link.rel='manifest';link.href=mUrl;document.head.appendChild(link);
 const iconLink=document.createElement('link');iconLink.rel='icon';iconLink.href=iconUrl;iconLink.type='image/svg+xml';document.head.appendChild(iconLink);
 const appleIcon=document.createElement('link');appleIcon.rel='apple-touch-icon';appleIcon.href=iconUrl;document.head.appendChild(appleIcon);
-if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v32';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
+if('serviceWorker' in navigator){const swCode=`const CACHE='wieser-workouts-v33';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;const swBlob=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});}
 // Firebase init deferred to boot()
 </script>
 </head>
@@ -773,9 +773,10 @@ const GC = {
   cardio: "#F472B6",
   other: "#6B7280"
 };
-const DURATION_EX = new Set(["Biking", "Air Bike", "Rower"]);
-const MILES_EX = new Set(["Biking", "Air Bike", "Rower"]);
-const REPS_ONLY_EX = new Set(["Stretches", "Jumping Jacks"]);
+const DURATION_EX = new Set(["Biking", "Air Bike", "Rower", "Treadmill"]);
+const MILES_EX = new Set(["Biking", "Air Bike", "Rower", "Treadmill"]);
+const REPS_ONLY_EX = new Set(["Stretches", "Jumping Jacks", "Burpees", "Mountain Climbers", "High Knees", "Jump Squats", "Jump Rope"]);
+const TIME_HOLD_EX = new Set(["Plank", "Side Plank", "Wall Sit"]);
 const ADMIN_EMAILS = new Set(["traviswieser@gmail.com"]);
 const EQUIPMENT = [{
   key: "dumbbells",
@@ -1685,6 +1686,11 @@ const FEATURED_PLANS = [
   }]
 }];
 const CHANGELOG = [{
+  ver: "v33",
+  date: "2026-03-05",
+  title: "Theme System, Progress Dashboard & Bug Fixes",
+  items: ["Match Device theme — auto-detects dark/light mode (new default)", "8 accent color palettes in Settings", "Progress dashboard shows data across all workout plans with toggle", "Weekly chart now tracks total sets instead of volume", "Chat input no longer covered by nav bar", "Chat send bug fixed with better error handling", "Coach Directory connect button now works — auto-joins directly", "Superset graphic shows between exercises during workouts", "Superset toggle button improved in plan editor", "Exercise types fixed — Treadmill, Plank, bodyweight exercises properly categorized", "Default nav bar: Home, My Plans, Coaching, Progress, Leaderboard", "Nav bar no longer flashes default layout on refresh"]
+}, {
   ver: "v32",
   date: "2026-03-04",
   title: "Profiles, Coach Directory & Featured Plans",
@@ -1972,17 +1978,57 @@ const LIGHT = {
   srf: "#EBEBF0",
   sbdr: "#D0D0DA"
 };
+const PALETTES = [{
+  id: "orange",
+  name: "Orange Blaze",
+  acc: "#FF6B2C",
+  accLight: "#E8551A"
+}, {
+  id: "blue",
+  name: "Ocean Blue",
+  acc: "#3B82F6",
+  accLight: "#2563EB"
+}, {
+  id: "green",
+  name: "Forest Green",
+  acc: "#22C55E",
+  accLight: "#16A34A"
+}, {
+  id: "purple",
+  name: "Royal Purple",
+  acc: "#8B5CF6",
+  accLight: "#7C3AED"
+}, {
+  id: "red",
+  name: "Crimson Red",
+  acc: "#EF4444",
+  accLight: "#DC2626"
+}, {
+  id: "pink",
+  name: "Hot Pink",
+  acc: "#EC4899",
+  accLight: "#DB2777"
+}, {
+  id: "teal",
+  name: "Teal Wave",
+  acc: "#14B8A6",
+  accLight: "#0D9488"
+}, {
+  id: "amber",
+  name: "Golden Amber",
+  acc: "#F59E0B",
+  accLight: "#D97706"
+}];
 
 // PROGRESS HELPERS
 const Stats = {
   getDates: (hist, pid) => {
     const dates = [];
     Object.keys(hist).forEach(k => {
-      if (k.startsWith(pid + "-")) {
-        const p = k.split("-");
-        const d = p.slice(3).join("-");
-        if (d && !dates.includes(d)) dates.push(d);
-      }
+      if (pid && !k.startsWith(pid + "-")) return;
+      const p = k.split("-");
+      const d = pid ? p.slice(3).join("-") : p.slice(p.length >= 6 ? 3 : 3).join("-");
+      if (d && d.match(/^\d{4}-/) && !dates.includes(d)) dates.push(d);
     });
     return dates.sort();
   },
@@ -2008,7 +2054,7 @@ const Stats = {
   getExHistory: (hist, pid, exName) => {
     const pts = [];
     Object.entries(hist).forEach(([k, v]) => {
-      if (!k.startsWith(pid + "-")) return;
+      if (pid && !k.startsWith(pid + "-")) return;
       const parts = k.split("-");
       const date = parts.slice(3).join("-");
       Object.values(v).forEach(ex => {
@@ -2040,9 +2086,9 @@ const Stats = {
   getLoggedExercises: (hist, pid) => {
     const names = new Set();
     Object.entries(hist).forEach(([k, v]) => {
-      if (!k.startsWith(pid + "-")) return;
+      if (pid && !k.startsWith(pid + "-")) return;
       Object.values(v).forEach(ex => {
-        if (ex.name && ex.sets && ex.sets.some(s => parseFloat(s.weight) > 0)) names.add(ex.name);
+        if (ex.name && ex.sets && ex.sets.some(s => parseFloat(s.weight) > 0 || parseFloat(s.reps) > 0)) names.add(ex.name);
       });
     });
     return Array.from(names).sort();
@@ -2050,7 +2096,7 @@ const Stats = {
   getTotalMiles: (hist, pid, exName) => {
     let total = 0;
     Object.entries(hist).forEach(([k, v]) => {
-      if (!k.startsWith(pid + "-")) return;
+      if (pid && !k.startsWith(pid + "-")) return;
       Object.values(v).forEach(ex => {
         if (ex.name === exName && ex.sets) {
           ex.sets.forEach(s => {
@@ -2064,7 +2110,7 @@ const Stats = {
   getPR: (hist, pid, exName) => {
     let best = 0;
     Object.entries(hist).forEach(([k, v]) => {
-      if (!k.startsWith(pid + "-")) return;
+      if (pid && !k.startsWith(pid + "-")) return;
       Object.values(v).forEach(ex => {
         if (ex.name === exName && ex.sets) {
           ex.sets.forEach(s => {
@@ -2099,9 +2145,9 @@ const Stats = {
   getAll1RMs: (hist, pid) => {
     const map = {};
     Object.entries(hist).forEach(([k, v]) => {
-      if (!k.startsWith(pid + "-")) return;
+      if (pid && !k.startsWith(pid + "-")) return;
       Object.values(v).forEach(ex => {
-        if (!ex.name || !ex.sets || DURATION_EX.has(ex.name)) return;
+        if (!ex.name || !ex.sets || DURATION_EX.has(ex.name) || TIME_HOLD_EX.has(ex.name) || REPS_ONLY_EX.has(ex.name)) return;
         ex.sets.forEach(s => {
           const w = parseFloat(s.weight) || 0;
           const r = parseFloat(s.reps) || 0;
@@ -2176,7 +2222,7 @@ const Stats = {
         sessions = 0;
       const dates = new Set();
       Object.entries(hist).forEach(([k, v]) => {
-        if (!k.startsWith(pid + "-")) return;
+        if (pid && !k.startsWith(pid + "-")) return;
         const d = k.split("-").slice(3).join("-");
         if (d >= ws && d <= we) {
           dates.add(d);
@@ -2205,7 +2251,7 @@ const Stats = {
   getMuscleVolume: (hist, pid) => {
     const map = {};
     Object.entries(hist).forEach(([k, v]) => {
-      if (!k.startsWith(pid + "-")) return;
+      if (pid && !k.startsWith(pid + "-")) return;
       Object.values(v).forEach(ex => {
         if (!ex.name || !ex.sets) return;
         const grp = EX_GRP[ex.name] || "other";
@@ -2477,7 +2523,9 @@ function App() {
   const [editSets, setEditSets] = useState("");
   const [editCues, setEditCues] = useState("");
   const [editGroup, setEditGroup] = useState("chest");
-  const [theme, setTheme] = useState("dark");
+  const [theme, setTheme] = useState("auto");
+  const [accentId, setAccentId] = useState("orange");
+  const sysDark = typeof window !== "undefined" && window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)").matches : true;
   const [restSec, setRestSec] = useState(0);
   const [restRunning, setRestRunning] = useState(false);
   const [sessionStart, setSessionStart] = useState(null);
@@ -2654,8 +2702,8 @@ function App() {
       }, "");
     }
   }];
-  const DEFAULT_NAV = ["plans", "community", "create", "coaching", "leaderboard"];
-  const [navItems, setNavItems] = useState(DEFAULT_NAV);
+  const DEFAULT_NAV = ["home", "plans", "coaching", "progress", "leaderboard"];
+  const [navItems, setNavItems] = useState(null);
   const [navEditOpen, setNavEditOpen] = useState(false);
   const [sessionSummary, setSessionSummary] = useState(null);
   const [undoStack, setUndoStack] = useState([]);
@@ -2676,8 +2724,17 @@ function App() {
   const [coachAccepting, setCoachAccepting] = useState(true);
   const [coachSpecialty, setCoachSpecialty] = useState("");
   const [hasNoPlanTip, setHasNoPlanTip] = useState(false);
+  const [progScope, setProgScope] = useState("all");
   const unsubs = useRef([]);
-  const C = theme === "dark" ? DARK : LIGHT;
+  const resolvedTheme = theme === "auto" ? sysDark ? "dark" : "light" : theme;
+  const palette = PALETTES.find(p => p.id === accentId) || PALETTES[0];
+  const C = resolvedTheme === "dark" ? {
+    ...DARK,
+    acc: palette.acc
+  } : {
+    ...LIGHT,
+    acc: palette.accLight
+  };
   const allPlans = useMemo(() => [...ALL, ...Object.values(myPlans).filter(p => p._published !== false), ...Object.values(coachPlans).filter(p => p._published !== false)], [myPlans, coachPlans]);
   const visiblePlans = useMemo(() => allPlans.filter(p => !hiddenPlans.includes(p.id)), [allPlans, hiddenPlans]);
   const hasNoPlan = visiblePlans.length === 0 || hasNoPlanTip;
@@ -2690,10 +2747,11 @@ function App() {
   const phase = plan.phases[phaseIdx];
   const day = phase?.days[dayIdx];
   const today = new Date().toISOString().slice(0, 10);
-  const weekNum = useMemo(() => Stats.getWeek(hist, planId), [hist, planId]);
-  const totalSessions = useMemo(() => Stats.getTotal(hist, planId), [hist, planId]);
-  const loggedExercises = useMemo(() => Stats.getLoggedExercises(hist, planId), [hist, planId]);
-  const exHistory = useMemo(() => progEx ? Stats.getExHistory(hist, planId, progEx) : [], [hist, planId, progEx]);
+  const progPid = progScope === "all" ? "" : planId;
+  const weekNum = useMemo(() => Stats.getWeek(hist, progPid), [hist, progPid]);
+  const totalSessions = useMemo(() => Stats.getTotal(hist, progPid), [hist, progPid]);
+  const loggedExercises = useMemo(() => Stats.getLoggedExercises(hist, progPid), [hist, progPid]);
+  const exHistory = useMemo(() => progEx ? Stats.getExHistory(hist, progPid, progEx) : [], [hist, progPid, progEx]);
   const pctChange = useMemo(() => Stats.getPctChange(exHistory), [exHistory]);
 
   // AUTH LISTENER
@@ -2726,6 +2784,7 @@ function App() {
       if (ee) setExEdits(ee);
       if (bw) setBodyWt(bw);
       if (pf && pf.theme) setTheme(pf.theme);
+      if (pf && pf.accentId) setAccentId(pf.accentId);
       if (pf && pf.aiKey) setAiKey(pf.aiKey);
       if (pf && pf.aiProvider) setAiProvider(pf.aiProvider);
       if (pf && pf.bwEnabled === false) setBwEnabled(false);
@@ -3250,7 +3309,10 @@ function App() {
     }, () => {});
   };
   const sendChatMsg = async (text, type) => {
-    if (!user || !chatWith) return;
+    if (!user || !chatWith) {
+      console.error("sendMsg: no user or chatWith");
+      return;
+    }
     const t = type || "msg";
     const msg = {
       from: user.uid,
@@ -3261,15 +3323,18 @@ function App() {
     };
     try {
       await db.collection("chats").doc(chatWith.chatId).collection("messages").add(msg);
-      const unrUpdate = {};
-      unrUpdate["unread." + chatWith.uid] = firebase.firestore.FieldValue.increment(1);
-      await db.collection("chats").doc(chatWith.chatId).update({
-        lastMsg: text.slice(0, 80),
-        lastTs: Date.now(),
-        ...unrUpdate
-      });
+      try {
+        await db.collection("chats").doc(chatWith.chatId).update({
+          lastMsg: text.slice(0, 80),
+          lastTs: Date.now(),
+          [`unread.${chatWith.uid}`]: firebase.firestore.FieldValue.increment(1)
+        });
+      } catch (e2) {
+        console.error("update chat meta:", e2);
+      }
     } catch (e) {
       console.error("sendMsg:", e);
+      alert("Message failed: " + e.message);
     }
   };
   const sendSystemMsg = async (chatId, recipientUid, text) => {
@@ -4005,6 +4070,15 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
             reps: ""
           }]
         };
+      } else if (TIME_HOLD_EX.has(e.name)) {
+        const n = parseInt(e.sets) || 3;
+        l[i] = {
+          name: e.name,
+          sets: Array(Math.min(n, 6)).fill(0).map(() => ({
+            weight: "",
+            reps: ""
+          }))
+        };
       } else {
         const n = parseInt(e.sets) || 3;
         l[i] = {
@@ -4520,7 +4594,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
 
   // THEME TOGGLE
   const toggleTheme = () => {
-    const nt = theme === "dark" ? "light" : "dark";
+    const nt = theme === "auto" ? "dark" : theme === "dark" ? "light" : "auto";
     setTheme(nt);
     if (user) savePrefs({
       theme: nt
@@ -5269,7 +5343,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       fontWeight: 600,
       cursor: "pointer"
     }
-  }, theme === "dark" ? "☀️" : "🌙"), /*#__PURE__*/React.createElement("button", {
+  }, theme === "auto" ? "🔄" : theme === "dark" ? "☀️" : "🌙"), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setPlanMenu(false);
       setLinkMsg("");
@@ -6326,39 +6400,32 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       width: 70,
       flexShrink: 0
     }
-  }), /*#__PURE__*/React.createElement("select", {
-    value: ex.ss || "",
-    onChange: e => {
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
       const np = JSON.parse(JSON.stringify(cpDraft.phases));
-      np[pi].days[di].exercises[xi].ss = e.target.value;
+      const vals = ["", "A", "B", "C"];
+      const cur = vals.indexOf(ex.ss || "");
+      np[pi].days[di].exercises[xi].ss = vals[(cur + 1) % 4];
       setCpDraft({
         ...cpDraft,
         phases: np
       });
     },
-    title: "Superset group",
+    title: "Toggle superset group",
     style: {
-      background: C.srf,
-      border: `1px solid ${C.sbdr}`,
+      background: ex.ss ? "#A78BFA20" : "transparent",
+      border: `1px solid ${ex.ss ? "#A78BFA60" : C.sbdr}`,
       borderRadius: 4,
-      padding: "3px",
+      padding: "2px 4px",
       color: ex.ss ? "#A78BFA" : C.fnt,
       fontSize: 9,
-      outline: "none",
-      fontFamily: "inherit",
-      width: 28,
+      fontWeight: 700,
+      cursor: "pointer",
       flexShrink: 0,
+      minWidth: 22,
       textAlign: "center"
     }
-  }, /*#__PURE__*/React.createElement("option", {
-    value: ""
-  }, "\u2013"), /*#__PURE__*/React.createElement("option", {
-    value: "A"
-  }, "A"), /*#__PURE__*/React.createElement("option", {
-    value: "B"
-  }, "B"), /*#__PURE__*/React.createElement("option", {
-    value: "C"
-  }, "C")), /*#__PURE__*/React.createElement("button", {
+  }, ex.ss || "SS"), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       const np = JSON.parse(JSON.stringify(cpDraft.phases));
       np[pi].days[di].exercises.splice(xi, 1);
@@ -6769,7 +6836,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     style: {
       display: "flex",
       flexDirection: "column",
-      height: "calc(100vh - 60px - env(safe-area-inset-top, 0px))",
+      height: "calc(100vh - 120px)",
       padding: 0
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -6856,7 +6923,8 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       padding: "10px 16px",
       borderTop: `1px solid ${C.bdr}`,
       display: "flex",
-      gap: 8
+      gap: 8,
+      flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("input", {
     value: chatInput,
@@ -10242,7 +10310,39 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     style: {
       padding: "16px 16px 80px"
     }
-  }, (() => {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setProgScope("all"),
+    style: {
+      flex: 1,
+      padding: "8px",
+      borderRadius: 8,
+      border: `1px solid ${progScope === "all" ? C.acc + "60" : C.sbdr}`,
+      background: progScope === "all" ? C.acc + "15" : "transparent",
+      color: progScope === "all" ? C.acc : C.dim,
+      fontSize: 12,
+      fontWeight: 700,
+      cursor: "pointer"
+    }
+  }, "All Plans"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setProgScope("current"),
+    style: {
+      flex: 1,
+      padding: "8px",
+      borderRadius: 8,
+      border: `1px solid ${progScope === "current" ? C.acc + "60" : C.sbdr}`,
+      background: progScope === "current" ? C.acc + "15" : "transparent",
+      color: progScope === "current" ? C.acc : C.dim,
+      fontSize: 12,
+      fontWeight: 700,
+      cursor: "pointer"
+    }
+  }, "Current Plan")), (() => {
     const sk = Stats.getStreak(hist);
     return /*#__PURE__*/React.createElement("div", {
       style: {
@@ -10429,7 +10529,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       }
     }, b.desc)))));
   })(), (() => {
-    const orms = Stats.getAll1RMs(hist, planId);
+    const orms = Stats.getAll1RMs(hist, progPid);
     const entries = Object.entries(orms).sort((a, b) => b[1].orm - a[1].orm);
     if (!entries.length) return null;
     return /*#__PURE__*/React.createElement("div", {
@@ -10500,9 +10600,9 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       }
     }, "Showing top 12 of ", entries.length, " exercises"));
   })(), (() => {
-    const wv = Stats.getWeeklyVolume(hist, planId);
-    const maxVol = Math.max(...wv.map(w => w.volume), 1);
-    if (wv.every(w => w.volume === 0)) return null;
+    const wv = Stats.getWeeklyVolume(hist, progPid);
+    const maxVol = Math.max(...wv.map(w => w.sets), 1);
+    if (wv.every(w => w.sets === 0)) return null;
     return /*#__PURE__*/React.createElement("div", {
       style: {
         background: C.card,
@@ -10519,7 +10619,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         letterSpacing: "0.5px",
         marginBottom: 10
       }
-    }, "\uD83D\uDCCA WEEKLY VOLUME (8 WEEKS)"), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCCA WEEKLY SETS (8 WEEKS)"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         alignItems: "flex-end",
@@ -10542,13 +10642,13 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         color: C.fnt,
         fontWeight: 600
       }
-    }, w.volume > 1000 ? (w.volume / 1000).toFixed(1) + "k" : w.volume || ""), /*#__PURE__*/React.createElement("div", {
+    }, w.sets || ""), /*#__PURE__*/React.createElement("div", {
       style: {
         width: "100%",
-        background: `linear-gradient(180deg,#5B8DEF,#5B8DEF60)`,
+        background: `linear-gradient(180deg,${C.acc},${C.acc}60)`,
         borderRadius: "4px 4px 0 0",
-        height: Math.max(w.volume / maxVol * 100, w.volume ? 4 : 0) + "%",
-        minHeight: w.volume ? 4 : 0,
+        height: Math.max(w.sets / maxVol * 100, w.sets ? 6 : 0) + "%",
+        minHeight: w.sets ? 6 : 0,
         transition: "height .3s"
       }
     })))), /*#__PURE__*/React.createElement("div", {
@@ -10566,7 +10666,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       }
     }, w.week))));
   })(), (() => {
-    const mv = Stats.getMuscleVolume(hist, planId);
+    const mv = Stats.getMuscleVolume(hist, progPid);
     const entries = Object.entries(mv).sort((a, b) => b[1] - a[1]);
     const total = entries.reduce((a, e) => a + e[1], 0);
     if (!total) return null;
@@ -10637,7 +10737,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         marginBottom: 16
       }
     }, machines.map(m => {
-      const mi = Stats.getTotalMiles(hist, planId, m);
+      const mi = Stats.getTotalMiles(hist, progPid, m);
       return /*#__PURE__*/React.createElement("div", {
         key: m,
         style: {
@@ -11065,9 +11165,9 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     onClick: () => {
       const w = window.open("", "_blank");
       if (!w) return;
-      const orms = Stats.getAll1RMs(hist, planId);
+      const orms = Stats.getAll1RMs(hist, progPid);
       const streak = Stats.getStreak(hist);
-      const wv = Stats.getWeeklyVolume(hist, planId);
+      const wv = Stats.getWeeklyVolume(hist, progPid);
       let h = "<html><head><title>Progress Report</title><style>body{font-family:system-ui;max-width:700px;margin:0 auto;padding:20px}h1{font-size:20px}h2{font-size:16px;margin-top:20px;border-bottom:1px solid #ddd;padding-bottom:4px}.stat{display:inline-block;background:#f5f5f5;border-radius:8px;padding:12px 20px;margin:4px;text-align:center}.stat b{display:block;font-size:24px;color:#FF6B2C}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.card{background:#f9f9f9;border-radius:8px;padding:10px}.card b{color:#FF6B2C;font-size:18px}@media print{button{display:none}}</style></head><body>";
       h += "<h1>Wieser Workouts — Progress Report</h1><p>Generated " + new Date().toLocaleDateString() + "</p>";
       h += "<div><div class='stat'><b>" + totalSessions + "</b>Sessions</div><div class='stat'><b>" + streak.current + "</b>Current Streak</div><div class='stat'><b>" + streak.best + "</b>Best Streak</div><div class='stat'><b>" + loggedExercises.length + "</b>Exercises</div></div>";
@@ -11676,7 +11776,38 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       fontWeight: 600,
       cursor: "pointer"
     }
-  }, theme === "dark" ? "☀️ Light" : "🌙 Dark")), /*#__PURE__*/React.createElement("div", {
+  }, theme === "auto" ? "🔄 Auto (Device)" : theme === "dark" ? "☀️ Light" : "🌙 Dark")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.fnt,
+      fontWeight: 600,
+      marginTop: 4,
+      marginBottom: 4
+    }
+  }, "ACCENT COLOR"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap"
+    }
+  }, PALETTES.map(p => /*#__PURE__*/React.createElement("button", {
+    key: p.id,
+    onClick: () => {
+      setAccentId(p.id);
+      savePrefs({
+        accentId: p.id
+      });
+    },
+    style: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      background: p.acc,
+      border: accentId === p.id ? `3px solid ${C.txt}` : `3px solid transparent`,
+      cursor: "pointer"
+    },
+    title: p.name
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "space-between",
@@ -12035,13 +12166,42 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       marginTop: 10
     }
   }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      setJoinCode(c.code);
+    onClick: async () => {
       setCoachMsg("");
-      setScreen("coaching");
-      history.pushState({
-        screen: "coaching"
-      }, "");
+      try {
+        const connId = c.uid + "_" + user.uid;
+        const existDoc = await db.collection("connections").doc(connId).get();
+        if (existDoc.exists && existDoc.data().status === "active") {
+          setCoachMsg("Already connected to " + c.name + ".");
+          setScreen("coaching");
+          history.pushState({
+            screen: "coaching"
+          }, "");
+          return;
+        }
+        await db.collection("connections").doc(connId).set({
+          coachUid: c.uid,
+          athleteUid: user.uid,
+          status: "active",
+          joinedAt: Date.now()
+        });
+        setMyCoaches(prev => [...prev, {
+          uid: c.uid,
+          name: c.name,
+          connId
+        }]);
+        setCoachMsg("Connected to coach: " + c.name + "!");
+        setScreen("coaching");
+        history.pushState({
+          screen: "coaching"
+        }, "");
+      } catch (e) {
+        setCoachMsg("Failed to connect: " + e.message);
+        setScreen("coaching");
+        history.pushState({
+          screen: "coaching"
+        }, "");
+      }
     },
     style: {
       padding: "8px 14px",
@@ -12204,8 +12364,9 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     })();
     const prevPR = Stats.getPR(hist, planId, exercise.name);
     const isNewPR = curBest > 0 && curBest > prevPR;
-    const linked = isSS(ei);
-    const linkedFromAbove = ei > 0 && isSS(ei - 1);
+    const planSS = exercise.ss && ei > 0 && exs[ei - 1]?.ss === exercise.ss;
+    const linked = isSS(ei) || exercise.ss && ei < exs.length - 1 && exs[ei + 1]?.ss === exercise.ss;
+    const linkedFromAbove = ei > 0 && (isSS(ei - 1) || planSS);
     const isCustom = exercise.custom;
     const customIdx = isCustom ? exercise._origIdx - day.exercises.length : -1;
     const isEditing = editPanel === ei;
@@ -12227,7 +12388,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         borderRadius: 6,
         padding: "2px 10px"
       }
-    }, "\u26A1 SUPERSET \u2014 no rest")), /*#__PURE__*/React.createElement("div", {
+    }, "\u26A1 SUPERSET \u2014 no rest between sets")), /*#__PURE__*/React.createElement("div", {
       style: {
         background: C.card,
         border: `1px solid ${linked ? "#F59E0B44" : linkedFromAbove ? "#F59E0B44" : open ? C.acc + "44" : C.bdr}`,
@@ -13587,7 +13748,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       margin: "0 auto",
       padding: "6px 0"
     }
-  }, navItems.map(id => {
+  }, (navItems || DEFAULT_NAV).map(id => {
     const opt = NAV_OPTIONS.find(o => o.id === id);
     if (!opt) return null;
     const isActive = id === "home" && screen === "home" || id === "plans" && screen === "plans" || id === "community" && screen === "community" || id === "create" && screen === "create" || id === "coaching" && screen === "coaching" || id === "leaderboard" && screen === "leaderboard" || id === "progress" && screen === "progress" || id === "chat" && screen === "chatlist";
@@ -13689,7 +13850,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       letterSpacing: 1,
       marginBottom: 8
     }
-  }, "Current Navigation"), navItems.map((id, idx) => {
+  }, "Current Navigation"), (navItems || DEFAULT_NAV).map((id, idx) => {
     const opt = NAV_OPTIONS.find(o => o.id === id);
     if (!opt) return null;
     return /*#__PURE__*/React.createElement("div", {
@@ -13712,7 +13873,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       }
     }, idx > 0 && /*#__PURE__*/React.createElement("button", {
       onClick: () => {
-        const n = [...navItems];
+        const n = [...(navItems || DEFAULT_NAV)];
         [n[idx - 1], n[idx]] = [n[idx], n[idx - 1]];
         setNavItems(n);
       },
@@ -13725,9 +13886,9 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         padding: 0,
         lineHeight: 1
       }
-    }, "\u25B2"), idx < navItems.length - 1 && /*#__PURE__*/React.createElement("button", {
+    }, "\u25B2"), idx < (navItems || DEFAULT_NAV).length - 1 && /*#__PURE__*/React.createElement("button", {
       onClick: () => {
-        const n = [...navItems];
+        const n = [...(navItems || DEFAULT_NAV)];
         [n[idx], n[idx + 1]] = [n[idx + 1], n[idx]];
         setNavItems(n);
       },
@@ -13753,7 +13914,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       }
     }, opt.label), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
-        setNavItems(navItems.filter(i => i !== id));
+        setNavItems((navItems || DEFAULT_NAV).filter(i => i !== id));
       },
       style: {
         padding: "4px 10px",
@@ -13766,7 +13927,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         cursor: "pointer"
       }
     }, "Remove"));
-  }), navItems.length < 5 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }), (navItems || DEFAULT_NAV).length < 5 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 700,
@@ -13776,10 +13937,10 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       marginTop: 16,
       marginBottom: 8
     }
-  }, "Available Items"), NAV_OPTIONS.filter(o => !navItems.includes(o.id)).map(opt => /*#__PURE__*/React.createElement("button", {
+  }, "Available Items"), NAV_OPTIONS.filter(o => !(navItems || DEFAULT_NAV).includes(o.id)).map(opt => /*#__PURE__*/React.createElement("button", {
     key: opt.id,
     onClick: () => {
-      if (navItems.length < 5) setNavItems([...navItems, opt.id]);
+      if ((navItems || DEFAULT_NAV).length < 5) setNavItems([...(navItems || DEFAULT_NAV), opt.id]);
     },
     style: {
       display: "flex",
@@ -13835,7 +13996,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
   }, "Reset Default"), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       savePrefs({
-        navItems
+        navItems: navItems || DEFAULT_NAV
       });
       setNavEditOpen(false);
     },
