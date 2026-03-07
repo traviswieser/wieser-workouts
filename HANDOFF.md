@@ -118,7 +118,7 @@ Navigation lives in `NAV_OPTIONS` array (~line 479). Top bar has app title (clic
 ## 🎨 UI Patterns
 
 - **Color system:** `C` object (e.g. `C.acc`, `C.bg`, `C.card`, `C.txt`, `C.dim`, `C.bdr`)
-- **Theme:** Dark mode default, user-switchable via settings
+- **Theme:** Auto (match device) mode default, user-switchable via settings
 - **Font:** Outfit (Google Fonts)
 - **Icons:** Inline SVG components (e.g. `<DBIcon/>`)
 - **Logo:** Real "W" logo embedded as base64 (192px PNG + 512px JPEG)
