@@ -31,6 +31,8 @@ git checkout main && git merge dev && git push origin main && git checkout dev
 | `build.js` | Build script — compiles JSX, defers autoCue, adds splash screen → outputs `index.html` |
 | `index.html` | ❌ **Never edit.** Compiled production output deployed by Netlify. |
 | `HANDOFF.md` | This file. Updated at the end of each session. |
+| `sw.js` | Service worker file — registered from real URL for proper WebAPK. Cache version managed here. |
+| `manifest.json` | PWA manifest — references real icon files, linked via `<link>` in head. |
 
 ---
 
@@ -164,4 +166,26 @@ Navigation lives in `NAV_OPTIONS` array (~line 479). Top bar has app title (clic
 
 ---
 
-*Last updated: 2026-03-06*
+## 🛠️ Recent Fix: PWA Chrome Badge (2026-03-07)
+
+**Problem:** App showed Chrome badge on home screen icon (treated as "web shortcut" instead of standalone PWA).
+
+**Root cause:** Manifest and service worker were registered via blob URLs (`URL.createObjectURL`). Chrome requires real, fetchable URLs to create a proper WebAPK.
+
+**Fix:**
+- Created real `sw.js` file (service worker v35)
+- `manifest.json` already existed but was ignored — now linked via `<link rel="manifest" href="/manifest.json">`
+- Removed all base64 icon constants from source and build template
+- All icons now reference real files: `/icon-512.jpg`, `/icon-512-maskable.jpg`, `/icon-192.png`, `/icon-192-maskable.png`
+- Removed dead `logoSmallUrl` (transparent W logo was unused)
+- Build output reduced from ~488KB to ~439KB
+- Updated `build.js` template to include manifest link, SW registration, and real icon paths
+- Splash screen now uses `/icon-512.jpg` instead of inline base64
+
+**Key files changed:** `ww-source.html`, `build.js`, `sw.js` (new), `index.html` (compiled)
+
+**To fully clear old Chrome badge:** User must uninstall shortcut, clear Chrome cache for site, then reinstall.
+
+---
+
+*Last updated: 2026-03-07*
