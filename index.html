@@ -2476,6 +2476,8 @@ function App() {
   const [addExSets, setAddExSets] = useState("3");
   const [delConfirm, setDelConfirm] = useState(false);
   const [delHistKey, setDelHistKey] = useState(null);
+  const [editHistDurKey, setEditHistDurKey] = useState(null);
+  const [editHistDurVal, setEditHistDurVal] = useState("");
   const [exOrder, setExOrder] = useState({});
   const [exEdits, setExEdits] = useState({});
   const [editPanel, setEditPanel] = useState(null);
@@ -2666,6 +2668,8 @@ function App() {
   const [navItems, setNavItems] = useState(null);
   const [navEditOpen, setNavEditOpen] = useState(false);
   const [sessionSummary, setSessionSummary] = useState(null);
+  const [editDurOpen, setEditDurOpen] = useState(false);
+  const [editDurVal, setEditDurVal] = useState("");
   const [undoStack, setUndoStack] = useState([]);
   const [undoToast, setUndoToast] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -2712,6 +2716,9 @@ function App() {
   const totalSessions = useMemo(() => Stats.getTotal(hist, progPid), [hist, progPid]);
   const loggedExercises = useMemo(() => Stats.getLoggedExercises(hist, progPid), [hist, progPid]);
   const exHistory = useMemo(() => progEx ? Stats.getExHistory(hist, progPid, progEx) : [], [hist, progPid, progEx]);
+  const homeWeekNum = useMemo(() => Stats.getWeek(hist, planId), [hist, planId]);
+  const homeTotalSessions = useMemo(() => Stats.getTotal(hist, planId), [hist, planId]);
+  const homeLoggedExercises = useMemo(() => Stats.getLoggedExercises(hist, planId), [hist, planId]);
   const pctChange = useMemo(() => Stats.getPctChange(exHistory), [exHistory]);
 
   // AUTH LISTENER
@@ -2795,6 +2802,12 @@ function App() {
       if (data && data.coachCode) setCoachCode(data.coachCode);
       if (data?.notifySession === false) setNotifySession(false);else if (data?.notifySession === true) setNotifySession(true);
       if (data?.notifyPlan === false) setNotifyPlan(false);else if (data?.notifyPlan === true) setNotifyPlan(true);
+      if (data && data.accentId) setAccentId(data.accentId);
+      if (data && data.navItems) setNavItems(data.navItems);
+      if (data?.pushEnabled === true) setPushEnabled(true);
+      if (data?.coachAccepting !== undefined) setCoachAccepting(data.coachAccepting);
+      if (data && data.coachSpecialty) setCoachSpecialty(data.coachSpecialty);
+      if (data && data.profile) setMyProfile(data.profile);
     }), Cloud.listen(uid, "myPlans", data => {
       if (data) setMyPlans(data);
     }), Cloud.listen(uid, "hiddenPlans", data => {
@@ -3704,6 +3717,12 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       coachCode,
       notifySession,
       notifyPlan,
+      accentId,
+      navItems: navItems || DEFAULT_NAV,
+      coachAccepting,
+      coachSpecialty,
+      pushEnabled,
+      profile: myProfile,
       ...extra
     });
   };
@@ -9997,7 +10016,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       fontSize: 13,
       marginTop: 4
     }
-  }, plan.subtitle)), weekNum > 0 && /*#__PURE__*/React.createElement("div", {
+  }, plan.subtitle)), homeWeekNum > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.acc + "18",
       border: `1px solid ${C.acc}30`,
@@ -10014,7 +10033,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       color: C.acc,
       lineHeight: 1
     }
-  }, weekNum), /*#__PURE__*/React.createElement("div", {
+  }, homeWeekNum), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 9,
       color: C.acc,
@@ -10029,7 +10048,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       marginTop: 12,
       flexWrap: "wrap"
     }
-  }, weekNum > 0 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
+  }, homeWeekNum > 0 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
     style: {
       background: C.grn + "18",
       color: C.grn,
@@ -10038,7 +10057,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       fontSize: 11,
       fontWeight: 600
     }
-  }, "Week ", weekNum, " of 12"), /*#__PURE__*/React.createElement("span", {
+  }, "Week ", homeWeekNum, " of 12"), /*#__PURE__*/React.createElement("span", {
     style: {
       background: "#5B8DEF18",
       color: "#5B8DEF",
@@ -10047,7 +10066,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       fontSize: 11,
       fontWeight: 600
     }
-  }, totalSessions, " sessions logged"), bwEnabled && bwThisWeek && /*#__PURE__*/React.createElement("span", {
+  }, homeTotalSessions, " sessions logged"), bwEnabled && bwThisWeek && /*#__PURE__*/React.createElement("span", {
     style: {
       background: "#F59E0B18",
       color: "#F59E0B",
@@ -10066,7 +10085,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       fontSize: 11,
       fontWeight: 600
     }
-  }, t))), weekNum > 0 && /*#__PURE__*/React.createElement("div", {
+  }, t))), homeWeekNum > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 12
     }
@@ -10086,7 +10105,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       fontSize: 10,
       color: C.fnt
     }
-  }, Math.round(weekNum / 12 * 100), "%")), /*#__PURE__*/React.createElement("div", {
+  }, Math.round(homeWeekNum / 12 * 100), "%")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
@@ -10103,15 +10122,16 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       height: "100%",
-      width: `${weekNum / 12 * 100}%`,
+      width: `${homeWeekNum / 12 * 100}%`,
       background: `linear-gradient(90deg,${C.acc},#FF9F5C)`,
       borderRadius: 3,
       transition: "width 0.5s"
     }
-  })), totalSessions > 0 && /*#__PURE__*/React.createElement("button", {
+  })), homeTotalSessions > 0 && /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setScreen("progress");
-      setProgEx(loggedExercises[0] || "");
+      setProgScope("current");
+      setProgEx(homeLoggedExercises[0] || "");
       setProgDay("all");
       setProgOpen(null);
       history.pushState({
@@ -10135,14 +10155,15 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     }
   }, /*#__PURE__*/React.createElement(ChartIcon, {
     s: 14
-  }), " Progress"))), totalSessions > 0 && !weekNum && /*#__PURE__*/React.createElement("div", {
+  }), " Progress"))), homeTotalSessions > 0 && !homeWeekNum && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 10
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setScreen("progress");
-      setProgEx(loggedExercises[0] || "");
+      setProgScope("current");
+      setProgEx(homeLoggedExercises[0] || "");
       setProgDay("all");
       setProgOpen(null);
       history.pushState({
@@ -11494,10 +11515,118 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         lineHeight: 1.5,
         fontStyle: "italic"
       }
-    }, session.data._notes), /*#__PURE__*/React.createElement("button", {
+    }, session.data._notes), editHistDurKey === sessKey ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 10,
+        background: "#A78BFA12",
+        border: "1px solid #A78BFA30",
+        borderRadius: 8,
+        padding: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#A78BFA",
+        fontWeight: 700,
+        marginBottom: 6
+      }
+    }, "Edit Duration (minutes)"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      inputMode: "numeric",
+      min: "1",
+      max: "999",
+      value: editHistDurVal,
+      onChange: e => setEditHistDurVal(e.target.value),
+      style: {
+        flex: 1,
+        background: C.bg,
+        border: `1px solid #A78BFA60`,
+        borderRadius: 6,
+        padding: "6px 10px",
+        color: C.txt,
+        fontSize: 16,
+        fontWeight: 700,
+        outline: "none",
+        fontFamily: "inherit"
+      },
+      autoFocus: true
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        color: C.fnt
+      }
+    }, "min"), /*#__PURE__*/React.createElement("button", {
+      onClick: async () => {
+        const newDur = parseInt(editHistDurVal) || 0;
+        const updated = {
+          ...hist[sessKey],
+          _duration: newDur
+        };
+        const nh = {
+          ...hist,
+          [sessKey]: updated
+        };
+        setHist(nh);
+        if (user) {
+          setSyncing(true);
+          await Cloud.save(user.uid, "history", nh);
+          setSyncing(false);
+        }
+        setEditHistDurKey(null);
+      },
+      style: {
+        padding: "6px 12px",
+        borderRadius: 6,
+        border: "none",
+        background: "#A78BFA",
+        color: "#fff",
+        fontWeight: 700,
+        fontSize: 11,
+        cursor: "pointer"
+      }
+    }, "Save"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setEditHistDurKey(null),
+      style: {
+        padding: "6px 10px",
+        borderRadius: 6,
+        border: `1px solid ${C.sbdr}`,
+        background: C.srf,
+        color: C.dim,
+        fontWeight: 600,
+        fontSize: 11,
+        cursor: "pointer"
+      }
+    }, "\u2715"))) : /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        setEditHistDurKey(sessKey);
+        setEditHistDurVal(String(session.data._duration || ""));
+      },
+      style: {
+        marginTop: 10,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 4,
+        width: "100%",
+        padding: "8px",
+        background: "transparent",
+        border: `1px solid #A78BFA20`,
+        borderRadius: 8,
+        color: "#A78BFA",
+        fontSize: 11,
+        fontWeight: 600,
+        cursor: "pointer"
+      }
+    }, "\u23F1 Edit Duration", session.data._duration > 0 ? ` (${session.data._duration}m)` : ""), /*#__PURE__*/React.createElement("button", {
       onClick: () => setDelHistKey(sessKey),
       style: {
-        marginTop: 12,
+        marginTop: 6,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -13650,7 +13779,10 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       justifyContent: "center",
       padding: 16
     },
-    onClick: () => setSessionSummary(null)
+    onClick: () => {
+      setSessionSummary(null);
+      setEditDurOpen(false);
+    }
   }, /*#__PURE__*/React.createElement("div", {
     onClick: e => e.stopPropagation(),
     style: {
@@ -13745,9 +13877,10 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     style: {
       background: C.srf,
       borderRadius: 12,
-      padding: "12px"
+      padding: "12px",
+      position: "relative"
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, !editDurOpen ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "Outfit",
       fontSize: 24,
@@ -13759,7 +13892,89 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       fontSize: 10,
       color: C.fnt
     }
-  }, "Duration"))), sessionSummary.prs && sessionSummary.prs.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "Duration"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setEditDurOpen(true);
+      setEditDurVal(String(sessionSummary.duration || ""));
+    },
+    style: {
+      position: "absolute",
+      top: 6,
+      right: 6,
+      background: "transparent",
+      border: "none",
+      fontSize: 13,
+      cursor: "pointer",
+      color: C.fnt
+    },
+    title: "Edit duration"
+  }, "\u270E")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: "#A78BFA",
+      fontWeight: 600,
+      marginBottom: 4
+    }
+  }, "Edit Duration (min)"), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    inputMode: "numeric",
+    min: "1",
+    max: "999",
+    value: editDurVal,
+    onChange: e => setEditDurVal(e.target.value),
+    style: {
+      width: "100%",
+      background: C.bg,
+      border: `1px solid #A78BFA60`,
+      borderRadius: 6,
+      padding: "4px 6px",
+      color: C.txt,
+      fontSize: 16,
+      fontWeight: 700,
+      textAlign: "center",
+      outline: "none",
+      boxSizing: "border-box",
+      fontFamily: "inherit"
+    },
+    autoFocus: true
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: async () => {
+      const newDur = parseInt(editDurVal) || 0;
+      if (newDur < 0) return;
+      const k = `${planId}-${phaseIdx}-${dayIdx}-${today}`;
+      const updated = {
+        ...hist[k],
+        _duration: newDur
+      };
+      const nh = {
+        ...hist,
+        [k]: updated
+      };
+      setHist(nh);
+      if (user) {
+        setSyncing(true);
+        await Cloud.save(user.uid, "history", nh);
+        setSyncing(false);
+      }
+      setSessionSummary(s => ({
+        ...s,
+        duration: newDur
+      }));
+      setEditDurOpen(false);
+    },
+    style: {
+      marginTop: 4,
+      width: "100%",
+      padding: "4px",
+      borderRadius: 6,
+      border: "none",
+      background: "#A78BFA",
+      color: "#fff",
+      fontSize: 11,
+      fontWeight: 700,
+      cursor: "pointer"
+    }
+  }, "Save")))), sessionSummary.prs && sessionSummary.prs.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       background: "#F59E0B15",
       border: "1px solid #F59E0B30",
@@ -13785,7 +14000,10 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
       color: "#F59E0B"
     }
   }, pr.weight, " lbs")))), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setSessionSummary(null),
+    onClick: () => {
+      setSessionSummary(null);
+      setEditDurOpen(false);
+    },
     style: {
       width: "100%",
       padding: "14px",

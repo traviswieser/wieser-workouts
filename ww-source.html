@@ -403,6 +403,8 @@ function App(){
   const [addExSets,setAddExSets]=useState("3");
   const [delConfirm,setDelConfirm]=useState(false);
   const [delHistKey,setDelHistKey]=useState(null);
+  const [editHistDurKey,setEditHistDurKey]=useState(null);
+  const [editHistDurVal,setEditHistDurVal]=useState("");
   const [exOrder,setExOrder]=useState({});
   const [exEdits,setExEdits]=useState({});
   const [editPanel,setEditPanel]=useState(null);
@@ -481,6 +483,8 @@ function App(){
   const [navItems,setNavItems]=useState(null);
   const [navEditOpen,setNavEditOpen]=useState(false);
   const [sessionSummary,setSessionSummary]=useState(null);
+  const [editDurOpen,setEditDurOpen]=useState(false);
+  const [editDurVal,setEditDurVal]=useState("");
   const [undoStack,setUndoStack]=useState([]);
   const [undoToast,setUndoToast]=useState(false);
   const [isOffline,setIsOffline]=useState(!navigator.onLine);
@@ -512,6 +516,9 @@ function App(){
   const totalSessions=useMemo(()=>Stats.getTotal(hist,progPid),[hist,progPid]);
   const loggedExercises=useMemo(()=>Stats.getLoggedExercises(hist,progPid),[hist,progPid]);
   const exHistory=useMemo(()=>progEx?Stats.getExHistory(hist,progPid,progEx):[],[hist,progPid,progEx]);
+  const homeWeekNum=useMemo(()=>Stats.getWeek(hist,planId),[hist,planId]);
+  const homeTotalSessions=useMemo(()=>Stats.getTotal(hist,planId),[hist,planId]);
+  const homeLoggedExercises=useMemo(()=>Stats.getLoggedExercises(hist,planId),[hist,planId]);
   const pctChange=useMemo(()=>Stats.getPctChange(exHistory),[exHistory]);
 
   // AUTH LISTENER
@@ -535,7 +542,7 @@ function App(){
       Cloud.listen(uid,"exOrder",data=>{if(data)setExOrder(data);}),
       Cloud.listen(uid,"exEdits",data=>{if(data)setExEdits(data);}),
       Cloud.listen(uid,"bodyWeight",data=>{if(data)setBodyWt(data);}),
-      Cloud.listen(uid,"prefs",data=>{if(data&&data.theme)setTheme(data.theme);if(data&&data.aiKey)setAiKey(data.aiKey);if(data&&data.aiProvider)setAiProvider(data.aiProvider);if(data?.bwEnabled===false)setBwEnabled(false);else if(data?.bwEnabled===true)setBwEnabled(true);if(data&&data.userName)setUserName(data.userName);if(data&&data.role)setUserRole(data.role);if(data&&data.isCoach!==undefined)setIsCoach(!!data.isCoach);if(data&&data.coachCode)setCoachCode(data.coachCode);if(data?.notifySession===false)setNotifySession(false);else if(data?.notifySession===true)setNotifySession(true);if(data?.notifyPlan===false)setNotifyPlan(false);else if(data?.notifyPlan===true)setNotifyPlan(true);}),
+      Cloud.listen(uid,"prefs",data=>{if(data&&data.theme)setTheme(data.theme);if(data&&data.aiKey)setAiKey(data.aiKey);if(data&&data.aiProvider)setAiProvider(data.aiProvider);if(data?.bwEnabled===false)setBwEnabled(false);else if(data?.bwEnabled===true)setBwEnabled(true);if(data&&data.userName)setUserName(data.userName);if(data&&data.role)setUserRole(data.role);if(data&&data.isCoach!==undefined)setIsCoach(!!data.isCoach);if(data&&data.coachCode)setCoachCode(data.coachCode);if(data?.notifySession===false)setNotifySession(false);else if(data?.notifySession===true)setNotifySession(true);if(data?.notifyPlan===false)setNotifyPlan(false);else if(data?.notifyPlan===true)setNotifyPlan(true);if(data&&data.accentId)setAccentId(data.accentId);if(data&&data.navItems)setNavItems(data.navItems);if(data?.pushEnabled===true)setPushEnabled(true);if(data?.coachAccepting!==undefined)setCoachAccepting(data.coachAccepting);if(data&&data.coachSpecialty)setCoachSpecialty(data.coachSpecialty);if(data&&data.profile)setMyProfile(data.profile);}),
       Cloud.listen(uid,"myPlans",data=>{if(data)setMyPlans(data);}),
       Cloud.listen(uid,"hiddenPlans",data=>{if(data&&data.ids)setHiddenPlans(data.ids);}),
       Cloud.listen(uid,"coachPlans",data=>{if(data)setCoachPlans(data);}),
@@ -678,7 +685,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
     finally{setAiLoading(false);}
   };
 
-  const savePrefs=(extra={})=>{if(!user)return;Cloud.save(user.uid,"prefs",{theme,aiKey,aiProvider,bwEnabled,userName,role:userRole,isCoach,coachCode,notifySession,notifyPlan,...extra});};
+  const savePrefs=(extra={})=>{if(!user)return;Cloud.save(user.uid,"prefs",{theme,aiKey,aiProvider,bwEnabled,userName,role:userRole,isCoach,coachCode,notifySession,notifyPlan,accentId,navItems:navItems||DEFAULT_NAV,coachAccepting,coachSpecialty,pushEnabled,profile:myProfile,...extra});};
   const saveAIKey=()=>savePrefs();
 
   // LEADERBOARD
@@ -1580,13 +1587,13 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         {!hasNoPlan&&(<><div style={{background:"linear-gradient(135deg,#1A1420,#141A22)",borderRadius:16,padding:"20px 18px",marginBottom:12,border:`1px solid ${C.bdr}`}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
             <div><div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:C.acc,lineHeight:1.2}}>{plan.name}</div><div style={{color:C.dim,fontSize:13,marginTop:4}}>{plan.subtitle}</div></div>
-            {weekNum>0&&(<div style={{background:C.acc+"18",border:`1px solid ${C.acc}30`,borderRadius:10,padding:"8px 12px",textAlign:"center",flexShrink:0}}><div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:C.acc,lineHeight:1}}>{weekNum}</div><div style={{fontSize:9,color:C.acc,fontWeight:600,letterSpacing:"0.5px",marginTop:2}}>WEEK</div></div>)}
+            {homeWeekNum>0&&(<div style={{background:C.acc+"18",border:`1px solid ${C.acc}30`,borderRadius:10,padding:"8px 12px",textAlign:"center",flexShrink:0}}><div style={{fontFamily:"Outfit",fontSize:22,fontWeight:800,color:C.acc,lineHeight:1}}>{homeWeekNum}</div><div style={{fontSize:9,color:C.acc,fontWeight:600,letterSpacing:"0.5px",marginTop:2}}>WEEK</div></div>)}
           </div>
           <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-            {weekNum>0?(<><span style={{background:C.grn+"18",color:C.grn,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>Week {weekNum} of 12</span><span style={{background:"#5B8DEF18",color:"#5B8DEF",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{totalSessions} sessions logged</span>{bwEnabled&&bwThisWeek&&<span style={{background:"#F59E0B18",color:"#F59E0B",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{bwThisWeek} lbs</span>}</>):(["Mon/Wed/Fri","Full Body","12 Weeks","3 Phases"].map(t=>(<span key={t} style={{background:C.acc+"18",color:C.acc,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{t}</span>)))}
+            {homeWeekNum>0?(<><span style={{background:C.grn+"18",color:C.grn,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>Week {homeWeekNum} of 12</span><span style={{background:"#5B8DEF18",color:"#5B8DEF",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{homeTotalSessions} sessions logged</span>{bwEnabled&&bwThisWeek&&<span style={{background:"#F59E0B18",color:"#F59E0B",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{bwThisWeek} lbs</span>}</>):(["Mon/Wed/Fri","Full Body","12 Weeks","3 Phases"].map(t=>(<span key={t} style={{background:C.acc+"18",color:C.acc,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600}}>{t}</span>)))}
           </div>
-          {weekNum>0&&(<div style={{marginTop:12}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:10,color:C.fnt}}>Progress</span><span style={{fontSize:10,color:C.fnt}}>{Math.round((weekNum/12)*100)}%</span></div><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{flex:1,height:6,background:C.srf,borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${(weekNum/12)*100}%`,background:`linear-gradient(90deg,${C.acc},#FF9F5C)`,borderRadius:3,transition:"width 0.5s"}}/></div>{totalSessions>0&&<button onClick={()=>{setScreen("progress");setProgEx(loggedExercises[0]||"");setProgDay("all");setProgOpen(null);history.pushState({screen:"progress"},"");}} style={{padding:"5px 12px",borderRadius:8,border:`1px solid #5B8DEF30`,background:"#5B8DEF12",color:"#5B8DEF",fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4,flexShrink:0}}><ChartIcon s={14}/> Progress</button>}</div></div>)}
-          {totalSessions>0&&!weekNum&&<div style={{marginTop:10}}><button onClick={()=>{setScreen("progress");setProgEx(loggedExercises[0]||"");setProgDay("all");setProgOpen(null);history.pushState({screen:"progress"},"");}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid #5B8DEF30`,background:"#5B8DEF12",color:"#5B8DEF",fontSize:12,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}><ChartIcon s={14}/> View Progress & History</button></div>}
+          {homeWeekNum>0&&(<div style={{marginTop:12}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:10,color:C.fnt}}>Progress</span><span style={{fontSize:10,color:C.fnt}}>{Math.round((homeWeekNum/12)*100)}%</span></div><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{flex:1,height:6,background:C.srf,borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${(homeWeekNum/12)*100}%`,background:`linear-gradient(90deg,${C.acc},#FF9F5C)`,borderRadius:3,transition:"width 0.5s"}}/></div>{homeTotalSessions>0&&<button onClick={()=>{setScreen("progress");setProgScope("current");setProgEx(homeLoggedExercises[0]||"");setProgDay("all");setProgOpen(null);history.pushState({screen:"progress"},"");}} style={{padding:"5px 12px",borderRadius:8,border:`1px solid #5B8DEF30`,background:"#5B8DEF12",color:"#5B8DEF",fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4,flexShrink:0}}><ChartIcon s={14}/> Progress</button>}</div></div>)}
+          {homeTotalSessions>0&&!homeWeekNum&&<div style={{marginTop:10}}><button onClick={()=>{setScreen("progress");setProgScope("current");setProgEx(homeLoggedExercises[0]||"");setProgDay("all");setProgOpen(null);history.pushState({screen:"progress"},"");}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid #5B8DEF30`,background:"#5B8DEF12",color:"#5B8DEF",fontSize:12,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}><ChartIcon s={14}/> View Progress & History</button></div>}
         </div>
 
 {/* BODY WEIGHT LOG - weekly */}
@@ -1814,7 +1821,21 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
                         </div>
                       </div>
                     ):(
-                      <>{session.data._notes&&<div style={{marginTop:8,padding:"8px 10px",background:C.srf,borderRadius:6,fontSize:11,color:C.dim,lineHeight:1.5,fontStyle:"italic"}}>{session.data._notes}</div>}<button onClick={()=>setDelHistKey(sessKey)} style={{marginTop:12,display:"flex",alignItems:"center",justifyContent:"center",gap:4,width:"100%",padding:"8px",background:"transparent",border:`1px solid #EF444420`,borderRadius:8,color:"#EF4444",fontSize:11,fontWeight:600,cursor:"pointer"}}>🗑 Delete Session</button></>
+                      <>{session.data._notes&&<div style={{marginTop:8,padding:"8px 10px",background:C.srf,borderRadius:6,fontSize:11,color:C.dim,lineHeight:1.5,fontStyle:"italic"}}>{session.data._notes}</div>}
+                      {editHistDurKey===sessKey?(
+                        <div style={{marginTop:10,background:"#A78BFA12",border:"1px solid #A78BFA30",borderRadius:8,padding:10}}>
+                          <div style={{fontSize:11,color:"#A78BFA",fontWeight:700,marginBottom:6}}>Edit Duration (minutes)</div>
+                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                            <input type="number" inputMode="numeric" min="1" max="999" value={editHistDurVal} onChange={e=>setEditHistDurVal(e.target.value)} style={{flex:1,background:C.bg,border:`1px solid #A78BFA60`,borderRadius:6,padding:"6px 10px",color:C.txt,fontSize:16,fontWeight:700,outline:"none",fontFamily:"inherit"}} autoFocus/>
+                            <span style={{fontSize:12,color:C.fnt}}>min</span>
+                            <button onClick={async()=>{const newDur=parseInt(editHistDurVal)||0;const updated={...hist[sessKey],_duration:newDur};const nh={...hist,[sessKey]:updated};setHist(nh);if(user){setSyncing(true);await Cloud.save(user.uid,"history",nh);setSyncing(false);}setEditHistDurKey(null);}} style={{padding:"6px 12px",borderRadius:6,border:"none",background:"#A78BFA",color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer"}}>Save</button>
+                            <button onClick={()=>setEditHistDurKey(null)} style={{padding:"6px 10px",borderRadius:6,border:`1px solid ${C.sbdr}`,background:C.srf,color:C.dim,fontWeight:600,fontSize:11,cursor:"pointer"}}>✕</button>
+                          </div>
+                        </div>
+                      ):(
+                        <button onClick={()=>{setEditHistDurKey(sessKey);setEditHistDurVal(String(session.data._duration||""));}} style={{marginTop:10,display:"flex",alignItems:"center",justifyContent:"center",gap:4,width:"100%",padding:"8px",background:"transparent",border:`1px solid #A78BFA20`,borderRadius:8,color:"#A78BFA",fontSize:11,fontWeight:600,cursor:"pointer"}}>⏱ Edit Duration{session.data._duration>0?` (${session.data._duration}m)`:""}</button>
+                      )}
+                      <button onClick={()=>setDelHistKey(sessKey)} style={{marginTop:6,display:"flex",alignItems:"center",justifyContent:"center",gap:4,width:"100%",padding:"8px",background:"transparent",border:`1px solid #EF444420`,borderRadius:8,color:"#EF4444",fontSize:11,fontWeight:600,cursor:"pointer"}}>🗑 Delete Session</button></>
                     )}
                   </div>)}
               </div>);})}
@@ -2128,7 +2149,7 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
         </div>
       </div>)}
     {/* ══════ SESSION SUMMARY MODAL ══════ */}
-    {sessionSummary&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.8)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setSessionSummary(null)}>
+    {sessionSummary&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.8)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>{setSessionSummary(null);setEditDurOpen(false);}}>
       <div onClick={e=>e.stopPropagation()} style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:20,padding:"24px",maxWidth:340,width:"100%",textAlign:"center"}}>
         <div style={{fontSize:40,marginBottom:8}}>💪</div>
         <div style={{fontFamily:"Outfit",fontSize:20,fontWeight:800,marginBottom:4}}>Workout Complete!</div>
@@ -2137,13 +2158,19 @@ Make exercises practical with dumbbells, cables, and bodyweight. Include 5-8 exe
           <div style={{background:C.srf,borderRadius:12,padding:"12px"}}><div style={{fontFamily:"Outfit",fontSize:24,fontWeight:800,color:C.acc}}>{sessionSummary.volume>1000?(sessionSummary.volume/1000).toFixed(1)+"k":sessionSummary.volume}</div><div style={{fontSize:10,color:C.fnt}}>Total Volume (lbs)</div></div>
           <div style={{background:C.srf,borderRadius:12,padding:"12px"}}><div style={{fontFamily:"Outfit",fontSize:24,fontWeight:800,color:C.grn}}>{sessionSummary.sets}</div><div style={{fontSize:10,color:C.fnt}}>Sets Completed</div></div>
           <div style={{background:C.srf,borderRadius:12,padding:"12px"}}><div style={{fontFamily:"Outfit",fontSize:24,fontWeight:800,color:"#5B8DEF"}}>{sessionSummary.exercises}</div><div style={{fontSize:10,color:C.fnt}}>Exercises</div></div>
-          <div style={{background:C.srf,borderRadius:12,padding:"12px"}}><div style={{fontFamily:"Outfit",fontSize:24,fontWeight:800,color:"#A78BFA"}}>{sessionSummary.duration||"<1"}m</div><div style={{fontSize:10,color:C.fnt}}>Duration</div></div>
+          <div style={{background:C.srf,borderRadius:12,padding:"12px",position:"relative"}}>
+            {!editDurOpen?(
+              <><div style={{fontFamily:"Outfit",fontSize:24,fontWeight:800,color:"#A78BFA"}}>{sessionSummary.duration||"<1"}m</div><div style={{fontSize:10,color:C.fnt}}>Duration</div><button onClick={()=>{setEditDurOpen(true);setEditDurVal(String(sessionSummary.duration||""));}} style={{position:"absolute",top:6,right:6,background:"transparent",border:"none",fontSize:13,cursor:"pointer",color:C.fnt}} title="Edit duration">✎</button></>
+            ):(
+              <><div style={{fontSize:10,color:"#A78BFA",fontWeight:600,marginBottom:4}}>Edit Duration (min)</div><input type="number" inputMode="numeric" min="1" max="999" value={editDurVal} onChange={e=>setEditDurVal(e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid #A78BFA60`,borderRadius:6,padding:"4px 6px",color:C.txt,fontSize:16,fontWeight:700,textAlign:"center",outline:"none",boxSizing:"border-box",fontFamily:"inherit"}} autoFocus/><button onClick={async()=>{const newDur=parseInt(editDurVal)||0;if(newDur<0)return;const k=`${planId}-${phaseIdx}-${dayIdx}-${today}`;const updated={...hist[k],_duration:newDur};const nh={...hist,[k]:updated};setHist(nh);if(user){setSyncing(true);await Cloud.save(user.uid,"history",nh);setSyncing(false);}setSessionSummary(s=>({...s,duration:newDur}));setEditDurOpen(false);}} style={{marginTop:4,width:"100%",padding:"4px",borderRadius:6,border:"none",background:"#A78BFA",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>Save</button></>
+            )}
+          </div>
         </div>
         {sessionSummary.prs&&sessionSummary.prs.length>0&&(<div style={{background:"#F59E0B15",border:"1px solid #F59E0B30",borderRadius:12,padding:"10px 14px",marginBottom:16}}>
           <div style={{fontSize:12,fontWeight:700,color:"#F59E0B",marginBottom:6}}>🎉 New Personal Records!</div>
           {sessionSummary.prs.map((pr,i)=>(<div key={i} style={{fontSize:12,color:C.txt}}>{pr.name}: <b style={{color:"#F59E0B"}}>{pr.weight} lbs</b></div>))}
         </div>)}
-        <button onClick={()=>setSessionSummary(null)} style={{width:"100%",padding:"14px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>Done</button>
+        <button onClick={()=>{setSessionSummary(null);setEditDurOpen(false);}} style={{width:"100%",padding:"14px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${C.acc},#E85D1A)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>Done</button>
       </div>
     </div>)}
 
